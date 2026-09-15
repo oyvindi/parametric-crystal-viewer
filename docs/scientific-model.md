@@ -69,7 +69,7 @@ Normalize Miller-Bravais input into three-index coordinates in the declared latt
 
 For an active point operation `x' = W x`, transform the Miller-index column by `h' = inverse(transpose(W)) h`. Convert the transformed indices through the reciprocal lattice into a Cartesian unit normal. Real-space and reciprocal-space transformations must remain distinct; see the [IUCr symmetry tutorial](https://www.iucr.org/what-we-do/education/pamphlets/rotation-matrices-and-translation-vectors-in-crystallography).
 
-Deduplicate equivalent oriented planes while preserving originating form and operation IDs. Preserve the distinction between `h` and `-h`; do not automatically add opposite faces or inversion symmetry. Multiple operations producing the same oriented plane should retain their provenance without duplicating that plane.
+During symmetry expansion, deduplicate equivalent oriented directions within each form while preserving all originating operation IDs. Preserve the distinction between `h` and `-h`; do not automatically add opposite faces or inversion symmetry. Once support distances are assigned, combine constraints across forms according to [Overlapping Plane Constraints](#overlapping-plane-constraints); matching directions alone do not make planes coincident.
 
 ---
 
@@ -156,17 +156,21 @@ interface CrystalFace {
 
     normal: Vec3;
 
+    contributors: FaceContributor[];
+
+    symmetryGroup?: string;
+}
+
+interface FaceContributor {
     formId: string;
 
     indices: MillerIndices;
 
     operationIds: string[];
-
-    symmetryGroup?: string;
 }
 ```
 
-This allows the rendering layer to identify every visible face.
+Every visible face must expose all contributing forms, with oriented indices and originating operation IDs grouped by form. Contributor attribution follows [Overlapping Plane Constraints](#overlapping-plane-constraints). Exact types remain illustrative; a single primary form must not replace the full provenance.
 
 > **Open decision — deferred to M1:** Define `Vec3` — since `crystal-core` must not import Three.js, this must be a plain type (e.g. `[number, number, number]`), not `THREE.Vector3`.
 
@@ -210,6 +214,20 @@ Do not arbitrarily deform mesh vertices after generation.
 The engine must detect unbounded and degenerate intersections and return the diagnostic result defined in [Geometry Output](scientific-model.md#geometry-output). Do not silently add bounding planes: these would introduce faces without a crystallographic source.
 
 With a common origin and strictly positive support distances, valid input half-spaces contain a neighborhood of that origin. An empty or exactly zero-volume intersection therefore indicates invalid input or a computational problem, rather than an ordinary slider outcome.
+
+### Overlapping Plane Constraints
+
+After support distances are assigned, compare constraints using their outward unit normals and distances from the common morphology origin:
+
+* For matching oriented normals with different support distances, retain the smallest distance as the effective boundary. Looser constraints are redundant in that direction and are not contributors to its visible face.
+* For coincident constraints, generate one polygon if that boundary survives intersection, retaining every contributing form and its own oriented indices and operation IDs.
+* Opposite normals remain separate constraints.
+
+For example, parallel constraints at 10 Å and 6 Å retain the 6 Å boundary and its contributor. Two constraints at 6 Å share that boundary and both contribute.
+
+Define normal and distance comparison tolerances during M1, consistent with [Geometry Validation](#geometry-validation). Use the smallest distance for the effective boundary and attribute constraints coincident with it under those tolerances. Geometry and contributor attribution must not depend on input form order.
+
+Constraint reduction must preserve requested form settings. Recompute effective boundaries and contributors after development changes: a redundant form may become controlling, and contributor attribution may change even when vertex positions do not.
 
 ---
 

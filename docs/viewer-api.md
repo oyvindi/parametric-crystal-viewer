@@ -131,8 +131,9 @@ Example payload:
 ```ts
 {
     mineralId: "quartz",
-    formId: "r",
-    indices: [1, 0, -1, 1],
+    contributors: [
+        { formId: "r", indices: [1, 0, -1, 1], operationIds: ["op-r-1"] }
+    ],
     faceIndex: 7
 }
 ```
@@ -143,7 +144,7 @@ Example payload:
 
 Three.js raycasting may be used for interaction.
 
-Every rendered polygon must retain information about its crystallographic source.
+Every rendered polygon must retain all contributors defined by the [geometry provenance contract](scientific-model.md#geometry-output). Face inspection and selection payloads must expose the contributing forms with indices and operation IDs grouped by form. If a convenience primary form is exposed, its selection must be deterministic and the full contributor list must remain available.
 
 When a user selects a face, it should be possible to display:
 
@@ -157,6 +158,8 @@ Equivalent faces
 ```
 
 Provide a function to highlight all symmetry-equivalent faces.
+
+For a face shared by multiple forms, equivalent-face highlighting must support selecting which contributing form's equivalence set to highlight. Use current contributor metadata after every regeneration, including when attribution changes without a change in vertex positions.
 
 ---
 
@@ -242,7 +245,7 @@ This feature is secondary to the morphology engine.
 
 ## State Serialization
 
-Viewer state should be serializable.
+Viewer state must be serializable as JSON-compatible data. Restoring state produced by the viewer must reproduce the requested scientific configuration and persistent viewing settings, provided referenced data is available and compatible. This guarantees equivalent configuration, not identical rendered pixels across environments.
 
 Example:
 
@@ -250,7 +253,7 @@ Example:
 const state = viewer.getState();
 ```
 
-Possible state:
+Partial illustration of state (not a complete restorable payload):
 
 ```json
 {
@@ -288,3 +291,41 @@ external state managers
 user-built wrappers
 testing
 ```
+
+Shareable URLs are a possible host capability, subject to payload size and data availability; serialization alone does not guarantee that a state fits in a URL.
+
+### Persistent State Coverage
+
+State must include the following configuration where the corresponding capability is supported:
+
+| Category | Required coverage |
+|---|---|
+| Mineral or structural definition | Identity and data revision or compatibility identifier; imported definition as described below |
+| Morphology | Effective form definitions or resolvable identities, enabled flags, development values, morphology scale, and supported preset overrides |
+| Habit | Selected preset association alongside effective morphology settings |
+| Appearance | Selected appearance and user overrides |
+| Camera | Projection mode, position/orientation, target, and zoom or equivalent framing |
+| Display | Persistent visibility settings, including axes, labels, unit cell, and wireframe |
+| Atomic view | View mode and lattice repetition settings |
+
+Saved effective settings take precedence over preset defaults during restoration. A habit ID alone is insufficient to reproduce an edited habit. Do not silently substitute changed defaults or incompatible referenced data.
+
+Transient state such as pointer hover, animation-loop handles, and GPU resources is excluded. Exact state types and signatures remain deferred to M7.
+
+> **Open decision — deferred to M7:** Decide whether face selection is persistent. If included, define stable identification and behavior when regeneration removes the selected face.
+
+### Data Portability and Versions
+
+Reference bundled minerals using their identity and data revision or compatibility identifier. Include the normalized structural definition for imported data, including its cell, symmetry, sites, applicable bonds, and preserved source metadata, so restoration does not depend on the original import session. Apply the [structural compatibility rules](data-model.md#atomic-structure). Any additional custom definitions needed to reproduce the configuration must also be included or resolve through compatible bundled data.
+
+Every complete state payload must declare a state-format version. Unsupported versions and incompatible data references produce explicit diagnostics rather than guessed substitutions.
+
+> **Open decision — deferred to M7:** Define version identifiers, supported versions, migration policy, and the mechanism for establishing referenced-data compatibility. Migrations, if supported, must preserve the round-trip guarantee.
+
+### Transactional Restoration
+
+Parse and validate the payload and resolve its required data before committing the restored configuration as one operation. Malformed state, unsupported versions, and unresolved or incompatible required references must reject restoration with a diagnostic and leave the previous viewer state unchanged. The host must be able to observe completion or rejection; exact API signatures are deferred to M7.
+
+A valid state whose form settings produce invalid geometry is accepted as a requested configuration and follows [Invalid Geometry and Recovery](#invalid-geometry-and-recovery). This is distinct from rejecting malformed or incompatible state.
+
+Serialize requested settings, including invalid combinations, rather than a retained mesh or its previous valid settings. On restoration, regenerate geometry and derive status from the result. A freshly created viewer restoring an invalid request shows no mesh; an existing viewer may retain its previous valid mesh with stale status. The retained mesh is outside the round-trip guarantee.

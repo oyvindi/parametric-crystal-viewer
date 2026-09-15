@@ -177,9 +177,18 @@ interface HabitPreset {
 }
 ```
 
-`orientation` specifies a preferred viewing direction. `asymmetry` constrains which forms appear on which sides of the crystal, as described in [Habit Presets](data-model.md#habit-presets).
+`orientation` specifies a preferred viewing direction. `asymmetry` is an illustrative extension for unequal development of symmetry-equivalent faces within a form; its behavior is unresolved. Different development values for separate forms are already supported and do not require this extension.
 
-> **Open decision — deferred:** Define `AsymmetryConstraint` using the resolved symmetry operations ([Symmetry Resolution](scientific-model.md#symmetry-resolution)) and face provenance ([Geometry Output](scientific-model.md#geometry-output)) to identify which equivalent faces it affects.
+> **Open decision — deferred to M3 habit selection:** Determine whether the selected V1 habits require asymmetry within a form. If they do, define and implement the behavior before accepting any dependent preset. Otherwise, record the supporting habit selection and explicitly defer the capability; the illustrative field does not make asymmetry a V1 requirement. Revisit the decision if later habit selection introduces a dependency.
+
+If asymmetry is needed, the decision must specify:
+
+* how affected oriented planes are identified using resolved symmetry and face provenance, including deduplicated planes;
+* which overrides are allowed and when they apply in the geometry pipeline;
+* how geometry validation distinguishes valid crystallographic face directions from intentionally unequal face development;
+* how overrides interact with form sliders, disabled forms, and zero development.
+
+Record the mathematical behavior in the [scientific model](scientific-model.md#half-space-intersection), preset representation here, and control behavior in the [viewer API](viewer-api.md#morphology-controls). Per-face distance multipliers and selective face omission remain undecided until that design is accepted.
 
 ---
 
@@ -230,6 +239,18 @@ Each preset should define:
 * source references
 
 A habit name should not be treated as an independent mesh.
+
+### Completed Habit Presets
+
+A shipped habit preset counts toward the [V1 checklist](spec.md#v1-checklist) when it:
+
+* has a stable ID, name, and description;
+* identifies its crystallographic forms and development settings;
+* generates valid geometry under the [geometry validation contract](scientific-model.md#geometry-validation);
+* includes source references supporting the habit identification and forms;
+* distinguishes sourced information from curated visualization parameters, including development values.
+
+A source need not supply numerical development values. Curated values must be identified as such rather than presented as measurements.
 
 ---
 

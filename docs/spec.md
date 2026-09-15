@@ -37,7 +37,7 @@ V1 must provide:
 * symmetry-equivalent faces
 * procedural crystal morphology
 * adjustable crystal forms
-* at least five minerals, each with multiple documented named habits
+* at least five minerals, each with at least two documented named habits (see [habit completion requirements](data-model.md#completed-habit-presets) and [delivery coverage](plan.md#mineral-and-crystal-system-coverage))
 * crystallographic axes and unit-cell display
 * morphology sliders and face inspection
 * serializable and restorable viewer state

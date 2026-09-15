@@ -85,6 +85,14 @@ Required acceptance tests ([Geometry Output](scientific-model.md#geometry-output
 | Redundant plane outside an enclosed crystal | Valid; no face generated for the redundant plane |
 | Invalid settings followed by valid settings | Diagnostic, then successful generation |
 | Same shape at different supported morphology scales | Same validity classification |
+| Matching normals with different support distances | Tighter boundary retained; looser form excluded from that face's contributors |
+| Coincident constraints from different forms | One surviving face with all contributors and operation IDs grouped by form |
+| Multiple symmetry operations producing one direction within a form | One constraint retaining all originating operation IDs |
+| Reordered input forms | Same geometry and contributor attribution |
+| Development changes that change the controlling constraint | Effective boundary and contributors updated, including ties becoming a single contributor without vertex changes |
+| Opposite-facing plane constraints | Separate constraints retained |
+
+Exercise the [overlapping-constraint rules](scientific-model.md#overlapping-plane-constraints) within bounded fixtures and under the documented comparison tolerances. At viewer integration, verify that picking exposes all current contributors and equivalent-face highlighting respects the selected contributing form ([Picking and Face Inspection](viewer-api.md#picking-and-face-inspection)).
 
 Define scale-relative tolerances and test degenerate-result and numerical-failure diagnostics. At viewer integration, also verify that an invalid edit retains the last valid mesh with an exposed stale status, an initially invalid request displays no mesh, and a subsequent valid edit clears the diagnostic and replaces the mesh ([Viewer Lifecycle](viewer-api.md#viewer-lifecycle)).
 
@@ -92,7 +100,7 @@ Define scale-relative tolerances and test degenerate-result and numerical-failur
 
 ### M2 — Simple Cubic Mineral
 
-Implement a mineral such as fluorite or pyrite.
+Implement fluorite as the first cubic mineral in the [content delivery matrix](#mineral-and-crystal-system-coverage).
 
 Support combinations of:
 
@@ -105,6 +113,8 @@ other common forms
 Success criterion:
 
 > Relative form-distance changes produce correct transitions between common cubic morphologies.
+
+Complete fluorite's habit coverage according to the [content delivery checks](#mineral-and-crystal-system-coverage).
 
 ---
 
@@ -125,6 +135,10 @@ face labels
 Success criterion:
 
 > Multiple recognizable quartz habits are produced by the same procedural engine.
+
+Complete quartz's habit coverage according to the [content delivery checks](#mineral-and-crystal-system-coverage).
+
+Resolve the [asymmetry decision](data-model.md#habit-preset) during M3 habit selection. Acceptance requires either implemented and validated behavior for dependent presets, or a documented selection of V1 habits that can use the existing form-level controls with asymmetry explicitly deferred. Reassess this dependency when selecting the remaining habits in M5.
 
 ---
 
@@ -161,6 +175,10 @@ triclinic
 ```
 
 Use representative minerals for validation.
+
+Success criterion:
+
+> Complete both the shipped mineral coverage and the crystal-system fixture coverage in [Mineral and Crystal-System Coverage](#mineral-and-crystal-system-coverage), including the remaining mineral records and habits.
 
 ---
 
@@ -213,6 +231,18 @@ invalid-geometry status, events, and recovery
 
 Document all public interfaces.
 
+Required acceptance tests for the [state serialization contract](viewer-api.md#state-serialization):
+
+* Save and restore a modified habit with disabled forms and a non-default morphology scale.
+* Restore camera, persistent display settings, atomic view mode, and lattice repetition settings.
+* Verify that saved effective settings take precedence over preset defaults for compatible referenced data.
+* Restore an imported structure in a fresh viewer without relying on the original import session.
+* Reject malformed state, unsupported versions, and missing or incompatible required references without partial mutation.
+* Accept structurally valid state that produces invalid geometry; verify both fresh-viewer and retained-mesh behavior and subsequent recovery.
+* Verify that `getState → setState → getState` preserves equivalent persistent configuration.
+
+Resolve the versioning, data-compatibility, and face-selection decisions identified in the owning contract during M7. Define appearance-state coverage in M7 and verify selected appearance and user-override round trips when M8 delivers appearance support.
+
 ---
 
 ### M8 — Appearance
@@ -229,6 +259,8 @@ basic transparent minerals
 ```
 
 Quartz and fluorite are useful test materials.
+
+Verify that selected appearance and user overrides survive state restoration under the [serialization contract](viewer-api.md#state-serialization), completing the appearance acceptance check scheduled in M7.
 
 ---
 
@@ -264,7 +296,7 @@ Use minerals with good experimental data.
 Build one minimal vertical slice through the full stack (see [Crystal Geometry Engine](scientific-model.md#crystal-geometry-engine) for the generation pipeline):
 
 ```text
-Cubic mineral data (fluorite or pyrite)
+Cubic mineral data (fluorite)
     ↓
 CrystalGeometry
     ↓
@@ -282,6 +314,42 @@ This validates the entire architecture end-to-end with the simplest crystal syst
 ## Definition of Successful V1
 
 Version 1 succeeds when the [authoritative V1 checklist](spec.md#v1-checklist) is satisfied and the acceptance criteria for M1–M8 are met. M9–M10 are later work.
+
+Before release, verify the shipped mineral and habit counts against that checklist, with every counted habit meeting the [completion requirements](data-model.md#completed-habit-presets). Separately verify all crystal-system fixtures below. Test-only fixtures do not count toward shipped mineral coverage.
+
+### Mineral and Crystal-System Coverage
+
+The following delivery assignments use the [recommended initial minerals](spec.md#initial-minerals). Habit coverage in each row must meet the count in the [V1 checklist](spec.md#v1-checklist).
+
+| Shipped mineral | Record and habit delivery | Acceptance evidence |
+|---|---|---|
+| Fluorite | M2 | Completed habit presets and valid-geometry checks |
+| Quartz | M3 | Completed habit presets and valid-geometry checks |
+| Calcite | M5 | Completed habit presets and valid-geometry checks |
+| Pyrite | M5 | Completed habit presets and valid-geometry checks |
+| Anatase | M5 | Completed habit presets and valid-geometry checks |
+
+At each assigned milestone, record the mineral and habit IDs and link their records, references, and validation results. These checks establish record and habit coverage; later milestones still deliver their structural, API, and appearance capabilities.
+
+**Open decision — deferred to each assigned milestone:** Select the exact named habits after checking sources and whether the morphology model can represent them. Apply the [asymmetry decision from M3 habit selection](data-model.md#habit-preset) and revisit it if a new habit introduces a dependency. Habits that depend on unresolved asymmetry cannot be accepted until that behavior is defined and implemented; later twinning support is not a dependency for completing this matrix.
+
+Engine coverage is tracked separately:
+
+| Crystal system | Fixture delivery milestone | Fixture selection |
+|---|---|---|
+| Cubic | M1–M2 | Cubic prototype and fluorite reference cases |
+| Trigonal | M3 | Quartz reference cases |
+| Tetragonal | M5 | Reference fixture selected during M5 |
+| Hexagonal | M5 | Reference fixture selected during M5 |
+| Orthorhombic | M5 | Reference fixture selected during M5 |
+| Monoclinic | M5 | Reference fixture selected during M5 |
+| Triclinic | M5 | Reference fixture selected during M5 |
+
+**Open decision — deferred to M5:** Select the remaining reference fixtures. For every row, link the fixture, its sources, and expected results before accepting its delivery milestone.
+
+Validate lattice relationships, symmetry-equivalent plane directions, and bounded geometry for selected enclosing forms against the reference results, following [symmetry resolution](scientific-model.md#symmetry-resolution) and [geometry validation](scientific-model.md#geometry-validation). Include non-orthogonal cells and the relevant symmetry operations. Successful mesh generation alone is insufficient evidence of crystal-system coverage.
+
+Fixtures may reuse shipped mineral records or use separate test data. They do not need shipped habit or appearance presets unless they also count toward the content delivery matrix.
 
 ---
 
