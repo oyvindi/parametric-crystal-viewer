@@ -1,6 +1,8 @@
 # Parametric Mineral Crystal Viewer — Implementation Plan
 
-# 1. Implementation Sequence
+This document sequences delivery and acceptance checks. Requirements belong to the documents in the [documentation map](spec.md#document-map); the [V1 checklist](spec.md#v1-checklist) is the authority for release scope.
+
+## Implementation Sequence
 
 Recommended implementation sequence for crystal systems:
 
@@ -18,7 +20,7 @@ The order may be changed if required by the selected prototype minerals.
 
 ---
 
-# 2. First Complex Prototype
+## First Complex Prototype
 
 Quartz is the first complex prototype, after the generic engine and a simple cubic mineral validate the architecture.
 
@@ -37,7 +39,9 @@ This establishes whether the architecture can correctly generate recognizable cr
 
 ---
 
-# 3. Development Milestone 1 — Geometry Prototype
+## V1 Milestones
+
+### M1 — Geometry Prototype
 
 Deliver:
 
@@ -54,7 +58,7 @@ explicit invalid-geometry diagnostics
 
 No polished UI required.
 
-Implement the symmetry contract in spec §5.2 and §7 during M1. Expand registry coverage with the later crystal-system and CIF milestones; a complete space-group registry is not required for the first prototype.
+Implement the symmetry contract in [Symmetry Resolution](scientific-model.md#symmetry-resolution) and [Miller Indices](scientific-model.md#miller-indices) during M1. Expand registry coverage with the later crystal-system and CIF milestones; a complete space-group registry is not required for the first prototype.
 
 Required symmetry tests:
 
@@ -70,7 +74,7 @@ Success criterion:
 
 > Given a simple set of crystallographic forms, the engine generates the expected convex crystal.
 
-Required acceptance tests (spec §9, §10, and §39):
+Required acceptance tests ([Geometry Output](scientific-model.md#geometry-output), [Half-Space Intersection](scientific-model.md#half-space-intersection), and [Geometry Validation](scientific-model.md#geometry-validation)):
 
 | Input | Expected result |
 |---|---|
@@ -82,11 +86,11 @@ Required acceptance tests (spec §9, §10, and §39):
 | Invalid settings followed by valid settings | Diagnostic, then successful generation |
 | Same shape at different supported morphology scales | Same validity classification |
 
-Define scale-relative tolerances and test degenerate-result and numerical-failure diagnostics. At viewer integration, also verify that an invalid edit retains the last valid mesh with an exposed stale status, an initially invalid request displays no mesh, and a subsequent valid edit clears the diagnostic and replaces the mesh (spec §17).
+Define scale-relative tolerances and test degenerate-result and numerical-failure diagnostics. At viewer integration, also verify that an invalid edit retains the last valid mesh with an exposed stale status, an initially invalid request displays no mesh, and a subsequent valid edit clears the diagnostic and replaces the mesh ([Viewer Lifecycle](viewer-api.md#viewer-lifecycle)).
 
 ---
 
-# 4. Development Milestone 2 — Simple Cubic Mineral
+### M2 — Simple Cubic Mineral
 
 Implement a mineral such as fluorite or pyrite.
 
@@ -104,7 +108,7 @@ Success criterion:
 
 ---
 
-# 5. Development Milestone 3 — Quartz
+### M3 — Quartz
 
 Implement:
 
@@ -124,7 +128,7 @@ Success criterion:
 
 ---
 
-# 6. Development Milestone 4 — Generic Mineral Definitions
+### M4 — Generic Mineral Definitions
 
 Move all mineral-specific information out of generator code.
 
@@ -144,7 +148,7 @@ The engine must work from generic data.
 
 ---
 
-# 7. Development Milestone 5 — Multiple Crystal Systems
+### M5 — Multiple Crystal Systems
 
 Add:
 
@@ -160,7 +164,7 @@ Use representative minerals for validation.
 
 ---
 
-# 8. Development Milestone 6 — CIF / Structural Data
+### M6 — CIF / Structural Data
 
 Implement:
 
@@ -176,7 +180,7 @@ Success criterion:
 
 > The viewer can load structural data independently of morphology data.
 
-Required acceptance tests (spec §5.4 and §22):
+Required acceptance tests ([Atomic Structure](data-model.md#atomic-structure) and [CIF Support](data-model.md#cif-support)):
 
 * Symmetry-independent sites expand into the expected complete reference cell.
 * Multiple operations producing the same image of a source site do not duplicate atoms.
@@ -190,7 +194,7 @@ Required acceptance tests (spec §5.4 and §22):
 
 ---
 
-# 9. Development Milestone 7 — Viewer API
+### M7 — Viewer API
 
 Stabilize public API:
 
@@ -211,7 +215,7 @@ Document all public interfaces.
 
 ---
 
-# 10. Development Milestone 8 — Appearance
+### M8 — Appearance
 
 Add:
 
@@ -228,7 +232,9 @@ Quartz and fluorite are useful test materials.
 
 ---
 
-# 11. Development Milestone 9 — Twinning
+## Later Milestones
+
+### M9 — Twinning
 
 Implement twin transforms independently of normal morphology generation.
 
@@ -236,7 +242,7 @@ Test with one quartz twin law first.
 
 ---
 
-# 12. Development Milestone 10 — Pressure / Temperature
+### M10 — Pressure / Temperature
 
 Only after basic crystallography is stable.
 
@@ -253,9 +259,9 @@ Use minerals with good experimental data.
 
 ---
 
-# 13. Recommended First Implementation Target
+## Recommended First Implementation Target
 
-Build one minimal vertical slice through the full stack (see spec §8 for the generation pipeline):
+Build one minimal vertical slice through the full stack (see [Crystal Geometry Engine](scientific-model.md#crystal-geometry-engine) for the generation pipeline):
 
 ```text
 Cubic mineral data (fluorite or pyrite)
@@ -273,13 +279,13 @@ This validates the entire architecture end-to-end with the simplest crystal syst
 
 ---
 
-# 14. Definition of Successful V1
+## Definition of Successful V1
 
-Version 1 succeeds when the goals in spec §1 are met within the scope defined by the milestones (§3–12): framework-independent core, procedural generation from crystallographic data, several crystal systems, at least 5 minerals with multiple documented habits each, morphology sliders, face inspection, axes and unit-cell display, structural/morphology separation, serializable state, citable sources, Three.js as rendering only, and no manually modeled meshes.
+Version 1 succeeds when the [authoritative V1 checklist](spec.md#v1-checklist) is satisfied and the acceptance criteria for M1–M8 are met. M9–M10 are later work.
 
 ---
 
-# 15. Priority Order
+## Priority Order
 
 The development milestones define the implementation order; see the milestone sections above.
 

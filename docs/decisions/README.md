@@ -1,0 +1,18 @@
+# Technical Decision Records
+
+[Documentation map](../spec.md#document-map)
+
+Use a short decision record when a significant technical choice needs durable rationale, such as a geometry algorithm, dependency, or package boundary. Routine implementation details belong in tasks or code. Platform choices and current technical constraints belong in [architecture](../architecture.md).
+
+Name records `NNNN-short-title.md`. Include:
+
+* **Status:** proposed, accepted, or superseded.
+* **Context:** the concrete problem and constraints.
+* **Decision:** the selected approach.
+* **Alternatives:** the meaningful options considered.
+* **Consequences:** tradeoffs and validation needs.
+* **References:** links to the affected authoritative contracts and any superseding record.
+
+Decision records explain why a choice was made. Update the owning contract when an accepted decision changes required behavior; do not create a second competing specification here. Do not invent historical rationale for existing choices.
+
+No individual decision records have been recorded yet.
