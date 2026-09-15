@@ -33,6 +33,12 @@ This ensures the resulting crystal remains crystallographically meaningful.
 
 The viewer is delivered as a framework-agnostic Web Component. Users integrate it into React, Vue, Svelte, Electron, Tauri, or any other browser-based environment by wrapping the component themselves; no framework-specific wrapper packages are provided.
 
+The component must support plain-HTML embedding and multiple independent instances on one page. Changes to one instance must not change another's configuration, selection, or lifecycle. The public lifecycle and state-restoration contracts apply through the component.
+
+### Quartz Variant Selection
+
+Users must be able to select and inspect the supported [quartz handedness variants](data-model.md#quartz-handedness). Expose the selected variant and its crystallographic identity through the viewer API, and demonstrate selection and inspection in the reference application. Variant identity is part of the structural definition covered by [Persistent State Coverage](#persistent-state-coverage).
+
 ### Programmatic API
 
 The viewer should expose a small framework-independent API. All API examples in this document are pseudocode illustrating intent, not final signatures. The API will be designed when the plan is stable.
@@ -83,12 +89,26 @@ viewer.stop();
 
 The host application must be able to control the lifecycle explicitly.
 
+### Mineral Loading
+
+Mineral loading is transactional: resolve and validate the requested definition before replacing the current configuration. A failed load leaves the current viewer configuration and displayed geometry unchanged and exposes a diagnostic to the host.
+
+When loads overlap, only the newest request may commit. Superseded results must not mutate viewer state or emit success events, even if they complete after the newest request fails. The host must be able to observe load completion, failure, or supersession; exact signatures and event names remain deferred to M7.
+
+When committing a different mineral or structural definition, clear the previous definition's morphology mesh. A successfully loaded definition whose requested morphology produces invalid geometry is accepted, shows no morphology mesh, and exposes the geometry diagnostic. This differs from a load rejected for invalid input. Retaining a stale mesh during morphology edits applies within the same loaded definition, as described below. State restoration follows its separate [transactional restoration contract](#transactional-restoration).
+
+### Connection and Disposal
+
+On Web Component disconnection, pause rendering and detach external listeners while preserving configuration. On reconnection, restore listeners and resume the previous rendering mode; a previously stopped viewer remains stopped. Repeated connection cycles must not create duplicate listeners or rendering loops.
+
+Disposal permanently releases viewer-owned resources, detaches listeners, stops rendering, and invalidates pending work so its completion cannot mutate state or emit success events. Repeated disposal is harmless. Subsequent mutating calls report that the viewer is disposed, and reconnecting a disposed component does not reactivate it. Exact diagnostic signatures remain deferred to M7.
+
 ### Invalid Geometry and Recovery
 
 When requested form settings produce an invalid geometry result ([Geometry Output](scientific-model.md#geometry-output)), the viewer must:
 
 * retain the requested settings so the user can continue editing toward a valid combination;
-* retain the last valid mesh, if one exists, and expose that it represents previous valid settings rather than the current request;
+* retain the last valid mesh from the same loaded definition, if one exists, and expose that it represents previous valid settings rather than the current request; mineral switches follow [Mineral Loading](#mineral-loading), while restoration follows [Transactional Restoration](#transactional-restoration);
 * emit `geometry-invalid` with the diagnostic;
 * show no crystal mesh if no valid mesh exists yet.
 
@@ -196,12 +216,11 @@ The unit cell should remain correctly oriented relative to the external crystal.
 
 ## Atomic Structure Mode
 
-The viewer supports the following modes according to the [product scope](spec.md#v1-checklist); combined view is an advanced capability described below:
+V1 supports the following separate modes according to the [product scope](spec.md#v1-checklist):
 
 ```text
 Morphology View
 Atomic Structure View
-Combined View
 ```
 
 Atomic structure rendering should support:
@@ -215,11 +234,13 @@ repeated lattice cells
 
 Use instanced rendering for atoms where appropriate.
 
+Morphology View supports optional crystallographic axes and a unit-cell overlay. Atomic Structure View supports atoms, available bonds, and repeated cells. Both views must preserve consistent crystallographic orientation; displaying an atomic lattice inside the external morphology is deferred to the combined view below.
+
 ---
 
 ## Combined Structure / Morphology View
 
-A useful advanced mode:
+This mode is deferred beyond V1 under [Later Scope](spec.md#later-scope), with no delivery milestone assigned:
 
 ```text
 transparent external crystal
@@ -239,7 +260,7 @@ to:
 microscopic crystal structure
 ```
 
-This feature is secondary to the morphology engine.
+**Open decision — deferred beyond V1:** Before implementing this mode, define the relationship between morphology and atomic physical scales, lattice repetition limits, and clipping of atoms and bonds at the morphology boundary.
 
 ---
 

@@ -58,6 +58,8 @@ explicit invalid-geometry diagnostics
 
 No polished UI required.
 
+Verify that `crystal-core` builds and runs in a non-browser environment without browser or rendering dependencies, following [Package Dependencies and Ownership](architecture.md#package-dependencies-and-ownership).
+
 Implement the symmetry contract in [Symmetry Resolution](scientific-model.md#symmetry-resolution) and [Miller Indices](scientific-model.md#miller-indices) during M1. Expand registry coverage with the later crystal-system and CIF milestones; a complete space-group registry is not required for the first prototype.
 
 Required symmetry tests:
@@ -79,6 +81,7 @@ Required acceptance tests ([Geometry Output](scientific-model.md#geometry-output
 | Input | Expected result |
 |---|---|
 | Six enclosing cube planes | Valid closed polyhedron |
+| Equivalent unit cells supplied through supported unit conversions, with identical symmetry and morphology settings | Equivalent normalized cells and geometry under the [internal unit convention](data-model.md#unit-cell) |
 | All forms disabled or zero development | `no-active-forms` |
 | Prism planes without end caps | `unbounded` |
 | Prism planes with enclosing end caps | Valid closed polyhedron |
@@ -116,6 +119,8 @@ Success criterion:
 
 Complete fluorite's habit coverage according to the [content delivery checks](#mineral-and-crystal-system-coverage).
 
+Establish the minimum [provenance representation](data-model.md#scientific-confidence--provenance) with fluorite. Verify coverage of its shipped scientific data, traceable source references, explicit curated values, and methods and input references for any derived values.
+
 ---
 
 ### M3 — Quartz
@@ -137,6 +142,8 @@ Success criterion:
 > Multiple recognizable quartz habits are produced by the same procedural engine.
 
 Complete quartz's habit coverage according to the [content delivery checks](#mineral-and-crystal-system-coverage).
+
+Validate the supported [left/right variants](data-model.md#quartz-handedness), including symmetry and face assignments, against sourced reference fixtures. Demonstrate [variant selection and inspection](viewer-api.md#quartz-variant-selection) through the API and reference application; visibly different geometry is not required for every habit.
 
 Resolve the [asymmetry decision](data-model.md#habit-preset) during M3 habit selection. Acceptance requires either implemented and validated behavior for dependent presets, or a documented selection of V1 habits that can use the existing form-level controls with asymmetry explicitly deferred. Reassess this dependency when selecting the remaining habits in M5.
 
@@ -184,6 +191,8 @@ Success criterion:
 
 ### M6 — CIF / Structural Data
 
+Before implementation, document the supported import subset required by the [V1 Import Boundary](data-model.md#v1-import-boundary). CIF bond import is optional; internal periodic bond resolution and rendering remain required.
+
 Implement:
 
 ```text
@@ -207,8 +216,17 @@ Required acceptance tests ([Atomic Structure](data-model.md#atomic-structure) an
 * Periodic bonds connect the correct images across cell boundaries.
 * Incompatible cell/basis combinations are rejected; explicit basis transformations preserve the structure.
 * Atomic structure, unit-cell overlay, and morphology have consistent orientation.
+* Separate morphology and atomic structure views provide the [V1 view capabilities](viewer-api.md#atomic-structure-mode), including optional axes and a unit-cell overlay for morphology and atoms, available bonds, and repeated cells for atomic structure. Combined view is [deferred beyond V1](spec.md#later-scope) and is not an M6 acceptance requirement.
 * Missing bonds permit an atoms-only view, and inferred bonds are identified as derived.
 * Ambiguous site representation produces an import diagnostic.
+* Imports preserve available source metadata and distinguish imported values from inferred values, following the [provenance contract](data-model.md#scientific-confidence--provenance).
+* Representative CIF 1.1 fixtures within the documented subset import successfully; unsupported formats and constructs produce diagnostics.
+* Files with multiple structural blocks require explicit selection and import the selected structure.
+* Numerical uncertainty notation and missing-value markers receive the documented handling; missing required information produces a diagnostic.
+* Explicit symmetry operations and supported registry identifiers resolve correctly; unsupported or ambiguous identifiers and conflicting descriptions produce diagnostics.
+* Supplied CIF bond data omitted by the importer is reported. If bond import is supported, fixtures verify symmetry-reference and cell-translation resolution into periodic endpoints.
+
+Include fixtures for every rejection case in the documented import boundary, including ambiguous site representation.
 
 ---
 
@@ -231,12 +249,28 @@ invalid-geometry status, events, and recovery
 
 Document all public interfaces.
 
+Required acceptance checks for the [Web Component](viewer-api.md#web-component) and [reference demos](spec.md#reference-viewer):
+
+* Embed the component in plain HTML without a framework.
+* Demonstrate two independent instances on one page and verify that their configuration, selection, and lifecycle do not interfere.
+* Ship the basic-embedding and programmatic-controls/events demos.
+* Exercise lifecycle behavior and state restoration through the component, including preservation of the selected quartz variant.
+
+Exercise the [loading and connection contracts](viewer-api.md#mineral-loading) during initial viewer integration and complete these acceptance checks by M7:
+
+* Failed mineral loads preserve the current configuration and geometry and expose a diagnostic.
+* Overlapping loads permit only the newest request to commit; superseded completions cannot mutate state or emit success events, including when the newest request fails.
+* Committing a different mineral clears the previous morphology mesh. Invalid morphology in the newly loaded definition shows no morphology mesh and exposes the diagnostic; invalid edits within the same definition retain its last valid mesh.
+* Disconnecting and reconnecting preserves configuration and the previous rendering mode without duplicate listeners or loops; rendering is paused and external listeners are detached while disconnected.
+* Disposal releases resources and invalidates pending work. Repeated disposal is harmless, later mutating calls report disposal, and reconnection does not reactivate a disposed component.
+
 Required acceptance tests for the [state serialization contract](viewer-api.md#state-serialization):
 
 * Save and restore a modified habit with disabled forms and a non-default morphology scale.
 * Restore camera, persistent display settings, atomic view mode, and lattice repetition settings.
 * Verify that saved effective settings take precedence over preset defaults for compatible referenced data.
 * Restore an imported structure in a fresh viewer without relying on the original import session.
+* Verify that imported definitions retain their [provenance](data-model.md#scientific-confidence--provenance) through state restoration.
 * Reject malformed state, unsupported versions, and missing or incompatible required references without partial mutation.
 * Accept structurally valid state that produces invalid geometry; verify both fresh-viewer and retained-mesh behavior and subsequent recovery.
 * Verify that `getState → setState → getState` preserves equivalent persistent configuration.
@@ -258,7 +292,7 @@ absorption
 basic transparent minerals
 ```
 
-Quartz and fluorite are useful test materials.
+Use documented quartz and fluorite reference scenes under the [appearance validation policy](architecture.md#appearance-validation). Verify the intended effects of transmission, IOR, roughness, color, and absorption without changes to scientific geometry. Check face and edge readability during rotation and zoom, and record visual review results alongside automated parameter-mapping checks.
 
 Verify that selected appearance and user overrides survive state restoration under the [serialization contract](viewer-api.md#state-serialization), completing the appearance acceptance check scheduled in M7.
 
@@ -330,6 +364,8 @@ The following delivery assignments use the [recommended initial minerals](spec.m
 | Anatase | M5 | Completed habit presets and valid-geometry checks |
 
 At each assigned milestone, record the mineral and habit IDs and link their records, references, and validation results. These checks establish record and habit coverage; later milestones still deliver their structural, API, and appearance capabilities.
+
+Verify each shipped mineral and habit against the [provenance contract](data-model.md#scientific-confidence--provenance), beginning with the representation established in M2 and applying it throughout M3–M5. Scientific data added by later milestones must also meet that contract.
 
 **Open decision — deferred to each assigned milestone:** Select the exact named habits after checking sources and whether the morphology model can represent them. Apply the [asymmetry decision from M3 habit selection](data-model.md#habit-preset) and revisit it if a new habit introduces a dependency. Habits that depend on unresolved asymmetry cannot be accepted until that behavior is defined and implemented; later twinning support is not a dependency for completing this matrix.
 

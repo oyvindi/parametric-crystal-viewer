@@ -203,7 +203,7 @@ otherwise: distance = morphologyScale / development
 
 Increasing development moves the form's planes toward the origin. The resulting face areas depend on all active forms; this does not guarantee increasing absolute face area. Increasing all active development values by the same factor scales the crystal down without changing its proportions.
 
-Geometry is returned in crystallographic units (Ångström). `crystal-core` does not normalize the output; the renderer uses `bounds` ([Geometry Output](scientific-model.md#geometry-output)) to frame the camera.
+Geometry and morphology support distances follow the [internal unit convention](data-model.md#unit-cell): lengths are in Ångström. `crystal-core` does not normalize the output; the renderer uses `bounds` ([Geometry Output](scientific-model.md#geometry-output)) to frame the camera.
 
 Changing a form's support distance or the shared morphology scale must regenerate the polyhedron.
 

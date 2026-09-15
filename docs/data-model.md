@@ -63,6 +63,10 @@ interface Crystallography {
 
 Operation types, coordinate conventions, and resolution rules are defined in the [scientific model](scientific-model.md#operation-representation).
 
+### Quartz Handedness
+
+Supported left- and right-handed quartz variants must be defined using sourced crystallographic data, including their symmetry and form assignments in the declared basis. Exact record representation remains an implementation decision. Validate the variants against reference fixtures; not every habit is required to have a visibly different morphology for the two variants.
+
 ### Unit Cell
 
 ```ts
@@ -77,11 +81,7 @@ interface UnitCell {
 }
 ```
 
-Angles are expressed in degrees.
-
-Lengths should use a consistent internal unit.
-
-For crystallographic source data, Ångström is recommended.
+Unit-cell lengths use Ångström (Å), and unit-cell angles use degrees. Imported lengths expressed in other units must be converted to Ångström before entering the normalized data model. Preserve the original units in source metadata when provided. Inputs with unknown or ambiguous units must produce a validation diagnostic rather than assuming a unit.
 
 ---
 
@@ -258,6 +258,20 @@ A source need not supply numerical development values. Curated values must be id
 
 Implement a CIF parser or integrate an appropriate lightweight CIF parsing library.
 
+### V1 Import Boundary
+
+V1 supports a documented subset of CIF 1.1 structural data. CIF 2.0 is deferred; unsupported formats and constructs must produce import diagnostics. Parser selection remains an implementation decision.
+
+* **Data blocks:** When a file contains multiple structural blocks, require explicit block selection rather than silently choosing one.
+* **Values:** Handle numerical uncertainty notation and missing-value markers explicitly. Missing information required to construct the structural definition produces a diagnostic rather than a fabricated default. Define the supported handling of uncertainty metadata before M6 implementation.
+* **Symmetry:** Accept validated explicit operations or identifiers and settings supported by the registry, following [Symmetry Resolution](scientific-model.md#symmetry-resolution). Publish supported registry settings; reject unsupported or ambiguous identifiers. When multiple descriptions are supplied, their agreement remains required.
+* **Sites:** Document the supported site-representation convention before M6 implementation and diagnose ambiguous representations, as specified below.
+* **Bonds:** CIF bond import is optional for V1. Report when supplied bond data is omitted. Periodic bond resolution and rendering for internal structural data remain required under [Periodic Bonds](#periodic-bonds) and [Atomic Structure Mode](viewer-api.md#atomic-structure-mode). When CIF bonds are imported, the endpoint-resolution requirements below apply.
+
+Before M6 implementation, document the supported tags, constructs, site convention, and registry settings. Validate the boundary using representative successful imports and fixtures for each rejection case. Delivery checks belong to [M6](plan.md#m6--cif--structural-data).
+
+### Extraction and Normalization
+
 Extract at minimum:
 
 ```text
@@ -320,7 +334,7 @@ Citrine
 Rose quartz
 ```
 
-These should not modify crystallographic geometry unless explicitly required.
+Appearance settings must not modify scientific geometry. Rendering behavior and visual validation are defined in [Appearance Validation](architecture.md#appearance-validation).
 
 ---
 
@@ -357,7 +371,18 @@ The internal structure may therefore change discontinuously rather than simply d
 
 ## Scientific Confidence / Provenance
 
-Every curated parameter should optionally contain source metadata.
+Provenance is required for shipped scientific data in V1. One provenance entry may cover related fields from the same source; a wrapper around every individual value is not required.
+
+Each entry must identify:
+
+* **Coverage:** the fields or parameter group it describes.
+* **Origin:** a source reference, or an explicit statement that the values were curated.
+* **Status:** `reported`, `derived`, `curated`, or `estimated`.
+* **Derivation:** for derived values, the method and references to the inputs used.
+
+For example, unit-cell parameters may share one literature reference, while habit development values are identified as curated visualization settings. References must identify the source sufficiently to trace the covered information; an otherwise empty reference ID is insufficient.
+
+Imports must preserve available source metadata and distinguish imported values from inferred values. Inferred values are derived and must identify their method and inputs. Missing source information must remain explicit rather than being invented. Imported definitions included in viewer state must retain their provenance through restoration, following [Data Portability and Versions](viewer-api.md#data-portability-and-versions).
 
 Example:
 
@@ -377,7 +402,7 @@ interface Reference {
 }
 ```
 
-Data fields may optionally record their source.
+An individual value may carry provenance directly; grouped entries are also permitted. The following example is illustrative and does not define the complete provenance representation.
 
 Example:
 
@@ -390,13 +415,12 @@ interface SourcedValue<T> {
     status:
         | "reported"
         | "derived"
+        | "curated"
         | "estimated";
 }
 ```
 
-> **Open decision — deferred:** `SourcedValue` is defined but not used in the data model. Either wire it into the schema or mark provenance as a future extension.
-
-Deferring provenance beyond V1 would require an explicit change to the [V1 checklist](spec.md#v1-checklist); this open question does not itself change release scope.
+Define the minimum provenance representation during M2 with fluorite. Exact schema syntax remains an implementation decision, subject to the coverage, origin, status, and derivation requirements above. Apply the same contract to subsequent shipped records and habits; delivery checks are assigned in the [implementation plan](plan.md#mineral-and-crystal-system-coverage).
 
 ---
 

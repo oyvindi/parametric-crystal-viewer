@@ -39,7 +39,7 @@ Crystallographic calculations must not depend on Three.js.
 
 ## Architectural Principles
 
-The architecture is layered (see [Package Structure](architecture.md#package-structure) for the concrete package graph): viewer API on top of a Three.js rendering layer, on top of crystal geometry generation, on top of the crystallographic engine, on top of mineral/morphology data.
+The viewer orchestrates data loading, scientific calculations, and rendering. Data normalization and rendering both depend on the renderer-neutral scientific core; the core does not depend on the mineral catalog. See [Package Dependencies and Ownership](#package-dependencies-and-ownership) for allowed imports.
 
 The system must maintain strict separation between:
 
@@ -105,9 +105,30 @@ packages/
         development / reference interface
 ```
 
-Dependencies should remain one-directional.
+### Package Dependencies and Ownership
 
-`crystal-core` must not import Three.js.
+The following graph defines allowed direct imports between project packages. An arrow means "imports"; packages need not use every allowed dependency.
+
+```text
+crystal-data   → crystal-core
+crystal-three  → crystal-core
+crystal-viewer → crystal-core, crystal-data, crystal-three
+crystal-demo   → crystal-viewer
+```
+
+| Package | Owns |
+|---|---|
+| `crystal-core` | Renderer-neutral scientific types, lattice mathematics, symmetry registry and resolution, geometry generation, atomic expansion, and periodic bond calculations |
+| `crystal-data` | Mineral and habit schemas, curated records, provenance, CIF parsing, and conversion into core inputs using core validation and normalization calculations |
+| `crystal-three` | Conversion of core geometry into Three.js objects, materials, and atomic rendering |
+| `crystal-viewer` | Loading, orchestration, interaction, lifecycle, and state serialization |
+| `crystal-demo` | Application controls, reference interface, and embedding demos |
+
+`crystal-core` receives scientific inputs directly. It must not import the mineral catalog, interpret named habits, or depend on Three.js or browser APIs. Shared scientific types belong in core; no separate shared-types package is introduced initially. Exact types and signatures remain implementation decisions.
+
+`crystal-data` interprets imported bond references and converts them into core inputs; core performs atomic expansion and periodic bond calculations. Rendering consumes the resulting scientific data without importing the mineral catalog.
+
+The rationale is recorded in [Scientific Core Dependency Boundary](decisions/0001-scientific-core-dependency-boundary.md).
 
 Monorepo tooling, package manager, build configuration, and module format will be determined during implementation based on what makes sense for the stack.
 
@@ -143,3 +164,9 @@ selection highlighting
 ## Testing
 
 Add automated tests to the code for all packages. Use published crystallographic examples as test fixtures where applicable.
+
+### Appearance Validation
+
+Use documented quartz and fluorite reference scenes to validate transmission, IOR, roughness, color, and absorption. For each property, document the intended visible effect and scene conditions used to assess it. Appearance changes must preserve scientific geometry, following [Mineral Appearance](data-model.md#mineral-appearance).
+
+Review face and edge readability during rotation and zoom. Record visual review results alongside automated checks for appearance parameter mapping and state restoration. These checks assess the required rendering behavior without requiring identical pixels across environments.

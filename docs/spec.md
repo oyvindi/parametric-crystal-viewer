@@ -57,6 +57,8 @@ Milestones M9–M10 ([later milestones](plan.md#later-milestones)) cover:
 
 Other future capabilities are described below; they are not additions to the V1 checklist.
 
+[Combined Structure / Morphology View](viewer-api.md#combined-structure--morphology-view) is deferred beyond V1, with no delivery milestone assigned. V1 provides separate morphology and atomic structure views, with consistent crystallographic orientation and optional axes and unit-cell display.
+
 ---
 
 ## Supported Crystal Systems
@@ -168,6 +170,8 @@ Export functionality should use generated geometry rather than accessing Three.j
 ## Reference Viewer
 
 Create a lightweight plain-DOM application for development, using plain HTML, CSS, and JavaScript/TypeScript. The repo should include multiple minimal demos showing how to embed the Web Component in barebone HTML without any framework.
+
+Provide at least two minimal demos: basic embedding, and programmatic controls and events. Demonstrate two independent viewer instances on one page in at least one demo.
 
 Suggested layout:
 
