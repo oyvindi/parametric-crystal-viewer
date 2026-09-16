@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { createLattice, transformMillerIndices, validateMillerIndices } from "./index.js";
+import { createLattice, transformMillerIndices, validateMillerIndices, validatePointOperations } from "./index.js";
 
 function assertMatrixClose(
     actual: readonly (readonly number[])[],
@@ -66,5 +66,25 @@ it("transforms Miller columns by inverse transpose", () => {
         [[0, -1, 0], [1, 0, 0], [0, 0, 1]],
     );
     expect(transformed).toEqual({ ok: true, value: { notation: "miller", h: 0, k: 1, l: 0 }, diagnostics: [] });
+});
+
+it("validates a metric-compatible closed point-operation set", () => {
+    const lattice = createLattice({ a: 1, b: 1, c: 1, alpha: 90, beta: 90, gamma: 90 });
+    if (!lattice.ok) throw new Error("Expected valid cubic lattice");
+    const result = validatePointOperations([
+        { id: "identity", linear: [[1, 0, 0], [0, 1, 0], [0, 0, 1]] },
+        { id: "inversion", linear: [[-1, 0, 0], [0, -1, 0], [0, 0, -1]] },
+    ], lattice.value);
+    expect(result.ok).toBe(true);
+});
+
+it("rejects operations incompatible with the cell metric", () => {
+    const lattice = createLattice({ a: 2, b: 3, c: 4, alpha: 90, beta: 90, gamma: 90 });
+    if (!lattice.ok) throw new Error("Expected valid orthorhombic lattice");
+    const result = validatePointOperations([
+        { id: "identity", linear: [[1, 0, 0], [0, 1, 0], [0, 0, 1]] },
+        { id: "swap-a-b", linear: [[0, 1, 0], [1, 0, 0], [0, 0, 1]] },
+    ], lattice.value);
+    expect(result).toMatchObject({ ok: false, diagnostics: [{ code: "core.symmetry.metric-incompatible" }] });
 });
 });

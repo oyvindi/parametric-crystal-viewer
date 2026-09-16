@@ -2,3 +2,4 @@
 export * from "./diagnostics.js";
 export * from "./lattice.js";
 export * from "./miller.js";
+export * from "./symmetry.js";
