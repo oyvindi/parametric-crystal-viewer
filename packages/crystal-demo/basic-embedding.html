@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Basic Embedding — M7 Demo</title>
+<style>
+  body { margin: 0; font-family: system-ui, sans-serif; background: #2a2a2a; color: #ddd; }
+  h1 { font-size: 1.2em; margin: 0; padding: 16px; }
+  .note { color: #999; font-size: 0.85em; padding: 0 16px 12px; }
+  .row { display: flex; gap: 16px; padding: 0 16px 16px; }
+  .cell { flex: 1; background: #333; border: 1px solid #555; border-radius: 6px; overflow: hidden; }
+  .cell h2 { font-size: 0.9em; margin: 0; padding: 8px 12px; background: #3a3a3a; border-bottom: 1px solid #555; }
+  crystal-viewer { display: block; width: 100%; height: 320px; }
+</style>
+<script type="importmap">
+{
+  "imports": {
+    "three": "../../node_modules/three/build/three.module.js",
+    "@crystal/core": "../crystal-core/dist/index.js",
+    "@crystal/data": "../crystal-data/dist/index.js",
+    "@crystal/three": "../crystal-three/dist/index.js",
+    "@crystal/viewer": "../crystal-viewer/dist/index.js",
+    "@crystal/viewer/component": "../crystal-viewer/dist/component.js"
+  }
+}
+</script>
+</head>
+<body>
+<h1>Basic Embedding — two independent instances</h1>
+<div class="note">Plain-HTML embedding of the <code>&lt;crystal-viewer&gt;</code> Web Component, no framework. Each instance loads a different mineral via the <code>mineral</code> attribute and is independently draggable.</div>
+<div class="row">
+  <div class="cell">
+    <h2>Quartz</h2>
+    <crystal-viewer mineral="quartz"></crystal-viewer>
+  </div>
+  <div class="cell">
+    <h2>Fluorite</h2>
+    <crystal-viewer mineral="fluorite"></crystal-viewer>
+  </div>
+</div>
+<script type="module">
+import { defineCrystalViewerElement } from "@crystal/viewer/component";
+defineCrystalViewerElement();
+
+// Start the render loops for each instance.
+document.querySelectorAll("crystal-viewer").forEach(async (el) => {
+  await new Promise((r) => requestAnimationFrame(r));
+  const viewer = el.getViewer();
+  if (viewer) viewer.start();
+});
+</script>
+</body>
+</html>

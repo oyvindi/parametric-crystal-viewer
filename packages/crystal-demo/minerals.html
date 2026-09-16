@@ -107,8 +107,8 @@ function populateMinerals() {
 }
 populateMinerals();
 
-function loadMineral(id) {
-  viewer.loadMineral(id);
+async function loadMineral(id) {
+  await viewer.loadMineral(id);
   updateMineralInfo(id);
   populateVariants();
   populateHabits();
@@ -277,7 +277,7 @@ viewer.addEventListener("geometry-invalid", () => updateStatus());
 
 // --- Initialize with the first mineral ---
 mineralSelect.value = mineralSelect.options[0].value;
-loadMineral(mineralSelect.value);
+await loadMineral(mineralSelect.value);
 
 // --- Resize handling ---
 function resize() {

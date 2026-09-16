@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Programmatic Controls & Events — M7 Demo</title>
+<style>
+  body { margin: 0; font-family: system-ui, sans-serif; background: #2a2a2a; color: #ddd; display: flex; height: 100vh; }
+  #panel { width: 360px; padding: 16px; overflow-y: auto; background: #333; border-right: 1px solid #555; }
+  #panel h1 { font-size: 1.1em; margin: 0 0 4px; }
+  #panel .sub { color: #999; font-size: 0.82em; margin-bottom: 12px; }
+  #panel h2 { font-size: 0.95em; margin: 14px 0 6px; color: #ccc; border-bottom: 1px solid #555; padding-bottom: 2px; }
+  #panel select { width: 100%; margin-bottom: 8px; }
+  #panel label { display: block; font-size: 0.85em; margin-bottom: 4px; }
+  #panel .form-row { margin-bottom: 8px; }
+  #panel .form-row .label-line { display: flex; justify-content: space-between; font-size: 0.82em; }
+  #panel input[type="range"] { width: 100%; }
+  #panel .value { color: #8cf; font-variant-numeric: tabular-nums; }
+  #panel .checkbox-row { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; font-size: 0.85em; }
+  #panel .checkbox-row input { width: auto; }
+  #panel .status { margin-top: 8px; padding: 6px; border-radius: 4px; font-size: 0.82em; }
+  #panel .status.valid { background: #2d4a2d; color: #8e8; }
+  #panel .status.invalid { background: #4a2d2d; color: #e88; }
+  #panel .status.stale { background: #4a4a2d; color: #dd8; }
+  #panel textarea { width: 100%; height: 90px; box-sizing: border-box; font-size: 0.7em; }
+  #panel button { margin: 4px 4px 4px 0; }
+  #panel #events { font-size: 0.72em; color: #9c9; max-height: 90px; overflow-y: auto; background: #2a2a2a; padding: 6px; border-radius: 4px; }
+  #canvas-container { flex: 1; position: relative; }
+  canvas { display: block; width: 100%; height: 100%; }
+</style>
+<script type="importmap">
+{
+  "imports": {
+    "three": "../../node_modules/three/build/three.module.js",
+    "@crystal/core": "../crystal-core/dist/index.js",
+    "@crystal/data": "../crystal-data/dist/index.js",
+    "@crystal/three": "../crystal-three/dist/index.js",
+    "@crystal/viewer": "../crystal-viewer/dist/index.js"
+  }
+}
+</script>
+</head>
+<body>
+<div id="panel">
+  <h1>Programmatic Controls & Events</h1>
+  <div class="sub">Controls initialize from viewer state and stay synchronized through events after programmatic changes and state restoration (M7).</div>
+
+  <h2>Mineral</h2>
+  <select id="mineral-select"></select>
+
+  <h2>Habit</h2>
+  <select id="habit-select"></select>
+
+  <h2>Forms</h2>
+  <div id="forms"></div>
+
+  <h2>Morphology scale</h2>
+  <input type="range" id="scale" min="0.25" max="3" step="0.05" value="1">
+  <div class="value" id="scale-val">1.00</div>
+
+  <h2>Display</h2>
+  <div class="checkbox-row"><input type="checkbox" id="axes"><label for="axes">Crystallographic axes</label></div>
+  <div class="checkbox-row"><input type="checkbox" id="unit-cell"><label for="unit-cell">Unit cell</label></div>
+  <div class="checkbox-row"><input type="checkbox" id="wireframe"><label for="wireframe">Wireframe</label></div>
+
+  <button type="button" id="reset-camera">Reset camera</button>
+
+  <div class="status" id="status">Loading…</div>
+
+  <h2>State save / restore</h2>
+  <button type="button" id="save">Save state</button>
+  <button type="button" id="restore">Restore state</button>
+  <textarea id="state-json" placeholder="Saved state appears here; edit and Restore to apply."></textarea>
+
+  <h2>Events</h2>
+  <div id="events"></div>
+</div>
+<div id="canvas-container">
+  <canvas id="canvas"></canvas>
+</div>
+
+<script type="module">
+import { CrystalViewer } from "@crystal/viewer";
+import { listMinerals, getMineral } from "@crystal/data";
+
+const canvas = document.getElementById("canvas");
+const viewer = new CrystalViewer(canvas);
+viewer.start();
+
+const eventsEl = document.getElementById("events");
+function logEvent(name) {
+  const line = document.createElement("div");
+  line.textContent = name;
+  eventsEl.prepend(line);
+  while (eventsEl.children.length > 12) eventsEl.removeChild(eventsEl.lastChild);
+}
+
+// --- Mineral selector ---
+const mineralSelect = document.getElementById("mineral-select");
+for (const id of listMinerals()) {
+  const m = getMineral(id);
+  const opt = document.createElement("option");
+  opt.value = id; opt.textContent = m.name;
+  mineralSelect.appendChild(opt);
+}
+mineralSelect.value = "quartz";
+async function loadMineral(id) {
+  await viewer.loadMineral(id);
+  syncAll();
+}
+mineralSelect.addEventListener("change", () => loadMineral(mineralSelect.value));
+
+// --- Habit selector ---
+const habitSelect = document.getElementById("habit-select");
+function populateHabits() {
+  habitSelect.innerHTML = "";
+  for (const h of viewer.getHabits()) {
+    const opt = document.createElement("option");
+    opt.value = h.id; opt.textContent = h.name;
+    habitSelect.appendChild(opt);
+  }
+  const current = viewer.getHabitId();
+  if (current) habitSelect.value = current;
+}
+habitSelect.addEventListener("change", () => { viewer.setHabit(habitSelect.value); populateForms(); updateStatus(); });
+
+// --- Form sliders ---
+const formsContainer = document.getElementById("forms");
+function populateForms() {
+  formsContainer.innerHTML = "";
+  for (const form of viewer.getForms()) {
+    const row = document.createElement("div");
+    row.className = "form-row";
+    row.dataset.formId = form.id;
+    const labelLine = document.createElement("div");
+    labelLine.className = "label-line";
+    labelLine.innerHTML = `<span>${form.label}</span><span class="value" id="val-${form.id}">${form.development.toFixed(2)}</span>`;
+    row.appendChild(labelLine);
+    const slider = document.createElement("input");
+    slider.type = "range"; slider.min = "0"; slider.max = "1"; slider.step = "0.01";
+    slider.value = String(form.development); slider.disabled = !form.enabled;
+    slider.addEventListener("input", () => {
+      const val = parseFloat(slider.value);
+      viewer.setFormDevelopment(form.id, val);
+      document.getElementById("val-" + form.id).textContent = val.toFixed(2);
+      updateStatus();
+    });
+    row.appendChild(slider);
+    formsContainer.appendChild(row);
+  }
+}
+
+/** Updates existing slider values and disabled state without rebuilding the DOM. */
+function syncFormValues() {
+  for (const form of viewer.getForms()) {
+    const row = formsContainer.querySelector(`[data-form-id="${form.id}"]`);
+    if (!row) { populateForms(); return; }
+    const slider = row.querySelector("input[type=range]");
+    const val = document.getElementById("val-" + form.id);
+    if (slider) { slider.value = String(form.development); slider.disabled = !form.enabled; }
+    if (val) val.textContent = form.development.toFixed(2);
+  }
+}
+
+// --- Morphology scale ---
+const scaleEl = document.getElementById("scale");
+const scaleVal = document.getElementById("scale-val");
+scaleEl.addEventListener("input", () => {
+  const v = parseFloat(scaleEl.value);
+  viewer.setMorphologyScale(v);
+  scaleVal.textContent = v.toFixed(2);
+});
+
+// --- Display toggles ---
+const axesEl = document.getElementById("axes");
+const unitCellEl = document.getElementById("unit-cell");
+const wireframeEl = document.getElementById("wireframe");
+axesEl.addEventListener("change", () => viewer.setShowAxes(axesEl.checked));
+unitCellEl.addEventListener("change", () => viewer.setShowUnitCell(unitCellEl.checked));
+wireframeEl.addEventListener("change", () => viewer.setShowWireframe(wireframeEl.checked));
+document.getElementById("reset-camera").addEventListener("click", () => viewer.resetCamera());
+
+// --- Status ---
+const statusEl = document.getElementById("status");
+function updateStatus() {
+  const s = viewer.getGeometryStatus();
+  statusEl.className = "status " + (s.stale ? "stale" : s.status);
+  statusEl.textContent = s.status === "valid" && !s.stale ? "Valid geometry"
+    : s.stale ? "Invalid — showing previous valid shape"
+    : "Invalid: " + s.diagnostics.map(d => d.code).join(", ");
+}
+
+// --- Sync all controls from current viewer state ---
+function syncDisplay() {
+  const st = viewer.getState();
+  axesEl.checked = st.display.axes;
+  unitCellEl.checked = st.display.unitCell;
+  wireframeEl.checked = st.display.wireframe;
+  scaleEl.value = String(st.morphologyScale ?? 1);
+  scaleVal.textContent = (st.morphologyScale ?? 1).toFixed(2);
+}
+function syncAll() {
+  populateHabits();
+  populateForms();
+  syncDisplay();
+  updateStatus();
+}
+
+// --- State save / restore ---
+const stateJson = document.getElementById("state-json");
+document.getElementById("save").addEventListener("click", () => {
+  stateJson.value = JSON.stringify(viewer.getState(), null, 2);
+  logEvent("getState");
+});
+document.getElementById("restore").addEventListener("click", () => {
+  try {
+    const state = JSON.parse(stateJson.value);
+    viewer.setState(state);
+    logEvent("setState");
+  } catch (e) {
+    stateJson.value = "Restore rejected: " + (e?.message ?? String(e));
+  }
+});
+
+// --- Events keep controls synchronized after programmatic changes and restoration ---
+viewer.addEventListener("mineral-loaded", () => { syncAll(); logEvent("mineral-loaded"); });
+viewer.addEventListener("habit-changed", () => { populateForms(); logEvent("habit-changed"); });
+viewer.addEventListener("form-changed", () => { syncFormValues(); logEvent("form-changed"); });
+viewer.addEventListener("geometry-changed", () => { updateStatus(); logEvent("geometry-changed"); });
+viewer.addEventListener("geometry-invalid", () => { updateStatus(); logEvent("geometry-invalid"); });
+viewer.addEventListener("state-restored", () => { syncAll(); logEvent("state-restored"); });
+
+// --- Initialize ---
+await loadMineral("quartz");
+
+// --- Resize ---
+function resize() {
+  const c = document.getElementById("canvas-container");
+  viewer.resize(c.clientWidth, c.clientHeight);
+}
+window.addEventListener("resize", resize);
+resize();
+</script>
+</body>
+</html>

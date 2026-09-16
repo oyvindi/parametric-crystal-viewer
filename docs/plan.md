@@ -316,6 +316,8 @@ Add an atomic-structure demo with view-mode, unit-cell, bond, and lattice-repeti
 
 ### M7 — Viewer API
 
+**Status: complete.** See the [M7 acceptance audit](m7-acceptance.md) for the stabilized API, Web Component, state serialization, loading/lifecycle contracts, demos, and decisions.
+
 Stabilize public API:
 
 ```text

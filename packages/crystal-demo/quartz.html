@@ -78,7 +78,7 @@ import { CrystalViewer } from "@crystal/viewer";
 
 const canvas = document.getElementById("canvas");
 const viewer = new CrystalViewer(canvas);
-viewer.loadMineral("quartz");
+await viewer.loadMineral("quartz");
 viewer.start();
 document.getElementById("reset-camera").addEventListener("click", () => viewer.resetCamera());
 

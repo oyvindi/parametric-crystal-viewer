@@ -22,19 +22,19 @@ vi.mock("three", async (importOriginal) => {
 const viewers: CrystalViewer[] = [];
 afterEach(() => { viewers.splice(0).forEach((viewer) => viewer.dispose()); render.mockClear(); });
 
-function setup(source: unknown = "quartz") {
+async function setup(source: unknown = "quartz") {
     const canvas = Object.assign(new EventTarget(), { clientWidth: 400, clientHeight: 300 }) as HTMLCanvasElement;
     const viewer = new CrystalViewer(canvas);
     viewers.push(viewer);
-    viewer.loadMineral(source);
+    await viewer.loadMineral(source);
     const [scene, camera] = render.mock.lastCall!;
     const group = scene.children.find((child) => child instanceof Group) as Group;
     return { viewer, camera, group, canvas };
 }
 
 describe("M3 camera lifecycle through the viewer", () => {
-    it("uses the initial habit view, preserves camera and rotation on edits, and resets explicitly", () => {
-        const { viewer, camera, group, canvas } = setup();
+    it("uses the initial habit view, preserves camera and rotation on edits, and resets explicitly", async () => {
+        const { viewer, camera, group, canvas } = await setup();
         const preferred = QUARTZ.habits[0].preferredView!.cameraDirection;
         const direction = camera.position.clone().normalize();
         const length = Math.hypot(...preferred);
@@ -59,10 +59,10 @@ describe("M3 camera lifecycle through the viewer", () => {
         expect(group.rotation.y).toBe(0);
     });
 
-    it("frames the first valid geometry after an initially disabled record", () => {
+    it("frames the first valid geometry after an initially disabled record", async () => {
         const source: any = structuredClone(FLUORITE);
         source.habits[0].forms.forEach((form: any) => { form.enabled = false; });
-        const { viewer, camera, group } = setup(source);
+        const { viewer, camera, group } = await setup(source);
         expect(viewer.getGeometryStatus().status).toBe("invalid");
         expect(group.children).toHaveLength(0);
         const before = camera.position.toArray();
@@ -74,16 +74,16 @@ describe("M3 camera lifecycle through the viewer", () => {
 });
 
 describe("M4 viewer loading", () => {
-    it("renders a caller-supplied provisional mineral through the exported viewer boundary", () => {
+    it("renders a caller-supplied provisional mineral through the exported viewer boundary", async () => {
         const source = { ...structuredClone(FLUORITE), id: "provisional", name: "Provisional", dataRevision: "test-1" };
-        const { viewer, group } = setup(source);
+        const { viewer, group } = await setup(source);
         expect(viewer.getMineralId()).toBe("provisional");
         expect(viewer.getAllFaces()).toHaveLength(6);
         expect(group.children.some((child) => child instanceof Mesh)).toBe(true);
     });
 
-    it("preserves configuration, mesh and camera when a load fails and emits diagnostics", () => {
-        const { viewer, camera, group } = setup();
+    it("preserves configuration, mesh and camera when a load fails and emits diagnostics", async () => {
+        const { viewer, camera, group } = await setup();
         viewer.setHabit("tessin");
         viewer.setFormDevelopment("m", 0.8);
         const forms = viewer.getForms();
@@ -93,7 +93,9 @@ describe("M4 viewer loading", () => {
         const loaded = vi.fn();
         viewer.addEventListener("mineral-load-failed", failed);
         viewer.addEventListener("mineral-loaded", loaded);
-        for (const source of ["missing", { ...FLUORITE, dataRevision: "" }]) expect(() => viewer.loadMineral(source)).toThrow(ViewerOperationError);
+        for (const source of ["missing", { ...FLUORITE, dataRevision: "" }]) {
+            await expect(viewer.loadMineral(source)).rejects.toThrow(ViewerOperationError);
+        }
         expect(failed).toHaveBeenCalledTimes(2);
         expect(loaded).not.toHaveBeenCalled();
         expect(viewer.getMineralId()).toBe("quartz");
@@ -102,8 +104,8 @@ describe("M4 viewer loading", () => {
         expect(group.children[0]).toBe(mesh);
     });
 
-    it("retains a stale mesh for invalid edits, clears it for a new invalid definition, and recovers", () => {
-        const { viewer, group } = setup("fluorite");
+    it("retains a stale mesh for invalid edits, clears it for a new invalid definition, and recovers", async () => {
+        const { viewer, group } = await setup("fluorite");
         const oldMesh = group.children[0];
         viewer.setFormEnabled("a", false);
         expect(viewer.getGeometryStatus()).toMatchObject({ status: "invalid", stale: true });
@@ -111,7 +113,7 @@ describe("M4 viewer loading", () => {
         const source: any = structuredClone(FLUORITE);
         source.id = "disabled-fixture";
         source.habits[0].forms.forEach((form: any) => { form.enabled = false; });
-        viewer.loadMineral(source);
+        await viewer.loadMineral(source);
         expect(viewer.getMineralId()).toBe("disabled-fixture");
         expect(viewer.getGeometryStatus()).toMatchObject({ status: "invalid", stale: false });
         expect(group.children).toHaveLength(0);
@@ -119,11 +121,11 @@ describe("M4 viewer loading", () => {
         expect(viewer.getGeometryStatus()).toMatchObject({ status: "valid", stale: false });
     });
 
-    it("rejects invalid preferred-view metadata before replacing the current record", () => {
-        const { viewer } = setup();
+    it("rejects invalid preferred-view metadata before replacing the current record", async () => {
+        const { viewer } = await setup();
         const source: any = structuredClone(FLUORITE);
         source.habits[0].preferredView = { cameraDirection: [0, 0, 0] };
-        expect(() => viewer.loadMineral(source)).toThrow(ViewerOperationError);
+        await expect(viewer.loadMineral(source)).rejects.toThrow(ViewerOperationError);
         expect(viewer.getMineralId()).toBe("quartz");
     });
 });

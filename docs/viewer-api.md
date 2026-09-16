@@ -35,6 +35,8 @@ The viewer is delivered as a framework-agnostic Web Component. Users integrate i
 
 The component must support plain-HTML embedding and multiple independent instances on one page. Changes to one instance must not change another's configuration, selection, or lifecycle. The public lifecycle and state-restoration contracts apply through the component.
 
+The component is exported from `@crystal/viewer/component` as `CrystalViewerElement` and registered with `defineCrystalViewerElement()`, which defines the `<crystal-viewer>` custom element. The `mineral` attribute loads a bundled mineral on connection and on subsequent attribute changes. The component exposes the underlying `CrystalViewer` via `getViewer()`, and dispatches a `viewer-ready` event on connection.
+
 ### Quartz Variant Selection
 
 Users must be able to select and inspect the supported [quartz handedness variants](data-model.md#quartz-handedness). Expose the selected variant and its crystallographic identity through the viewer API, and demonstrate selection and inspection in the reference application. Variant identity is part of the structural definition covered by [Persistent State Coverage](#persistent-state-coverage).
@@ -101,7 +103,7 @@ Changing habit or form settings preserves the user's current camera unless the h
 
 Mineral loading is transactional: resolve and validate the requested definition before replacing the current configuration. A failed load leaves the current viewer configuration and displayed geometry unchanged and exposes a diagnostic to the host.
 
-When loads overlap, only the newest request may commit. Superseded results must not mutate viewer state or emit success events, even if they complete after the newest request fails. The host must be able to observe load completion, failure, or supersession; exact signatures and event names remain deferred to M7.
+When loads overlap, only the newest request may commit. Superseded results must not mutate viewer state or emit success events, even if they complete after the newest request fails. The host observes load completion, failure, and supersession through the `mineral-loaded`, `mineral-load-failed`, and `load-superseded` events; `loadMineral` is async and commits only the newest request.
 
 When committing a different mineral or structural definition, clear the previous definition's morphology mesh. A successfully loaded definition whose requested morphology produces invalid geometry is accepted, shows no morphology mesh, and exposes the geometry diagnostic. This differs from a load rejected for invalid input. Retaining a stale mesh during morphology edits applies within the same loaded definition, as described below. State restoration follows its separate [transactional restoration contract](#transactional-restoration).
 
@@ -109,7 +111,7 @@ When committing a different mineral or structural definition, clear the previous
 
 On Web Component disconnection, pause rendering and detach external listeners while preserving configuration. On reconnection, restore listeners and resume the previous rendering mode; a previously stopped viewer remains stopped. Repeated connection cycles must not create duplicate listeners or rendering loops.
 
-Disposal permanently releases viewer-owned resources, detaches listeners, stops rendering, and invalidates pending work so its completion cannot mutate state or emit success events. Repeated disposal is harmless. Subsequent mutating calls report that the viewer is disposed, and reconnecting a disposed component does not reactivate it. Exact diagnostic signatures remain deferred to M7.
+Disposal permanently releases viewer-owned resources, detaches listeners, stops rendering, and invalidates pending work so its completion cannot mutate state or emit success events. Repeated disposal is harmless. Subsequent mutating calls report that the viewer is disposed (`viewer.lifecycle.disposed`), and reconnecting a disposed component does not reactivate it.
 
 ### Invalid Geometry and Recovery
 
@@ -130,23 +132,30 @@ On the next valid result, replace the displayed mesh, clear the invalid/stale st
 
 Use events rather than framework callbacks.
 
-Possible events:
+Events emitted by the stabilized viewer:
 
 ```text
-face-hovered
-face-selected
-form-changed
+mineral-loaded
+mineral-load-failed
+load-superseded
+structure-loaded
+structure-load-failed
 habit-changed
+variant-changed
+form-changed
 geometry-changed
 geometry-invalid
-phase-changed
-camera-changed
-mineral-loaded
+view-mode-changed
+lattice-repetition-changed
+face-selected
+state-restored
+state-rejected
+viewer-ready   (Web Component connection)
 ```
 
 `geometry-invalid` is required for failed geometry generation. Its detail contains the invalid result's complete [diagnostic](architecture.md#diagnostics) ([Geometry Output](scientific-model.md#geometry-output)). Recovery follows [Viewer Lifecycle](#viewer-lifecycle).
 
-Viewer loading, lifecycle, and state operations use stable `viewer.*` diagnostic codes. Expected asynchronous failures reject with a typed public-operation error carrying one or more diagnostics; hosts must not parse exception messages to determine behavior. Exact error class and method signatures remain deferred to M7.
+Viewer loading, lifecycle, and state operations use stable `viewer.*` diagnostic codes. Expected asynchronous failures reject with a typed public-operation error (`ViewerOperationError`) carrying one or more diagnostics; hosts must not parse exception messages to determine behavior. Exact types and signatures live in [crystal-viewer](../packages/crystal-viewer/src/index.ts).
 
 Example:
 
@@ -343,21 +352,17 @@ State must include the following configuration where the corresponding capabilit
 
 Saved effective settings take precedence over preset defaults during restoration. A habit ID alone is insufficient to reproduce an edited habit. Do not silently substitute changed defaults or incompatible referenced data.
 
-Transient state such as pointer hover, animation-loop handles, and GPU resources is excluded. Exact state types and signatures remain deferred to M7.
-
-> **Open decision — deferred to M7:** Decide whether face selection is persistent. If included, define stable identification and behavior when regeneration removes the selected face.
+Transient state such as pointer hover, animation-loop handles, GPU resources, and face selection is excluded. Face selection is mesh-relative and not stable across regeneration, so it is not persistent; hosts re-apply it through the public selection API after geometry is regenerated. Exact state types live in [crystal-viewer](../packages/crystal-viewer/src/state.ts) (`ViewerState`, version 1); see the [state serialization decision](decisions/0004-viewer-state-serialization.md).
 
 ### Data Portability and Versions
 
 Reference bundled minerals using their identity and data revision or compatibility identifier. Include the normalized structural definition for imported data, including its cell, symmetry, sites, applicable bonds, and preserved source metadata, so restoration does not depend on the original import session. Apply the [structural compatibility rules](data-model.md#atomic-structure). Any additional custom definitions needed to reproduce the configuration must also be included or resolve through compatible bundled data.
 
-Every complete state payload must declare a state-format version. Unsupported versions and incompatible data references produce explicit diagnostics rather than guessed substitutions.
-
-> **Open decision — deferred to M7:** Define version identifiers, supported versions, migration policy, and the mechanism for establishing referenced-data compatibility. Migrations, if supported, must preserve the round-trip guarantee.
+Every complete state payload must declare a state-format version. V1 ships `version: 1`; unsupported versions and incompatible data references produce explicit diagnostics rather than guessed substitutions. Referenced-data compatibility uses the mineral identity and data revision; imported definitions are embedded in full. See the [state serialization decision](decisions/0004-viewer-state-serialization.md) for version identifiers, the supported-version policy, and the compatibility mechanism.
 
 ### Transactional Restoration
 
-Parse and validate the payload and resolve its required data before committing the restored configuration as one operation. Malformed state, unsupported versions, and unresolved or incompatible required references must reject restoration with a diagnostic and leave the previous viewer state unchanged. The host must be able to observe completion or rejection; exact API signatures are deferred to M7.
+Parse and validate the payload and resolve its required data before committing the restored configuration as one operation. Malformed state, unsupported versions, and unresolved or incompatible required references must reject restoration with a diagnostic and leave the previous viewer state unchanged. The host observes completion or rejection through the `state-restored` and `state-rejected` events; `setState` throws a `ViewerOperationError` on rejection.
 
 A valid state whose form settings produce invalid geometry is accepted as a requested configuration and follows [Invalid Geometry and Recovery](#invalid-geometry-and-recovery). This is distinct from rejecting malformed or incompatible state.
 

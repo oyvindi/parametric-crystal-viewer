@@ -176,8 +176,8 @@ function populateMinerals() {
   }
 }
 populateMinerals();
-mineralSelect.addEventListener("change", () => {
-  viewer.loadMineral(mineralSelect.value);
+mineralSelect.addEventListener("change", async () => {
+  await viewer.loadMineral(mineralSelect.value);
   document.querySelector('input[name="viewmode"][value="morphology"]').checked = true;
   viewer.setViewMode("morphology");
   applyDisplay();

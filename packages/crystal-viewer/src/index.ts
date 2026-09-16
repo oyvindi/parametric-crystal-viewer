@@ -1,8 +1,12 @@
 import { Scene, PerspectiveCamera, WebGLRenderer, MeshStandardMaterial, Mesh, MeshBasicMaterial, Color, DirectionalLight, AmbientLight, Group, DoubleSide, Raycaster, Vector2, Vector3, Sprite, SpriteMaterial, CanvasTexture, BufferGeometry, Float32BufferAttribute, LineSegments, LineBasicMaterial } from "three";
 import { createLattice, expandAtomicStructure, generateCrystal, inferBonds, type Diagnostic, type GeometryResult, type CrystalGeometry, type CrystalFace, type ExpandedAtom, type Lattice, type PeriodicBond } from "@crystal/core";
-import { loadMineral as loadMineralData, createCrystalInput, resolveHabit, resolveCrystallography, importCif, MineralDataError, type Mineral, type StructuralDefinition } from "@crystal/data";
+import { loadMineral as loadMineralData, createCrystalInput, resolveHabit, resolveCrystallography, importCif, getMineral, MineralDataError, type Mineral, type StructuralDefinition } from "@crystal/data";
 import { createThreeGeometryWithPicking, createAtomicStructure, atomicBounds } from "@crystal/three";
 import { cameraBasis } from "./camera.js";
+import { STATE_VERSION, validateStateShape, type ViewerState, type ViewMode, type FormState, type MineralRefState } from "./state.js";
+
+export type { ViewerState, ViewMode } from "./state.js";
+export { STATE_VERSION } from "./state.js";
 
 export class ViewerOperationError extends Error {
     constructor(readonly diagnostics: readonly Diagnostic[]) {
@@ -44,8 +48,6 @@ export interface FaceInfo {
     readonly symmetryGroup?: string;
 }
 
-export type ViewMode = "morphology" | "atomic";
-
 export interface StructureInfo {
     readonly id: string;
     readonly name: string;
@@ -59,7 +61,7 @@ export interface StructureInfo {
     readonly bondsDerived: boolean;
 }
 
-/** Provisional viewer API for M4. Exact signatures remain deferred to M7. */
+/** Stabilized public viewer API (M7). Owns loading, orchestration, lifecycle, and state serialization. */
 export class CrystalViewer extends EventTarget {
     private readonly renderer: WebGLRenderer;
     private readonly scene: Scene;
@@ -78,6 +80,10 @@ export class CrystalViewer extends EventTarget {
     private currentGeometry: CrystalGeometry | null = null;
     private triangleFaces: Uint32Array | null = null;
     private disposed = false;
+    private disconnected = false;
+    private wasRunning = false;
+    private loadGeneration = 0;
+    private morphologyScale: number | undefined = undefined;
     private needsInitialFrame = true;
     private animationHandle: number | null = null;
     private rotationY = 0;
@@ -97,8 +103,10 @@ export class CrystalViewer extends EventTarget {
     private showUnitCell = false;
     private showBonds = true;
     private showAxes = false;
+    private showWireframe = false;
     private importDiagnostics: readonly Diagnostic[] = [];
     private readonly raycaster = new Raycaster();
+    private readonly canvas: HTMLCanvasElement;
     private readonly onPointerDownBound: (e: PointerEvent) => void;
     private readonly onPointerMoveBound: (e: PointerEvent) => void;
     private readonly onPointerUpBound: (e: PointerEvent) => void;
@@ -106,6 +114,7 @@ export class CrystalViewer extends EventTarget {
 
     constructor(canvas: HTMLCanvasElement) {
         super();
+        this.canvas = canvas;
         this.renderer = new WebGLRenderer({ canvas, antialias: true });
         this.renderer.setSize(canvas.clientWidth || 400, canvas.clientHeight || 300);
         this.scene = new Scene();
@@ -129,6 +138,11 @@ export class CrystalViewer extends EventTarget {
         this.onPointerMoveBound = this.onPointerMove.bind(this);
         this.onPointerUpBound = this.onPointerUp.bind(this);
         this.onClickBound = this.onCanvasClick.bind(this);
+        this.attachCanvasListeners();
+    }
+
+    private attachCanvasListeners(): void {
+        const canvas = this.canvas;
         canvas.addEventListener("pointerdown", this.onPointerDownBound);
         canvas.addEventListener("pointermove", this.onPointerMoveBound);
         canvas.addEventListener("pointerup", this.onPointerUpBound);
@@ -136,23 +150,53 @@ export class CrystalViewer extends EventTarget {
         canvas.addEventListener("click", this.onClickBound);
     }
 
-    /** Accepts a bundled ID or a caller-supplied record; rejects before committing. */
-    loadMineral(source: unknown): void {
+    private detachCanvasListeners(): void {
+        const canvas = this.canvas;
+        canvas.removeEventListener("pointerdown", this.onPointerDownBound);
+        canvas.removeEventListener("pointermove", this.onPointerMoveBound);
+        canvas.removeEventListener("pointerup", this.onPointerUpBound);
+        canvas.removeEventListener("pointerleave", this.onPointerUpBound);
+        canvas.removeEventListener("click", this.onClickBound);
+    }
+
+    /**
+     * Loads a bundled mineral ID or a caller-supplied record. Loading is
+     * transactional: the definition is resolved and validated before the
+     * current configuration is replaced. A failed load leaves the current
+     * configuration and geometry unchanged and emits `mineral-load-failed`.
+     * When loads overlap, only the newest request commits; superseded
+     * completions emit `load-superseded` and do not mutate state, including
+     * when the newest request fails.
+     */
+    async loadMineral(source: unknown): Promise<void> {
         this.assertNotDisposed();
+        const generation = ++this.loadGeneration;
         let mineral: Mineral;
         try {
             mineral = loadMineralData(source);
         } catch (error) {
             if (!(error instanceof MineralDataError)) throw error;
             const diagnostics: Diagnostic[] = [{ code: "viewer.load.invalid-mineral", severity: "error", message: "Mineral loading failed; the previous definition is unchanged." }, ...error.diagnostics];
-            this.dispatchEvent(new CustomEvent("mineral-load-failed", { detail: { diagnostics } }));
+            if (generation === this.loadGeneration) this.dispatchEvent(new CustomEvent("mineral-load-failed", { detail: { diagnostics } }));
             throw new ViewerOperationError(diagnostics);
         }
+        // Yield so overlapping loads interleave: only the newest request commits.
+        await Promise.resolve();
+        if (generation !== this.loadGeneration) {
+            this.dispatchEvent(new CustomEvent("load-superseded", { detail: { generation } }));
+            return;
+        }
+        this.commitMineral(mineral);
+        this.dispatchEvent(new CustomEvent("mineral-loaded", { detail: { mineralId: mineral.id, dataRevision: mineral.dataRevision } }));
+    }
+
+    private commitMineral(mineral: Mineral): void {
         this.mineral = mineral;
         this.habitId = undefined;
         this.variantId = undefined;
         this.formDevelopment = {};
         this.formEnabled = {};
+        this.morphologyScale = undefined;
         this.lastValidGeometry = null;
         this.needsInitialFrame = true;
         this.selectedFaceIndex = null;
@@ -162,7 +206,6 @@ export class CrystalViewer extends EventTarget {
         this.updateCellOverlay();
         this.updateViewVisibility();
         this.regenerate();
-        this.dispatchEvent(new CustomEvent("mineral-loaded", { detail: { mineralId: mineral.id, dataRevision: mineral.dataRevision } }));
     }
 
     setHabit(habitId: string): void {
@@ -174,6 +217,7 @@ export class CrystalViewer extends EventTarget {
         this.formEnabled = {};
         this.selectedFaceIndex = null;
         this.regenerate();
+        this.dispatchEvent(new CustomEvent("habit-changed", { detail: { habitId } }));
     }
 
     setVariant(variantId: string): void {
@@ -183,6 +227,7 @@ export class CrystalViewer extends EventTarget {
         this.variantId = variantId;
         this.selectedFaceIndex = null;
         this.regenerate();
+        this.dispatchEvent(new CustomEvent("variant-changed", { detail: { variantId } }));
     }
 
     setFormDevelopment(formId: string, value: number): void {
@@ -192,6 +237,7 @@ export class CrystalViewer extends EventTarget {
         this.formDevelopment[formId] = value;
         if (!this.formEnabled[formId]) this.formEnabled[formId] = true;
         this.regenerate();
+        this.dispatchEvent(new CustomEvent("form-changed", { detail: { formId, development: value } }));
     }
 
     setFormEnabled(formId: string, enabled: boolean): void {
@@ -200,6 +246,19 @@ export class CrystalViewer extends EventTarget {
         this.assertForm(formId);
         this.formEnabled[formId] = enabled;
         this.regenerate();
+        this.dispatchEvent(new CustomEvent("form-changed", { detail: { formId, enabled } }));
+    }
+
+    /** Sets the morphology scale applied to generated geometry (1 = native). */
+    setMorphologyScale(scale: number): void {
+        this.assertNotDisposed();
+        if (!Number.isFinite(scale) || scale <= 0) throw new ViewerOperationError([{ code: "viewer.request.invalid-scale", severity: "error", message: "morphologyScale must be a positive finite number." }]);
+        this.morphologyScale = scale;
+        if (this.mineral) this.regenerate();
+    }
+
+    getMorphologyScale(): number | null {
+        return this.morphologyScale ?? null;
     }
 
     getForms(): FormInfo[] {
@@ -245,6 +304,8 @@ export class CrystalViewer extends EventTarget {
     /** Loads a structural definition (e.g. from `importCif`) for the atomic structure view. */
     loadStructure(definition: StructuralDefinition): void {
         this.assertNotDisposed();
+        // Committing a structural definition supersedes any pending mineral load.
+        this.loadGeneration++;
         const latticeResult = createLattice(definition.crystallography.unitCell);
         if (!latticeResult.ok) {
             this.importDiagnostics = latticeResult.diagnostics;
@@ -268,7 +329,7 @@ export class CrystalViewer extends EventTarget {
         this.updateCellOverlay();
         this.updateViewVisibility();
         this.frameAtomic();
-        if (this.animationHandle === null) this.renderer.render(this.scene, this.camera);
+        this.renderOnce();
         this.dispatchEvent(new CustomEvent("view-mode-changed", { detail: { mode: "atomic" } }));
     }
 
@@ -279,7 +340,7 @@ export class CrystalViewer extends EventTarget {
         this.updateViewVisibility();
         if (mode === "atomic") this.frameAtomic();
         else if (this.lastValidGeometry?.status === "valid") this.frameCamera(this.lastValidGeometry.geometry.bounds.min, this.lastValidGeometry.geometry.bounds.max);
-        if (this.animationHandle === null) this.renderer.render(this.scene, this.camera);
+        this.renderOnce();
         this.dispatchEvent(new CustomEvent("view-mode-changed", { detail: { mode } }));
     }
 
@@ -293,7 +354,7 @@ export class CrystalViewer extends EventTarget {
         if (this.viewMode === "atomic") {
             this.updateAtomicRender();
             this.frameAtomic();
-            if (this.animationHandle === null) this.renderer.render(this.scene, this.camera);
+            this.renderOnce();
         }
         this.dispatchEvent(new CustomEvent("lattice-repetition-changed", { detail: { repetition: this.latticeRepetition } }));
     }
@@ -308,21 +369,32 @@ export class CrystalViewer extends EventTarget {
         if (this.viewMode === "atomic") this.updateAtomicRender();
         this.updateCellOverlay();
         this.updateViewVisibility();
-        if (this.animationHandle === null) this.renderer.render(this.scene, this.camera);
+        this.renderOnce();
     }
 
     setShowBonds(show: boolean): void {
         this.assertNotDisposed();
         this.showBonds = show;
         if (this.viewMode === "atomic") this.updateAtomicRender();
-        if (this.animationHandle === null) this.renderer.render(this.scene, this.camera);
+        this.renderOnce();
     }
 
     setShowAxes(show: boolean): void {
         this.assertNotDisposed();
         this.showAxes = show;
         this.updateCellOverlay();
-        if (this.animationHandle === null) this.renderer.render(this.scene, this.camera);
+        this.renderOnce();
+    }
+
+    setShowWireframe(show: boolean): void {
+        this.assertNotDisposed();
+        this.showWireframe = show;
+        if (this.mesh) this.mesh.material.wireframe = show;
+        this.renderOnce();
+    }
+
+    getShowWireframe(): boolean {
+        return this.showWireframe;
     }
 
     getStructureInfo(): StructureInfo | null {
@@ -364,6 +436,200 @@ export class CrystalViewer extends EventTarget {
     getHabitId(): string | null {
         if (!this.mineral) return null;
         return this.habitId ?? this.mineral.habits[0]?.id ?? null;
+    }
+
+    // --- State serialization (M7) ---
+
+    /** Serializes the persistent viewer configuration as JSON-compatible state. */
+    getState(): ViewerState {
+        const forms: Record<string, FormState> = {};
+        if (this.mineral) {
+            const habit = resolveHabit(this.mineral, this.habitId);
+            for (const form of habit.forms) {
+                const dev = this.formDevelopment[form.id] ?? form.development;
+                const en = this.formEnabled[form.id] ?? form.enabled ?? true;
+                forms[form.id] = { development: dev, enabled: en };
+            }
+        }
+        const mineralRef: MineralRefState | undefined = this.mineral
+            ? { id: this.mineral.id, dataRevision: this.mineral.dataRevision, ...(this.variantId ? { variant: this.variantId } : {}) }
+            : undefined;
+        return {
+            version: STATE_VERSION,
+            ...(mineralRef ? { mineral: mineralRef } : {}),
+            ...(this.habitId ? { habit: this.habitId } : {}),
+            forms,
+            ...(this.morphologyScale !== undefined ? { morphologyScale: this.morphologyScale } : {}),
+            display: {
+                axes: this.showAxes,
+                labels: this.showLabels,
+                unitCell: this.showUnitCell,
+                bonds: this.showBonds,
+                wireframe: this.showWireframe,
+            },
+            camera: {
+                position: [this.camera.position.x, this.camera.position.y, this.camera.position.z],
+                up: [this.camera.up.x, this.camera.up.y, this.camera.up.z],
+                near: this.camera.near,
+                far: this.camera.far,
+                groupRotation: [this.crystalGroup.rotation.x, this.crystalGroup.rotation.y, this.crystalGroup.rotation.z],
+            },
+            atomic: {
+                viewMode: this.viewMode,
+                latticeRepetition: [this.latticeRepetition[0], this.latticeRepetition[1], this.latticeRepetition[2]],
+            },
+            ...(this.structure ? { structure: { definition: this.structure } } : {}),
+        };
+    }
+
+    /**
+     * Restores persistent viewer configuration from serialized state. The
+     * payload is parsed and its referenced data resolved before any mutation
+     * (transactional). Malformed state, unsupported versions, and unresolved
+     * or incompatible references reject with a diagnostic and leave the
+     * previous state unchanged (`state-rejected`). A valid state whose forms
+     * produce invalid geometry is accepted as a requested configuration and
+     * follows Invalid Geometry and Recovery. On success emits `state-restored`.
+     */
+    setState(state: unknown): void {
+        this.assertNotDisposed();
+        const shape = validateStateShape(state);
+        if (!shape.ok) {
+            this.dispatchEvent(new CustomEvent("state-rejected", { detail: { diagnostics: shape.diagnostics } }));
+            throw new ViewerOperationError(shape.diagnostics);
+        }
+        const s = shape.value;
+        const diagnostics: Diagnostic[] = [];
+
+        // Resolve referenced mineral data before any mutation.
+        let mineral: Mineral | null = null;
+        if (s.mineral) {
+            const record = getMineral(s.mineral.id);
+            if (!record) diagnostics.push({ code: "viewer.state.unknown-mineral", severity: "error", message: `Unknown mineral "${s.mineral.id}"; referenced data is unavailable.`, path: "/mineral/id" });
+            else if (record.dataRevision !== s.mineral.dataRevision) diagnostics.push({ code: "viewer.state.incompatible-data", severity: "error", message: `Mineral "${s.mineral.id}" data revision mismatch: state has "${s.mineral.dataRevision}" but bundled data is "${record.dataRevision}".`, path: "/mineral/dataRevision" });
+            else mineral = record;
+        }
+        if (mineral) {
+            if (s.habit !== undefined) {
+                try { resolveHabit(mineral, s.habit); } catch { diagnostics.push({ code: "viewer.state.unknown-habit", severity: "error", message: `Unknown habit "${s.habit}" for mineral "${mineral.id}".`, path: "/habit" }); }
+            }
+            if (s.mineral!.variant !== undefined) {
+                try { resolveCrystallography(mineral, s.mineral!.variant); } catch { diagnostics.push({ code: "viewer.state.unknown-variant", severity: "error", message: `Unknown variant "${s.mineral!.variant}" for mineral "${mineral.id}".`, path: "/mineral/variant" }); }
+            }
+            const habit = resolveHabit(mineral, s.habit);
+            for (const id of Object.keys(s.forms)) {
+                if (!habit.forms.some((f) => f.id === id)) diagnostics.push({ code: "viewer.state.unknown-form", severity: "error", message: `Unknown form "${id}" for habit "${habit.id}".`, path: `/forms/${id}` });
+            }
+        }
+
+        // Resolve imported structure: re-expand to verify compatibility (portable).
+        let structureDef: StructuralDefinition | null = null;
+        let structureLattice: Lattice | null = null;
+        let expandedAtoms: readonly ExpandedAtom[] | null = null;
+        let structureBonds: readonly PeriodicBond[] | null = null;
+        if (s.structure) {
+            const def = s.structure.definition;
+            const latticeResult = createLattice(def.crystallography.unitCell);
+            if (!latticeResult.ok) diagnostics.push(...latticeResult.diagnostics.map((d) => ({ ...d, path: "/structure/definition/crystallography/unitCell" })));
+            else {
+                const ops = def.crystallography.spaceOperations ?? [];
+                const exp = expandAtomicStructure(def.atomicStructure, ops, latticeResult.value);
+                if (!exp.ok) diagnostics.push(...exp.diagnostics.map((d) => ({ ...d, path: "/structure/definition/atomicStructure" })));
+                else { structureDef = def; structureLattice = latticeResult.value; expandedAtoms = exp.value; structureBonds = inferBonds(exp.value, latticeResult.value); }
+            }
+        }
+
+        if (diagnostics.length > 0) {
+            this.dispatchEvent(new CustomEvent("state-rejected", { detail: { diagnostics } }));
+            throw new ViewerOperationError(diagnostics);
+        }
+
+        // ---- Commit as one operation (supersedes pending loads) ----
+        this.loadGeneration++;
+        const sameMineral = !!mineral && !!this.mineral && mineral.id === this.mineral.id && mineral.dataRevision === this.mineral.dataRevision && (s.mineral?.variant ?? undefined) === (this.variantId ?? undefined);
+
+        if (mineral) {
+            this.mineral = mineral;
+            this.variantId = s.mineral!.variant;
+            this.habitId = s.habit;
+            this.formDevelopment = {};
+            this.formEnabled = {};
+            for (const [id, fs] of Object.entries(s.forms)) {
+                this.formDevelopment[id] = fs.development;
+                this.formEnabled[id] = fs.enabled;
+            }
+            this.morphologyScale = s.morphologyScale;
+            this.needsInitialFrame = false; // restored camera takes precedence over preferred view
+            if (!sameMineral) {
+                this.clearMesh();
+                this.clearLabels();
+                this.lastValidGeometry = null;
+                this.selectedFaceIndex = null;
+            }
+            this.regenerate();
+        } else {
+            this.mineral = null;
+            this.habitId = undefined;
+            this.variantId = undefined;
+            this.formDevelopment = {};
+            this.formEnabled = {};
+            this.morphologyScale = undefined;
+            this.clearMesh();
+            this.clearLabels();
+            this.lastValidGeometry = null;
+            this.currentResult = null;
+            this.currentGeometry = null;
+            this.triangleFaces = null;
+            this.selectedFaceIndex = null;
+        }
+
+        // Structure: restore embedded definition or clear if the state omits it.
+        if (structureDef) {
+            this.structure = structureDef;
+            this.structureLattice = structureLattice;
+            this.expandedAtoms = expandedAtoms;
+            this.structureBonds = structureBonds;
+            this.importDiagnostics = [];
+        } else if (!s.structure) {
+            this.structure = null;
+            this.structureLattice = null;
+            this.expandedAtoms = null;
+            this.structureBonds = null;
+            this.importDiagnostics = [];
+            this.clearAtomic();
+        }
+
+        // Display settings.
+        this.showAxes = s.display.axes;
+        this.showLabels = s.display.labels;
+        this.showUnitCell = s.display.unitCell;
+        this.showBonds = s.display.bonds;
+        this.showWireframe = s.display.wireframe;
+        if (this.mesh) this.mesh.material.wireframe = this.showWireframe;
+
+        // Atomic view mode + lattice repetition.
+        this.viewMode = s.atomic.viewMode;
+        this.latticeRepetition = [
+            Math.max(1, Math.min(6, Math.round(s.atomic.latticeRepetition[0]))),
+            Math.max(1, Math.min(6, Math.round(s.atomic.latticeRepetition[1]))),
+            Math.max(1, Math.min(6, Math.round(s.atomic.latticeRepetition[2]))),
+        ];
+
+        // Restored camera takes precedence over preferred views.
+        this.camera.position.set(s.camera.position[0], s.camera.position[1], s.camera.position[2]);
+        this.camera.up.set(s.camera.up[0], s.camera.up[1], s.camera.up[2]);
+        this.camera.near = s.camera.near;
+        this.camera.far = s.camera.far;
+        this.camera.updateProjectionMatrix();
+        this.crystalGroup.rotation.set(s.camera.groupRotation[0], s.camera.groupRotation[1], s.camera.groupRotation[2]);
+        this.labelGroup.rotation.copy(this.crystalGroup.rotation);
+        this.rotationY = this.crystalGroup.rotation.y;
+
+        this.updateCellOverlay();
+        if (structureDef) this.updateAtomicRender();
+        this.updateViewVisibility();
+        this.renderOnce();
+        this.dispatchEvent(new CustomEvent("state-restored", { detail: {} }));
     }
 
     /** Returns info about the currently selected face, or null. */
@@ -423,7 +689,7 @@ export class CrystalViewer extends EventTarget {
         this.assertNotDisposed();
         this.showLabels = show;
         this.labelGroup.visible = show;
-        this.renderer.render(this.scene, this.camera);
+        this.renderOnce();
     }
 
     resize(width: number, height: number): void {
@@ -435,7 +701,7 @@ export class CrystalViewer extends EventTarget {
 
     render(): void {
         this.assertNotDisposed();
-        this.renderer.render(this.scene, this.camera);
+        this.renderOnce();
     }
 
     /** Apply the current habit's preferred view to the displayed geometry. */
@@ -443,20 +709,20 @@ export class CrystalViewer extends EventTarget {
         this.assertNotDisposed();
         if (this.viewMode === "atomic") {
             this.frameAtomic();
-            this.renderer.render(this.scene, this.camera);
+            this.renderOnce();
             return;
         }
         if (this.lastValidGeometry?.status !== "valid") return;
         const { bounds } = this.lastValidGeometry.geometry;
         this.frameCamera(bounds.min, bounds.max);
-        this.renderer.render(this.scene, this.camera);
+        this.renderOnce();
     }
 
     start(): void {
         this.assertNotDisposed();
-        if (this.animationHandle !== null) return;
+        if (this.disconnected || this.animationHandle !== null) return;
         const loop = () => {
-            if (this.disposed) return;
+            if (this.disposed || this.disconnected) return;
             this.rotationY += this.rotationSpeed;
             this.crystalGroup.rotation.y = this.rotationY;
             this.labelGroup.rotation.y = this.rotationY;
@@ -467,16 +733,54 @@ export class CrystalViewer extends EventTarget {
     }
 
     stop(): void {
-        if (this.animationHandle !== null) {
+        if (this.animationHandle !== null && typeof cancelAnimationFrame === "function") {
             cancelAnimationFrame(this.animationHandle);
             this.animationHandle = null;
+        } else if (this.animationHandle !== null) {
+            this.animationHandle = null;
         }
+    }
+
+    /** Whether the viewer has been permanently disposed. */
+    isDisposed(): boolean {
+        return this.disposed;
+    }
+
+    /**
+     * Pauses rendering and detaches external (canvas) listeners while
+     * preserving configuration. A running animation loop is paused and
+     * resumed on {@link reconnect}; a stopped viewer remains stopped.
+     */
+    disconnect(): void {
+        if (this.disposed || this.disconnected) return;
+        this.wasRunning = this.animationHandle !== null;
+        this.stop();
+        this.detachCanvasListeners();
+        this.disconnected = true;
+    }
+
+    /** Reattaches listeners and resumes the previous rendering mode. */
+    reconnect(): void {
+        if (this.disposed) return; // a disposed component does not reactivate
+        if (!this.disconnected) return;
+        this.disconnected = false;
+        this.attachCanvasListeners();
+        if (this.wasRunning) this.start();
+        this.wasRunning = false;
+        this.renderOnce();
+    }
+
+    /** Whether the viewer is currently disconnected (rendering paused). */
+    isDisconnected(): boolean {
+        return this.disconnected;
     }
 
     dispose(): void {
         if (this.disposed) return;
         this.disposed = true;
+        this.disconnected = true;
         this.stop();
+        this.detachCanvasListeners();
         this.clearMesh();
         this.clearLabels();
         this.clearAtomic();
@@ -491,6 +795,7 @@ export class CrystalViewer extends EventTarget {
             variantId: this.variantId,
             formDevelopment: this.formDevelopment,
             formEnabled: this.formEnabled,
+            ...(this.morphologyScale !== undefined ? { morphologyScale: this.morphologyScale } : {}),
         });
         const result = generateCrystal(input.crystallography, input.morphology);
         this.currentResult = result;
@@ -510,9 +815,12 @@ export class CrystalViewer extends EventTarget {
             this.selectedFaceIndex = null;
             this.dispatchEvent(new CustomEvent("geometry-invalid", { detail: { diagnostics: result.diagnostics } }));
         }
-        if (this.animationHandle === null) {
-            this.renderer.render(this.scene, this.camera);
-        }
+        this.renderOnce();
+    }
+
+    /** Renders a single frame unless the loop is running or the viewer is disconnected. */
+    private renderOnce(): void {
+        if (!this.disconnected && this.animationHandle === null) this.renderer.render(this.scene, this.camera);
     }
 
     private updateMesh(result: Extract<GeometryResult, { status: "valid" }>): void {
@@ -527,6 +835,7 @@ export class CrystalViewer extends EventTarget {
             roughness: 0.3,
             side: DoubleSide,
             flatShading: true,
+            wireframe: this.showWireframe,
         });
         this.mesh = new Mesh(buffer, material);
         this.crystalGroup.add(this.mesh);
