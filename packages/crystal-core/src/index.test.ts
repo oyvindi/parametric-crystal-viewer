@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { createLattice, expandEquivalentPlaneDirections, getPointOperationRegistryEntry, intersectHalfSpaces, resolvePointOperations, transformMillerIndices, validateMillerIndices, validatePointOperations } from "./index.js";
+import { createLattice, expandEquivalentPlaneDirections, generateCrystalGeometry, getPointOperationRegistryEntry, intersectHalfSpaces, resolvePointOperations, transformMillerIndices, validateMillerIndices, validatePointOperations } from "./index.js";
 
 function assertMatrixClose(
     actual: readonly (readonly number[])[],
@@ -138,5 +138,15 @@ it("reports an unbounded prism", () => {
         { id: "+y", normal: [0, 1, 0], distance: 1 }, { id: "-y", normal: [0, -1, 0], distance: 1 },
     ]);
     expect(result).toMatchObject({ status: "invalid", diagnostics: [{ code: "core.geometry.unbounded" }] });
+});
+
+it("generates cubic morphology from a developed {100} form", () => {
+    const lattice = createLattice({ a: 4, b: 4, c: 4, alpha: 90, beta: 90, gamma: 90 });
+    if (!lattice.ok) throw new Error("Expected valid cubic lattice");
+    const operations = resolvePointOperations({ registryId: "point-group:m-3m:standard" }, lattice.value);
+    if (!operations.ok) throw new Error("Expected valid cubic symmetry");
+    const result = generateCrystalGeometry({ lattice: lattice.value, operations: operations.value, forms: [{ id: "cube", indices: { notation: "miller", h: 1, k: 0, l: 0 }, development: 1 }] });
+    expect(result.status).toBe("valid");
+    if (result.status === "valid") expect(result.geometry.faces).toHaveLength(6);
 });
 });
