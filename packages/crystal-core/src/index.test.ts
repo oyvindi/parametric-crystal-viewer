@@ -212,4 +212,16 @@ it("scales valid morphology without changing topology", () => {
     expect(scaled.geometry.faces.map((face) => face.vertexIndices.length)).toEqual(unit.geometry.faces.map((face) => face.vertexIndices.length));
     expect(scaled.geometry.bounds.max).toEqual([5, 5, 5]);
 });
+
+it("produces deterministic geometry when forms are reordered", () => {
+    const lattice = createLattice({ a: 4, b: 4, c: 4, alpha: 90, beta: 90, gamma: 90 });
+    if (!lattice.ok) throw new Error("Expected valid cubic lattice");
+    const operations = resolvePointOperations({ registryId: "point-group:m-3m:standard" }, lattice.value);
+    if (!operations.ok) throw new Error("Expected cubic symmetry");
+    const cube = { id: "cube", indices: { notation: "miller" as const, h: 1, k: 0, l: 0 }, development: 1 };
+    const octahedron = { id: "octahedron", indices: { notation: "miller" as const, h: 1, k: 1, l: 1 }, development: 0.5 };
+    const first = generateCrystalGeometry({ lattice: lattice.value, operations: operations.value, forms: [cube, octahedron] });
+    const second = generateCrystalGeometry({ lattice: lattice.value, operations: operations.value, forms: [octahedron, cube] });
+    expect(second).toEqual(first);
+});
 });
