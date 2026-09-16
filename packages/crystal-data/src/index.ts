@@ -12,3 +12,7 @@ export * from "./preferred-view.js";
 export { CALCITE } from "./minerals/calcite.js";
 export { PYRITE } from "./minerals/pyrite.js";
 export { ANATASE } from "./minerals/anatase.js";
+export { ALBITE } from "./minerals/albite.js";
+export { GYPSUM } from "./minerals/gypsum.js";
+export { FORSTERITE } from "./minerals/forsterite.js";
+export { BERYL } from "./minerals/beryl.js";

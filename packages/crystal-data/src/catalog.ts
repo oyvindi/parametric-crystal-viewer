@@ -4,6 +4,10 @@ import { QUARTZ } from "./minerals/quartz.js";
 import { CALCITE } from "./minerals/calcite.js";
 import { PYRITE } from "./minerals/pyrite.js";
 import { ANATASE } from "./minerals/anatase.js";
+import { ALBITE } from "./minerals/albite.js";
+import { GYPSUM } from "./minerals/gypsum.js";
+import { FORSTERITE } from "./minerals/forsterite.js";
+import { BERYL } from "./minerals/beryl.js";
 
 import type { Diagnostic, Result } from "@crystal/core";
 import { validateMineral } from "./validate.js";
@@ -34,7 +38,7 @@ export function createMineralCatalog(records: unknown): Result<MineralCatalog> {
     return { ok: true, value: catalog, diagnostics };
 }
 
-const CATALOG = unwrapData(createMineralCatalog([FLUORITE, QUARTZ, CALCITE, PYRITE, ANATASE]));
+const CATALOG = unwrapData(createMineralCatalog([FLUORITE, QUARTZ, CALCITE, PYRITE, ANATASE, ALBITE, GYPSUM, FORSTERITE, BERYL]));
 
 /** Returns the mineral record for the given stable ID, or undefined. */
 export function getMineral(id: string): Mineral | undefined {

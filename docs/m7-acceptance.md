@@ -16,7 +16,7 @@ required acceptance tests.
 | Web Component | [`component.ts`](../packages/crystal-viewer/src/component.ts) exports `CrystalViewerElement` and `defineCrystalViewerElement()` (the `<crystal-viewer>` custom element), exported via the `@crystal/viewer/component` subpath. |
 | Loading contracts | Overlapping loads commit only the newest (`load-superseded`); failed loads preserve configuration (`mineral-load-failed`); committing a different mineral clears the previous mesh. |
 | Lifecycle | `disconnect` pauses rendering and detaches listeners; `reconnect` resumes the previous mode; disposal is idempotent and permanent. |
-| Events | `mineral-loaded`, `mineral-load-failed`, `load-superseded`, `habit-changed`, `variant-changed`, `form-changed`, `geometry-changed`, `geometry-invalid`, `view-mode-changed`, `lattice-repetition-changed`, `face-selected`, `structure-loaded`/`-failed`, `state-restored`/`-rejected`, `viewer-ready`. |
+| Events | `mineral-loaded`, `mineral-load-failed`, `load-superseded`, `habit-changed`, `variant-changed`, `form-changed`, `appearance-changed`, `geometry-changed`, `geometry-invalid`, `view-mode-changed`, `lattice-repetition-changed`, `face-selected`, `structure-loaded`/`-failed`, `state-restored`/`-rejected`, `viewer-ready`. |
 | Demos | [basic-embedding](../packages/crystal-demo/basic-embedding.html) (two independent instances, plain HTML), [controls](../packages/crystal-demo/controls.html) (programmatic controls, events, state save/restore), plus updated [fluorite](../packages/crystal-demo/fluorite.html), [quartz](../packages/crystal-demo/quartz.html), [minerals](../packages/crystal-demo/minerals.html), and [structure](../packages/crystal-demo/structure.html) demos. |
 
 Package boundaries are respected: `crystal-viewer` owns loading, orchestration,
@@ -38,9 +38,9 @@ decision and the implementation.
 
 ## Acceptance tests
 
-`npm test` runs 276 tests across 18 files. The M7 tests are:
+The M7 tests are:
 
-* [Viewer API and loading/lifecycle/state tests](../packages/crystal-viewer/src/m7-acceptance.test.ts) (15 + 1 todo):
+* [Viewer API and loading/lifecycle/state tests](../packages/crystal-viewer/src/m7-acceptance.test.ts):
   overlapping loads commit only the newest and emit `load-superseded`; a superseded
   load does not commit even when the newest fails and state is preserved;
   committing a different mineral clears the previous mesh and an invalid new
@@ -58,15 +58,14 @@ decision and the implementation.
   retained-mesh behavior and subsequent recovery; each paired trigonal-setting
   representation restores with its declared setting; and events fire for
   programmatic changes and state restoration.
-* [Web Component tests](../packages/crystal-viewer/src/m7-component.test.ts) (5, happy-dom):
+* [Web Component tests](../packages/crystal-viewer/src/m7-component.test.ts) (happy-dom):
   plain-HTML embedding loads a mineral from the `mineral` attribute and creates a
   canvas child; the mineral attribute change reloads; two instances keep
   configuration and lifecycle independent; disconnect preserves configuration and
   reconnect restores it and does not reactivate a disposed component; and a
   `viewer-ready` event fires on connection.
-* The M8 appearance-state round-trip is left as a `it.todo` placeholder; appearance
-  coverage is defined in the serialization contract but verification is deferred
-  to M8, which delivers appearance support.
+* [M8 appearance tests](../packages/crystal-viewer/src/m8-acceptance.test.ts)
+  verify selected-preset and user-override state round trips.
 
 ## Limitations and notes
 
@@ -76,9 +75,6 @@ decision and the implementation.
   async data source would compose with the same generation guard.
 * `setState` is synchronous (bundled data and structure re-expansion are
   synchronous); it supersedes pending loads via the same generation counter.
-* `scripts/check-workspace.mjs` still fails under Node 26 on the pre-existing
-  `node:fs` external-import assertion (M5 fixture reader), unrelated to M7. The
-  TypeScript build, all tests, and the documentation check pass.
 
 ## Verification
 
@@ -87,5 +83,5 @@ npm run check
 node scripts/check-docs.mjs
 ```
 
-Verification passed: 276 tests across 18 test files (275 passed, 1 todo), the
-TypeScript workspace build, and documentation links/anchors/code fences.
+Verification passes the workspace-boundary check, TypeScript build, current test
+suite, and documentation links, anchors, and code fences.

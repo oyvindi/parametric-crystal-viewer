@@ -130,7 +130,7 @@ For asymmetric-unit input:
 
 Keep imported sites separate from the expanded reference-cell structure used for rendering. Expanded sites have stable IDs within that structural definition. Complete-cell input follows the same reference-cell wrapping convention; preserve cell offsets when resolving bond endpoints.
 
-Do not automatically merge distinct source records at the same position: they may represent alternative elements or disorder. Omitted occupancy means `1`. Preserve partial occupancy as metadata; do not randomly remove atoms or present partial occupancy as full occupancy without an indication.
+Do not automatically merge distinct source records at the same position: they may represent alternative elements or disorder. Omitted occupancy means `1`. Preserve partial occupancy as metadata; do not randomly remove atoms or present partial occupancy as full occupancy without an indication. The V1 atomic renderer indicates occupancy below `1` with proportional atom transparency.
 
 Every fractional-position component must be finite. Occupancy, when supplied, must be finite and within `[0, 1]`; reject out-of-range values rather than clamping them.
 

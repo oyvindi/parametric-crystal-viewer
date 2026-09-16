@@ -47,6 +47,8 @@ function gridOffsets(repetition: readonly [number, number, number]): Vec3[] {
 /**
  * Builds a Three.js group rendering expanded atoms, optional periodic bonds, and a
  * unit-cell wireframe. Atoms use instanced spheres coloured and sized by element.
+ * Partial occupancies are rendered proportionally transparent, rather than as
+ * visually full sites.
  * Positions are in crystal-local Cartesian coordinates; the caller centres the group.
  */
 export function createAtomicStructure(
@@ -62,21 +64,24 @@ export function createAtomicStructure(
     const offsets = gridOffsets(repetition);
     const direct = lattice.direct;
 
-    // Atoms: one InstancedMesh per distinct radius bucket for stable sizing.
-    const positionsByRadius = new Map<number, { atom: ExpandedAtom; offset: Vec3; pos: Vector3 }[]>();
+    // Atoms: one InstancedMesh per element-radius/occupancy bucket. Occupancy is
+    // material opacity, so a partial site is visibly distinct from a full one.
+    const positionsByStyle = new Map<string, { radius: number; occupancy: number; entries: { atom: ExpandedAtom; offset: Vec3; pos: Vector3 }[] }>();
     for (const offset of offsets) {
         for (const atom of atoms) {
             const frac = [atom.position[0] + offset[0], atom.position[1] + offset[1], atom.position[2] + offset[2]] as const;
             const pos = cartesian(direct, frac);
             const r = style(atom.element).radius;
-            const bucket = positionsByRadius.get(r) ?? [];
-            bucket.push({ atom, offset, pos });
-            positionsByRadius.set(r, bucket);
+            const occupancy = atom.occupancy ?? 1;
+            const key = `${r}:${occupancy}`;
+            const bucket = positionsByStyle.get(key) ?? { radius: r, occupancy, entries: [] };
+            bucket.entries.push({ atom, offset, pos });
+            positionsByStyle.set(key, bucket);
         }
     }
-    for (const [radius, entries] of positionsByRadius) {
+    for (const { radius, occupancy, entries } of positionsByStyle.values()) {
         const geometry = new SphereGeometry(Math.max(radius, 0.05), 16, 12);
-        const material = new MeshStandardMaterial({ roughness: 0.45, metalness: 0.05 });
+        const material = new MeshStandardMaterial({ roughness: 0.45, metalness: 0.05, opacity: occupancy, transparent: occupancy < 1 });
         const mesh = new InstancedMesh(geometry, material, entries.length);
         const color = new Color();
         const matrix = new Matrix4();
