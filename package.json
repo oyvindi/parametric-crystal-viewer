@@ -16,7 +16,8 @@
     "clean": "bash -lc 'node ./node_modules/typescript/bin/tsc --build --clean'",
     "test": "bash -lc 'node ./node_modules/vitest/vitest.mjs run'",
     "check": "bash -lc 'node scripts/check-workspace.mjs && node ./node_modules/typescript/bin/tsc --build && node ./node_modules/vitest/vitest.mjs run'",
-    "benchmark:m1": "bash -lc 'node ./node_modules/typescript/bin/tsc --build && node scripts/benchmark-m1.mjs'"
+    "benchmark:m1": "bash -lc 'node ./node_modules/typescript/bin/tsc --build && node scripts/benchmark-m1.mjs'",
+    "serve": "bash -lc 'node ./node_modules/typescript/bin/tsc --build && node scripts/serve-demo.mjs'"
   },
   "devDependencies": {
     "@types/node": "^22.0.0",

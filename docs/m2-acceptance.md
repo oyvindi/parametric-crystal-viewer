@@ -54,7 +54,10 @@ npm run check
 To run the demo:
 
 ```sh
-npm run build
-# Serve packages/crystal-demo/ with a static file server
-# Open index.html in a browser
+npm run serve
+# Open http://localhost:5173/packages/crystal-demo/index.html in a browser
 ```
+
+ES modules cannot be loaded over the `file://` protocol; the static server is
+required. The server roots at the repository root so the import map resolves
+built package outputs and Three.js.
