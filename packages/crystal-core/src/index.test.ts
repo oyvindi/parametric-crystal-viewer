@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { createLattice, getPointOperationRegistryEntry, resolvePointOperations, transformMillerIndices, validateMillerIndices, validatePointOperations } from "./index.js";
+import { createLattice, expandEquivalentPlaneDirections, getPointOperationRegistryEntry, resolvePointOperations, transformMillerIndices, validateMillerIndices, validatePointOperations } from "./index.js";
 
 function assertMatrixClose(
     actual: readonly (readonly number[])[],
@@ -104,5 +104,17 @@ it("rejects missing and conflicting symmetry descriptions", () => {
     expect(resolvePointOperations({}, lattice.value)).toMatchObject({ ok: false, diagnostics: [{ code: "core.symmetry.missing" }] });
     expect(resolvePointOperations({ identityOnly: true, registryId: "point-group:m-3m:standard" }, lattice.value))
         .toMatchObject({ ok: false, diagnostics: [{ code: "core.symmetry.conflicting-descriptions" }] });
+});
+
+it("expands cubic {100} into six oriented plane directions", () => {
+    const lattice = createLattice({ a: 4, b: 4, c: 4, alpha: 90, beta: 90, gamma: 90 });
+    if (!lattice.ok) throw new Error("Expected valid cubic lattice");
+    const symmetry = resolvePointOperations({ registryId: "point-group:m-3m:standard" }, lattice.value);
+    if (!symmetry.ok) throw new Error("Expected valid cubic symmetry");
+    const planes = expandEquivalentPlaneDirections({ notation: "miller", h: 1, k: 0, l: 0 }, symmetry.value, lattice.value);
+    expect(planes.ok).toBe(true);
+    if (!planes.ok) return;
+    expect(planes.value).toHaveLength(6);
+    expect(planes.value.map((plane) => plane.indices)).toContainEqual({ notation: "miller", h: -1, k: 0, l: 0 });
 });
 });
