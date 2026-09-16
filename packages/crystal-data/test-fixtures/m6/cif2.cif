@@ -1,0 +1,3 @@
+version_cif_2.0
+data_cif2
+_cell_length_a 5.0

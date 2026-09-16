@@ -270,6 +270,8 @@ Add a multi-mineral demo with mineral and habit selection and visible crystal-sy
 
 ### M6 — CIF / Structural Data
 
+**Status: complete.** See the [M6 acceptance audit](m6-acceptance.md) for the V1 import boundary, CIF import, atomic expansion, periodic bonds, rendering, view modes, and demo evidence.
+
 Before implementation, document the supported import subset required by the [V1 Import Boundary](data-model.md#v1-import-boundary). CIF bond import is optional; internal periodic bond resolution and rendering remain required.
 
 Implement:

@@ -1,4 +1,4 @@
-import type { CrystalSystem, MillerIndices, PointOperation, SpaceOperation } from "@crystal/core";
+import type { CrystalSystem, MillerIndices, PointOperation, SpaceOperation, AtomicStructure } from "@crystal/core";
 
 /** A traceable source reference. */
 export interface Reference {
@@ -93,4 +93,27 @@ export interface MineralVariant {
     /** Crystallographic identity distinguishing this variant. */
     readonly crystallography: MineralCrystallography;
     readonly references?: readonly Reference[];
+}
+
+/** Preserved source metadata for an imported structural definition. */
+export interface ImportSource {
+    readonly blockId?: string;
+    readonly cifRevision?: string;
+    readonly temperature?: number;
+    readonly lengthUnit?: "angstrom" | "nanometre";
+    readonly format: "cif-1.1";
+}
+
+/**
+ * A structural definition imported from CIF: cell, symmetry, sites, provenance, and
+ * preserved source metadata. Converted to core inputs for atomic expansion.
+ */
+export interface StructuralDefinition {
+    readonly id: string;
+    readonly name: string;
+    readonly crystallography: MineralCrystallography;
+    readonly atomicStructure: AtomicStructure;
+    readonly references: readonly Reference[];
+    readonly provenance: readonly ProvenanceEntry[];
+    readonly source: ImportSource;
 }

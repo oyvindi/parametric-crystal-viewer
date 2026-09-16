@@ -21,8 +21,9 @@ typed error instead.
 
 The M4 schema covers morphology records: stable identity and data revision,
 crystallography, at least one described habit with forms, optional structural
-variants, references, and provenance. Unsupported fields are rejected. Atomic and
-CIF definitions are added in M6; state-format and compatibility decisions remain
+variants, references, and provenance. Unsupported fields are rejected. CIF import
+of structural definitions is provided by `importCif` (see the [V1 import boundary](../../docs/data-model.md#v1-import-boundary));
+state-format and compatibility decisions remain
 in M7. A revision identifies the record contents; it is not a state-format version.
 
 Validation checks record shapes, unique IDs within collections, reference resolution,

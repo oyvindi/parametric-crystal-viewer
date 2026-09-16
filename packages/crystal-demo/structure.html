@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Atomic Structure — M6 Demo</title>
+<style>
+  body { margin: 0; font-family: system-ui, sans-serif; background: #2a2a2a; color: #ddd; display: flex; height: 100vh; }
+  #panel { width: 340px; padding: 16px; overflow-y: auto; background: #333; border-right: 1px solid #555; }
+  #panel h1 { font-size: 1.2em; margin: 0 0 4px; }
+  #panel .subtitle { color: #999; font-size: 0.82em; margin-bottom: 12px; }
+  #panel h2 { font-size: 0.95em; margin: 16px 0 6px; color: #ccc; border-bottom: 1px solid #555; padding-bottom: 2px; }
+  #panel select, #panel input[type="file"] { width: 100%; margin-bottom: 8px; box-sizing: border-box; }
+  #panel label { display: block; margin-bottom: 8px; font-size: 0.85em; }
+  #panel .checkbox-row { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
+  #panel .checkbox-row input { width: auto; }
+  #panel .radio-row { display: flex; gap: 16px; margin-bottom: 8px; font-size: 0.85em; }
+  #panel .rep-row { display: flex; gap: 6px; margin-bottom: 8px; }
+  #panel .rep-row input { width: 100%; }
+  #panel .info { font-size: 0.82em; line-height: 1.6; color: #bbb; }
+  #panel .info .row { display: flex; justify-content: space-between; }
+  #panel .info .row .k { color: #888; }
+  #panel .info .row .v { color: #9cf; }
+  #panel .diagnostics { margin-top: 8px; padding: 8px; background: #2a2a2a; border-radius: 4px; font-size: 0.78em; max-height: 120px; overflow-y: auto; }
+  #panel .diagnostics .warn { color: #dd8; }
+  #panel .diagnostics .err { color: #e88; }
+  #panel .diagnostics .ok { color: #8e8; }
+  button { margin-bottom: 8px; }
+  #canvas-container { flex: 1; position: relative; }
+  canvas { display: block; width: 100%; height: 100%; }
+  .hint { position: absolute; bottom: 8px; right: 12px; font-size: 0.75em; color: #888; }
+</style>
+<script type="importmap">
+{
+  "imports": {
+    "three": "../../node_modules/three/build/three.module.js",
+    "@crystal/core": "../crystal-core/dist/index.js",
+    "@crystal/data": "../crystal-data/dist/index.js",
+    "@crystal/three": "../crystal-three/dist/index.js",
+    "@crystal/viewer": "../crystal-viewer/dist/index.js"
+  }
+}
+</script>
+</head>
+<body>
+<div id="panel">
+  <h1>Atomic Structure</h1>
+  <div class="subtitle">CIF import, symmetry expansion, periodic bonds, and lattice repetition (M6)</div>
+
+  <h2>Structural definition (CIF)</h2>
+  <select id="sample-select">
+    <option value="">— pick a sample —</option>
+    <option value="9000095">Calcite (trigonal, R-3c)</option>
+    <option value="9000594">Pyrite (cubic, Pa-3)</option>
+    <option value="9015929">Anatase (tetragonal, I41/amd)</option>
+    <option value="9001551">Beryl (hexagonal, P6/mcc)</option>
+    <option value="9000319">Forsterite (orthorhombic)</option>
+    <option value="9013164">Gypsum (monoclinic)</option>
+    <option value="9000993">Albite (triclinic)</option>
+  </select>
+  <label for="cif-file">…or load a CIF file:</label>
+  <input type="file" id="cif-file" accept=".cif,text/plain">
+
+  <h2>View mode</h2>
+  <div class="radio-row">
+    <label><input type="radio" name="viewmode" value="atomic" checked> Atomic</label>
+    <label><input type="radio" name="viewmode" value="morphology"> Morphology</label>
+  </div>
+
+  <h2>Morphology mineral</h2>
+  <select id="mineral-select"></select>
+
+  <h2>Lattice repetition</h2>
+  <div class="rep-row">
+    <input type="number" id="rep-a" min="1" max="6" value="1" title="a">
+    <input type="number" id="rep-b" min="1" max="6" value="1" title="b">
+    <input type="number" id="rep-c" min="1" max="6" value="1" title="c">
+  </div>
+
+  <h2>Display</h2>
+  <div class="checkbox-row"><input type="checkbox" id="unit-cell" checked><label for="unit-cell">Unit cell</label></div>
+  <div class="checkbox-row"><input type="checkbox" id="bonds" checked><label for="bonds">Bonds</label></div>
+  <div class="checkbox-row"><input type="checkbox" id="axes"><label for="axes">Crystallographic axes</label></div>
+
+  <button type="button" id="reset-camera">Reset camera</button>
+
+  <h2>Structure info</h2>
+  <div class="info" id="structure-info">No structure loaded.</div>
+
+  <h2>Import / loading diagnostics</h2>
+  <div class="diagnostics" id="diagnostics"><span class="ok">Idle.</span></div>
+</div>
+<div id="canvas-container">
+  <canvas id="canvas"></canvas>
+  <span class="hint">Drag to rotate · Switch view modes and repetition</span>
+</div>
+
+<script type="module">
+import { CrystalViewer } from "@crystal/viewer";
+import { listMinerals, getMineral } from "@crystal/data";
+
+const capitalize = (s) => s ? s.charAt(0).toUpperCase() + s.slice(1) : s;
+const canvasEl = document.getElementById("canvas");
+const viewer = new CrystalViewer(canvasEl);
+viewer.start();
+
+const structureInfo = document.getElementById("structure-info");
+const diagnosticsEl = document.getElementById("diagnostics");
+
+function showDiagnostics(diags) {
+  if (!diags || diags.length === 0) { diagnosticsEl.innerHTML = '<span class="ok">No diagnostics.</span>'; return; }
+  diagnosticsEl.innerHTML = diags.map((d) =>
+    `<div class="${d.severity === "error" ? "err" : "warn"}">[${d.code}] ${d.message}</div>`).join("");
+}
+
+function updateStructureInfo() {
+  const info = viewer.getStructureInfo();
+  if (!info) { structureInfo.textContent = "No structure loaded."; return; }
+  const rows = [
+    ["Block", info.id],
+    ["Crystal system", capitalize(info.crystalSystem)],
+    ["Point group", info.pointGroup ?? "—"],
+    ["Setting", info.setting ?? "—"],
+    ["Space group", info.spaceGroup ?? "—"],
+    ["Site representation", info.siteRepresentation],
+    ["Atoms (ref. cell)", String(info.atomCount)],
+    ["Bonds", String(info.bondCount)],
+    ["Bonds derived", info.bondCount > 0 ? String(info.bondsDerived) : "n/a"],
+  ];
+  structureInfo.innerHTML = rows.map(([k, v]) =>
+    `<div class="row"><span class="k">${k}</span><span class="v">${v}</span></div>`).join("");
+}
+
+// --- Sample CIF loading ---
+const sampleSelect = document.getElementById("sample-select");
+async function loadSample(id) {
+  const res = await fetch(`../crystal-core/test-fixtures/m5/${id}.cif`);
+  const text = await res.text();
+  const diags = viewer.loadCif(text);
+  showDiagnostics(diags);
+  updateStructureInfo();
+  document.querySelector('input[name="viewmode"][value="atomic"]').checked = true;
+  applyDisplay();
+}
+sampleSelect.addEventListener("change", () => { if (sampleSelect.value) loadSample(sampleSelect.value); });
+
+// --- File upload ---
+document.getElementById("cif-file").addEventListener("change", async (e) => {
+  const file = e.target.files[0];
+  if (!file) return;
+  const text = await file.text();
+  const diags = viewer.loadCif(text);
+  showDiagnostics(diags);
+  updateStructureInfo();
+  document.querySelector('input[name="viewmode"][value="atomic"]').checked = true;
+  applyDisplay();
+});
+
+// --- View mode ---
+document.querySelectorAll('input[name="viewmode"]').forEach((r) => {
+  r.addEventListener("change", () => {
+    viewer.setViewMode(r.value);
+    applyDisplay();
+  });
+});
+
+// --- Mineral (morphology) ---
+const mineralSelect = document.getElementById("mineral-select");
+function populateMinerals() {
+  mineralSelect.innerHTML = "";
+  for (const id of listMinerals()) {
+    const m = getMineral(id);
+    const opt = document.createElement("option");
+    opt.value = id;
+    opt.textContent = m.name;
+    mineralSelect.appendChild(opt);
+  }
+}
+populateMinerals();
+mineralSelect.addEventListener("change", () => {
+  viewer.loadMineral(mineralSelect.value);
+  document.querySelector('input[name="viewmode"][value="morphology"]').checked = true;
+  viewer.setViewMode("morphology");
+  applyDisplay();
+  updateStructureInfo();
+});
+
+// --- Lattice repetition ---
+function applyRepetition() {
+  const a = parseInt(document.getElementById("rep-a").value, 10) || 1;
+  const b = parseInt(document.getElementById("rep-b").value, 10) || 1;
+  const c = parseInt(document.getElementById("rep-c").value, 10) || 1;
+  viewer.setLatticeRepetition(a, b, c);
+}
+["rep-a", "rep-b", "rep-c"].forEach((id) => document.getElementById(id).addEventListener("change", applyRepetition));
+
+// --- Display toggles ---
+function applyDisplay() {
+  viewer.setShowUnitCell(document.getElementById("unit-cell").checked);
+  viewer.setShowBonds(document.getElementById("bonds").checked);
+  viewer.setShowAxes(document.getElementById("axes").checked);
+}
+document.getElementById("unit-cell").addEventListener("change", applyDisplay);
+document.getElementById("bonds").addEventListener("change", applyDisplay);
+document.getElementById("axes").addEventListener("change", applyDisplay);
+
+document.getElementById("reset-camera").addEventListener("click", () => viewer.resetCamera());
+
+viewer.addEventListener("structure-load-failed", (e) => showDiagnostics(e.detail.diagnostics));
+viewer.addEventListener("structure-loaded", (e) => { showDiagnostics(e.detail.warnings); updateStructureInfo(); });
+
+// --- Initialize ---
+applyDisplay();
+updateStructureInfo();
+
+function resize() {
+  const c = document.getElementById("canvas-container");
+  viewer.resize(c.clientWidth, c.clientHeight);
+}
+window.addEventListener("resize", resize);
+resize();
+</script>
+</body>
+</html>

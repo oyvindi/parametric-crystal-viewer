@@ -1,7 +1,7 @@
-import { Scene, PerspectiveCamera, WebGLRenderer, MeshStandardMaterial, Mesh, MeshBasicMaterial, Color, DirectionalLight, AmbientLight, Group, DoubleSide, Raycaster, Vector2, Sprite, SpriteMaterial, CanvasTexture, BufferGeometry } from "three";
-import { generateCrystal, type Diagnostic, type GeometryResult, type CrystalGeometry, type CrystalFace } from "@crystal/core";
-import { loadMineral as loadMineralData, createCrystalInput, resolveHabit, resolveCrystallography, MineralDataError, type Mineral } from "@crystal/data";
-import { createThreeGeometryWithPicking } from "@crystal/three";
+import { Scene, PerspectiveCamera, WebGLRenderer, MeshStandardMaterial, Mesh, MeshBasicMaterial, Color, DirectionalLight, AmbientLight, Group, DoubleSide, Raycaster, Vector2, Vector3, Sprite, SpriteMaterial, CanvasTexture, BufferGeometry, Float32BufferAttribute, LineSegments, LineBasicMaterial } from "three";
+import { createLattice, expandAtomicStructure, generateCrystal, inferBonds, type Diagnostic, type GeometryResult, type CrystalGeometry, type CrystalFace, type ExpandedAtom, type Lattice, type PeriodicBond } from "@crystal/core";
+import { loadMineral as loadMineralData, createCrystalInput, resolveHabit, resolveCrystallography, importCif, MineralDataError, type Mineral, type StructuralDefinition } from "@crystal/data";
+import { createThreeGeometryWithPicking, createAtomicStructure, atomicBounds } from "@crystal/three";
 import { cameraBasis } from "./camera.js";
 
 export class ViewerOperationError extends Error {
@@ -44,6 +44,21 @@ export interface FaceInfo {
     readonly symmetryGroup?: string;
 }
 
+export type ViewMode = "morphology" | "atomic";
+
+export interface StructureInfo {
+    readonly id: string;
+    readonly name: string;
+    readonly crystalSystem: string;
+    readonly pointGroup?: string;
+    readonly setting?: string;
+    readonly spaceGroup?: string;
+    readonly siteRepresentation: string;
+    readonly atomCount: number;
+    readonly bondCount: number;
+    readonly bondsDerived: boolean;
+}
+
 /** Provisional viewer API for M4. Exact signatures remain deferred to M7. */
 export class CrystalViewer extends EventTarget {
     private readonly renderer: WebGLRenderer;
@@ -71,6 +86,18 @@ export class CrystalViewer extends EventTarget {
     private lastMouseX = 0;
     private showLabels = false;
     private selectedFaceIndex: number | null = null;
+    private viewMode: ViewMode = "morphology";
+    private structure: StructuralDefinition | null = null;
+    private expandedAtoms: readonly ExpandedAtom[] | null = null;
+    private structureBonds: readonly PeriodicBond[] | null = null;
+    private structureLattice: Lattice | null = null;
+    private atomicGroup: Group | null = null;
+    private cellOverlay: Group | null = null;
+    private latticeRepetition: [number, number, number] = [1, 1, 1];
+    private showUnitCell = false;
+    private showBonds = true;
+    private showAxes = false;
+    private importDiagnostics: readonly Diagnostic[] = [];
     private readonly raycaster = new Raycaster();
     private readonly onPointerDownBound: (e: PointerEvent) => void;
     private readonly onPointerMoveBound: (e: PointerEvent) => void;
@@ -129,8 +156,11 @@ export class CrystalViewer extends EventTarget {
         this.lastValidGeometry = null;
         this.needsInitialFrame = true;
         this.selectedFaceIndex = null;
+        this.viewMode = "morphology";
         this.clearMesh();
         this.clearLabels();
+        this.updateCellOverlay();
+        this.updateViewVisibility();
         this.regenerate();
         this.dispatchEvent(new CustomEvent("mineral-loaded", { detail: { mineralId: mineral.id, dataRevision: mineral.dataRevision } }));
     }
@@ -194,6 +224,127 @@ export class CrystalViewer extends EventTarget {
 
     getVariantId(): string | null {
         return this.variantId ?? null;
+    }
+
+    // --- Atomic structure view (M6) ---
+
+    /** Imports a CIF and loads the resulting structural definition for atomic view. */
+    loadCif(text: string, options: { blockId?: string } = {}): readonly Diagnostic[] {
+        this.assertNotDisposed();
+        const result = importCif(text, options);
+        this.importDiagnostics = result.diagnostics;
+        if (!result.ok) {
+            this.dispatchEvent(new CustomEvent("structure-load-failed", { detail: { diagnostics: result.diagnostics } }));
+            return result.diagnostics;
+        }
+        this.loadStructure(result.value);
+        this.dispatchEvent(new CustomEvent("structure-loaded", { detail: { id: result.value.id, warnings: result.diagnostics } }));
+        return result.diagnostics;
+    }
+
+    /** Loads a structural definition (e.g. from `importCif`) for the atomic structure view. */
+    loadStructure(definition: StructuralDefinition): void {
+        this.assertNotDisposed();
+        const latticeResult = createLattice(definition.crystallography.unitCell);
+        if (!latticeResult.ok) {
+            this.importDiagnostics = latticeResult.diagnostics;
+            this.dispatchEvent(new CustomEvent("structure-load-failed", { detail: { diagnostics: latticeResult.diagnostics } }));
+            return;
+        }
+        const operations = definition.crystallography.spaceOperations ?? [];
+        const expanded = expandAtomicStructure(definition.atomicStructure, operations, latticeResult.value);
+        if (!expanded.ok) {
+            this.importDiagnostics = expanded.diagnostics;
+            this.dispatchEvent(new CustomEvent("structure-load-failed", { detail: { diagnostics: expanded.diagnostics } }));
+            return;
+        }
+        this.structure = definition;
+        this.structureLattice = latticeResult.value;
+        this.expandedAtoms = expanded.value;
+        this.structureBonds = inferBonds(expanded.value, latticeResult.value);
+        this.importDiagnostics = [];
+        this.viewMode = "atomic";
+        this.updateAtomicRender();
+        this.updateCellOverlay();
+        this.updateViewVisibility();
+        this.frameAtomic();
+        if (this.animationHandle === null) this.renderer.render(this.scene, this.camera);
+        this.dispatchEvent(new CustomEvent("view-mode-changed", { detail: { mode: "atomic" } }));
+    }
+
+    setViewMode(mode: ViewMode): void {
+        this.assertNotDisposed();
+        this.viewMode = mode;
+        this.updateCellOverlay();
+        this.updateViewVisibility();
+        if (mode === "atomic") this.frameAtomic();
+        else if (this.lastValidGeometry?.status === "valid") this.frameCamera(this.lastValidGeometry.geometry.bounds.min, this.lastValidGeometry.geometry.bounds.max);
+        if (this.animationHandle === null) this.renderer.render(this.scene, this.camera);
+        this.dispatchEvent(new CustomEvent("view-mode-changed", { detail: { mode } }));
+    }
+
+    getViewMode(): ViewMode {
+        return this.viewMode;
+    }
+
+    setLatticeRepetition(na: number, nb: number, nc: number): void {
+        this.assertNotDisposed();
+        this.latticeRepetition = [Math.max(1, Math.min(6, Math.round(na))), Math.max(1, Math.min(6, Math.round(nb))), Math.max(1, Math.min(6, Math.round(nc)))];
+        if (this.viewMode === "atomic") {
+            this.updateAtomicRender();
+            this.frameAtomic();
+            if (this.animationHandle === null) this.renderer.render(this.scene, this.camera);
+        }
+        this.dispatchEvent(new CustomEvent("lattice-repetition-changed", { detail: { repetition: this.latticeRepetition } }));
+    }
+
+    getLatticeRepetition(): readonly [number, number, number] {
+        return this.latticeRepetition;
+    }
+
+    setShowUnitCell(show: boolean): void {
+        this.assertNotDisposed();
+        this.showUnitCell = show;
+        if (this.viewMode === "atomic") this.updateAtomicRender();
+        this.updateCellOverlay();
+        this.updateViewVisibility();
+        if (this.animationHandle === null) this.renderer.render(this.scene, this.camera);
+    }
+
+    setShowBonds(show: boolean): void {
+        this.assertNotDisposed();
+        this.showBonds = show;
+        if (this.viewMode === "atomic") this.updateAtomicRender();
+        if (this.animationHandle === null) this.renderer.render(this.scene, this.camera);
+    }
+
+    setShowAxes(show: boolean): void {
+        this.assertNotDisposed();
+        this.showAxes = show;
+        this.updateCellOverlay();
+        if (this.animationHandle === null) this.renderer.render(this.scene, this.camera);
+    }
+
+    getStructureInfo(): StructureInfo | null {
+        if (!this.structure) return null;
+        const c = this.structure.crystallography;
+        const bonds = this.structureBonds ?? [];
+        return {
+            id: this.structure.id,
+            name: this.structure.name,
+            crystalSystem: c.crystalSystem,
+            ...(c.pointGroup ? { pointGroup: c.pointGroup } : {}),
+            ...(c.setting ? { setting: c.setting } : {}),
+            ...(c.spaceGroup ? { spaceGroup: c.spaceGroup } : {}),
+            siteRepresentation: this.structure.atomicStructure.siteRepresentation,
+            atomCount: this.expandedAtoms?.length ?? 0,
+            bondCount: bonds.length,
+            bondsDerived: bonds.length > 0 && bonds.every((b) => b.derived),
+        };
+    }
+
+    getImportDiagnostics(): readonly Diagnostic[] {
+        return this.importDiagnostics;
     }
 
     getGeometryStatus(): { status: GeometryStatus; diagnostics: readonly Diagnostic[]; stale: boolean } {
@@ -290,6 +441,11 @@ export class CrystalViewer extends EventTarget {
     /** Apply the current habit's preferred view to the displayed geometry. */
     resetCamera(): void {
         this.assertNotDisposed();
+        if (this.viewMode === "atomic") {
+            this.frameAtomic();
+            this.renderer.render(this.scene, this.camera);
+            return;
+        }
         if (this.lastValidGeometry?.status !== "valid") return;
         const { bounds } = this.lastValidGeometry.geometry;
         this.frameCamera(bounds.min, bounds.max);
@@ -323,6 +479,8 @@ export class CrystalViewer extends EventTarget {
         this.stop();
         this.clearMesh();
         this.clearLabels();
+        this.clearAtomic();
+        if (this.cellOverlay) { this.crystalGroup.remove(this.cellOverlay); this.cellOverlay = null; }
         this.renderer.dispose();
     }
 
@@ -477,6 +635,98 @@ export class CrystalViewer extends EventTarget {
         const sprite = new Sprite(material);
         sprite.scale.set(1.5, 1.5, 1);
         return sprite;
+    }
+
+    private clearAtomic(): void {
+        if (this.atomicGroup) {
+            this.crystalGroup.remove(this.atomicGroup);
+            this.atomicGroup.traverse((child) => {
+                const obj = child as { geometry?: { dispose(): void }; material?: { dispose(): void } };
+                obj.geometry?.dispose();
+                obj.material?.dispose();
+            });
+            this.atomicGroup = null;
+        }
+    }
+
+    private updateAtomicRender(): void {
+        this.clearAtomic();
+        if (!this.expandedAtoms || !this.structureLattice) return;
+        const group = createAtomicStructure(this.expandedAtoms, this.showBonds ? (this.structureBonds ?? []) : [], this.structureLattice, {
+            repetition: this.latticeRepetition, showBonds: this.showBonds, showUnitCell: this.showUnitCell,
+        });
+        // Centre the atomic group at the displayed-cell bounding-box centre so it
+        // shares the morphology view's crystal-local orientation and origin.
+        const { min, max } = atomicBounds(this.expandedAtoms, this.structureLattice, this.latticeRepetition);
+        const center = new Vector3().addVectors(min, max).multiplyScalar(0.5);
+        group.position.sub(center);
+        this.atomicGroup = group;
+        this.crystalGroup.add(group);
+    }
+
+    private updateCellOverlay(): void {
+        if (this.cellOverlay) {
+            this.crystalGroup.remove(this.cellOverlay);
+            this.cellOverlay = null;
+        }
+        const mineralLattice = this.mineral ? createLattice(resolveCrystallography(this.mineral, this.variantId).unitCell) : null;
+        const lattice = this.structureLattice ?? (mineralLattice?.ok ? mineralLattice.value : null);
+        if (!lattice || !this.showUnitCell) return;
+        this.cellOverlay = this.buildCellOverlay(lattice);
+        this.crystalGroup.add(this.cellOverlay);
+    }
+
+    private buildCellOverlay(lattice: Lattice): Group {
+        const group = new Group();
+        const direct = lattice.direct;
+        const corner = new Vector3(0, 0, 0);
+        const ax = new Vector3(direct[0][0], direct[1][0], direct[2][0]);
+        const ay = new Vector3(direct[0][1], direct[1][1], direct[2][1]);
+        const az = new Vector3(direct[0][2], direct[1][2], direct[2][2]);
+        // Unit-cell wireframe centred at the origin (matches morphology centring).
+        const c = corner.clone().add(ax).add(ay).add(az).multiplyScalar(-0.5);
+        const corners = [c.clone(), c.clone().add(ax), c.clone().add(ay), c.clone().add(az), c.clone().add(ax).add(ay), c.clone().add(ax).add(az), c.clone().add(ay).add(az), c.clone().add(ax).add(ay).add(az)];
+        const edges: number[] = [];
+        const edge = (i: number, j: number) => edges.push(corners[i]!.x, corners[i]!.y, corners[i]!.z, corners[j]!.x, corners[j]!.y, corners[j]!.z);
+        edge(0, 1); edge(0, 2); edge(0, 3); edge(1, 4); edge(1, 5); edge(2, 4); edge(2, 6); edge(3, 5); edge(3, 6); edge(4, 7); edge(5, 7); edge(6, 7);
+        const geo = new BufferGeometry();
+        geo.setAttribute("position", new Float32BufferAttribute(edges, 3));
+        group.add(new LineSegments(geo, new LineBasicMaterial({ color: 0x66ccff })));
+        // Crystallographic axes a/b/c (red/green/blue) from the centred origin.
+        if (this.showAxes) {
+            const axis = (v: Vector3, color: number) => {
+                const g = new BufferGeometry();
+                g.setAttribute("position", new Float32BufferAttribute([c.x, c.y, c.z, c.x + v.x, c.y + v.y, c.z + v.z], 3));
+                group.add(new LineSegments(g, new LineBasicMaterial({ color })));
+            };
+            axis(ax, 0xff4040); axis(ay, 0x40ff40); axis(az, 0x4080ff);
+        }
+        return group;
+    }
+
+    private updateViewVisibility(): void {
+        const morphVisible = this.viewMode === "morphology";
+        if (this.mesh) this.mesh.visible = morphVisible;
+        this.labelGroup.visible = morphVisible && this.showLabels;
+        if (this.atomicGroup) this.atomicGroup.visible = this.viewMode === "atomic";
+        if (this.cellOverlay) this.cellOverlay.visible = this.showUnitCell && this.viewMode === "morphology";
+    }
+
+    private frameAtomic(): void {
+        if (!this.expandedAtoms || !this.structureLattice) return;
+        const { min, max } = atomicBounds(this.expandedAtoms, this.structureLattice, this.latticeRepetition);
+        const size = Math.max(max.x - min.x, max.y - min.y, max.z - min.z);
+        const distance = (size || 10) * 2.5;
+        this.rotationY = 0;
+        this.crystalGroup.rotation.set(0, 0, 0);
+        // Default oblique view preserves the crystal-local frame consistently with morphology.
+        const dir = new Vector3(1, 0.7, 1).normalize();
+        this.camera.position.copy(dir.multiplyScalar(distance));
+        this.camera.up.set(0, 1, 0);
+        this.camera.lookAt(0, 0, 0);
+        this.camera.near = distance / 100;
+        this.camera.far = distance * 100;
+        this.camera.updateProjectionMatrix();
     }
 
     private frameCamera(min: readonly number[], max: readonly number[]): void {

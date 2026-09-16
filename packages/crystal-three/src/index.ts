@@ -1,6 +1,8 @@
 import type { CrystalGeometry } from "@crystal/core";
 import { BufferGeometry, Float32BufferAttribute, Uint32BufferAttribute } from "three";
 
+export * from "./atomic.js";
+
 /** Deterministic convex-polygon triangulation; triangleFaces resolves core provenance. */
 export function triangulateCrystal(geometry: CrystalGeometry): {
     readonly indices: Uint32Array;

@@ -10,7 +10,19 @@ export type DataDiagnosticCode =
     | "data.catalog.unknown-mineral"
     | "data.request.unknown-habit"
     | "data.request.unknown-variant"
-    | "data.request.unknown-form";
+    | "data.request.unknown-form"
+    | "data.cif.parse"
+    | "data.cif.missing-block"
+    | "data.cif.unsupported-version"
+    | "data.cif.unsupported-construct"
+    | "data.cif.missing-required"
+    | "data.cif.missing-operations"
+    | "data.cif.unsupported-symmetry"
+    | "data.cif.conflicting-symmetry"
+    | "data.cif.ambiguous-site-representation"
+    | "data.cif.ambiguous-block"
+    | "data.cif.invalid-site"
+    | "data.cif.bonds-omitted";
 
 export class MineralDataError extends Error {
     constructor(readonly diagnostics: readonly Diagnostic[]) {

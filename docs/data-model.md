@@ -287,6 +287,104 @@ Import errors and warnings use the shared [diagnostic envelope](architecture.md#
 
 Before M6 implementation, document the supported tags, constructs, site convention, and registry settings. Validate the boundary using representative successful imports and fixtures for each rejection case. Delivery checks belong to [M6](plan.md#m6--cif--structural-data).
 
+#### Supported CIF 1.1 tags
+
+V1 imports the following CIF 1.1 tags from a single selected data block. Tags are matched case-insensitively by CIF convention; synonyms are accepted where listed.
+
+```text
+# unit cell
+_cell_length_a, _cell_length_b, _cell_length_c
+_cell_angle_alpha, _cell_angle_beta, _cell_angle_gamma
+_cell_length_units (angstrom only; nm is normalized, unknown units are rejected)
+
+# symmetry
+_space_group_name_H-M_alt, _symmetry_space_group_name_H-M
+_space_group_name_Hall, _symmetry_space_group_name_Hall
+_space_group.IT_number, _space_group_IT_number
+_space_group_symop_operation_xyz, _symmetry_equiv_pos_as_xyz
+
+# atomic sites
+_atom_site_type_symbol
+_atom_site_label
+_atom_site_fract_x, _atom_site_fract_y, _atom_site_fract_z
+_atom_site_occupancy
+```
+
+The unit-cell lengths and angles are required. Symmetry is required: either an
+explicit operation loop (`_space_group_symop_operation_xyz` /
+`_symmetry_equiv_pos_as_xyz`) or a registry-supported identifier with setting, never
+both silently; multiple descriptions require agreement. Atomic sites require an
+element symbol, a label, and fractional coordinates. Occupancy is optional and
+defaults to `1`. Cartesian (`_atom_site_Cartn_*`) coordinates are not supported in
+V1; supply fractional coordinates or transform first. Measurement temperature
+(`_cell_measurement_temperature`) and publication metadata are preserved in source
+metadata when present but are not required.
+
+Unsupported constructs produce a diagnostic and do not commit:
+
+* CIF 2.0 syntax (the `version` block or CIF 2.0 delimiters);
+* save frames, global blocks, or non-structural loop categories;
+* `_atom_site_Cartn_*` Cartesian sites without fractional equivalents;
+* partial-occupancy disorder expressed through assemblies/groups rather than
+  distinct occupied sites;
+* incommensurate/modulated structures; and
+* units other than Ångström or nanometre.
+
+#### Site representation convention
+
+The importer infers `siteRepresentation` from the supplied data:
+
+* **`asymmetric-unit`:** the default when explicit space operations or a
+  registry identifier are supplied. The listed sites are symmetry-independent and
+  are expanded by the resolved space operations ([Site Expansion](#site-expansion)).
+* **`complete-cell`:** declared only when an explicit, unambiguous marker is
+  present. V1 recognizes `_atom_site_symmetry_multiplicity` equal to the site
+  count only when no symmetry operation loop or identifier is supplied; in that
+  case the sites are treated as already expanded and are not expanded a second
+  time.
+
+If the representation cannot be determined reliably — for example, an operation
+loop and a complete-cell marker both present, or neither a symmetry description
+nor a complete-cell marker — the importer emits a `data.cif.ambiguous-site-representation`
+diagnostic and does not commit. Distinct source sites at the same fractional
+position are never merged: they may represent alternative elements or disorder and
+are preserved as separate atoms, including coincident partially occupied
+alternatives.
+
+#### Supported registry settings
+
+Symmetry identifiers resolve through the [operation registry](scientific-model.md#operation-registry)
+by point-group, crystal system, and setting. V1 supports these settings:
+
+```text
+point-group:m-3m:cubic-standard
+point-group:m-3:cubic-standard
+point-group:-3m:hexagonal-standard
+point-group:32:hexagonal-standard
+point-group:4/mmm:tetragonal-standard
+point-group:6/mmm:hexagonal-standard
+point-group:mmm:orthorhombic-standard
+point-group:2/m:monoclinic-b
+point-group:-1:triclinic-standard
+```
+
+A Hermann–Mauguin or Hall symbol that does not map to one of these settings, or
+that is ambiguous without a setting, produces a `data.cif.unsupported-symmetry`
+diagnostic. Explicit operation loops are always accepted when they validate; they
+need not match a registry entry. Space-group numbers alone are not sufficient
+without a setting because several space groups share a number across settings or
+origins; supply an explicit operation loop for unsupported space groups.
+
+#### Uncertainty and missing-value handling
+
+CIF numerical values may carry parenthesized standard uncertainty (for example
+`5.463(2)`) which is parsed and discarded — V1 stores the central value only.
+Trailing-`e.s.d.` notation is not supported. The CIF missing-value markers `?`
+(unknown) and `.` (inapplicable) are recognized: an optional field marked missing
+is omitted from the normalized definition, while a required field marked missing
+produces a `data.cif.missing-required` diagnostic rather than a fabricated default.
+Uncertainty metadata is not preserved beyond the central value in V1.
+
 ### Extraction and Normalization
 
 Extract at minimum:
