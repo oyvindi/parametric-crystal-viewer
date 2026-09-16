@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { createLattice, expandEquivalentPlaneDirections, getPointOperationRegistryEntry, resolvePointOperations, transformMillerIndices, validateMillerIndices, validatePointOperations } from "./index.js";
+import { createLattice, expandEquivalentPlaneDirections, getPointOperationRegistryEntry, intersectHalfSpaces, resolvePointOperations, transformMillerIndices, validateMillerIndices, validatePointOperations } from "./index.js";
 
 function assertMatrixClose(
     actual: readonly (readonly number[])[],
@@ -116,5 +116,25 @@ it("expands cubic {100} into six oriented plane directions", () => {
     if (!planes.ok) return;
     expect(planes.value).toHaveLength(6);
     expect(planes.value.map((plane) => plane.indices)).toContainEqual({ notation: "miller", h: -1, k: 0, l: 0 });
+});
+
+it("intersects six enclosing planes into a cube", () => {
+    const result = intersectHalfSpaces([
+        { id: "+x", normal: [1, 0, 0], distance: 1 }, { id: "-x", normal: [-1, 0, 0], distance: 1 },
+        { id: "+y", normal: [0, 1, 0], distance: 1 }, { id: "-y", normal: [0, -1, 0], distance: 1 },
+        { id: "+z", normal: [0, 0, 1], distance: 1 }, { id: "-z", normal: [0, 0, -1], distance: 1 },
+    ]);
+    expect(result.status).toBe("valid");
+    if (result.status !== "valid") return;
+    expect(result.geometry.vertices).toHaveLength(24);
+    expect(result.geometry.bounds).toEqual({ min: [-1, -1, -1], max: [1, 1, 1] });
+});
+
+it("reports an unbounded prism", () => {
+    const result = intersectHalfSpaces([
+        { id: "+x", normal: [1, 0, 0], distance: 1 }, { id: "-x", normal: [-1, 0, 0], distance: 1 },
+        { id: "+y", normal: [0, 1, 0], distance: 1 }, { id: "-y", normal: [0, -1, 0], distance: 1 },
+    ]);
+    expect(result).toMatchObject({ status: "invalid", diagnostics: [{ code: "core.geometry.unbounded" }] });
 });
 });
