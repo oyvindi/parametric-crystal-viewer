@@ -127,6 +127,8 @@ it("rejects missing and conflicting symmetry descriptions", () => {
     expect(resolvePointOperations({}, lattice.value)).toMatchObject({ ok: false, diagnostics: [{ code: "core.symmetry.missing" }] });
     expect(resolvePointOperations({ identityOnly: true, registryId: "point-group:m-3m:standard" }, lattice.value))
         .toMatchObject({ ok: false, diagnostics: [{ code: "core.symmetry.conflicting-descriptions" }] });
+    expect(resolvePointOperations({ registryId: "unknown" }, lattice.value))
+        .toMatchObject({ ok: false, diagnostics: [{ code: "core.symmetry.unsupported-registry" }] });
 });
 
 it("expands cubic {100} into six oriented plane directions", () => {
