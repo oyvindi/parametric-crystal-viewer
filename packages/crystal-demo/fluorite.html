@@ -46,6 +46,8 @@
   <h2>Forms</h2>
   <div id="forms"></div>
 
+  <button type="button" id="reset-camera">Reset camera</button>
+
   <div class="status" id="status">Loading…</div>
 </div>
 <div id="canvas-container">
@@ -60,6 +62,7 @@ const canvas = document.getElementById("canvas");
 const viewer = new CrystalViewer(canvas);
 viewer.loadMineral("fluorite");
 viewer.start();
+document.getElementById("reset-camera").addEventListener("click", () => viewer.resetCamera());
 
 // Habit selector
 const habitSelect = document.getElementById("habit-select");

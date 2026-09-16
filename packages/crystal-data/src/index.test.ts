@@ -10,7 +10,7 @@ function valid(result: GeometryResult) {
 
 describe("fluorite record", () => {
     it("is registered in the catalog", () => {
-        expect(listMinerals()).toEqual(["fluorite", "quartz"]);
+        expect(listMinerals()).toEqual(["fluorite", "quartz", "calcite", "pyrite", "anatase"]);
         expect(getMineral("fluorite")).toBe(FLUORITE);
         expect(getMineral("unknown")).toBeUndefined();
     });

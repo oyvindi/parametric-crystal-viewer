@@ -220,6 +220,8 @@ Add a quartz demo with habit selection, synchronized form sliders, handedness se
 
 ### M4 — Mineral Data Infrastructure
 
+**Status: complete.** See the [M4 acceptance audit](m4-acceptance.md) for schema, validation, catalog/loading, provisional-record, and viewer regression evidence.
+
 Stabilize the reusable mineral and morphology schemas, catalog organization, validation, and loading paths in `crystal-data`. Move the provisional fluorite and quartz records from M2 and M3 into this permanent structure without changing the generic core input contract.
 
 Mineral-specific generator logic is prohibited throughout development:

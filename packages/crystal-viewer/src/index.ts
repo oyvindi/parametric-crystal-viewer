@@ -1,7 +1,15 @@
 import { Scene, PerspectiveCamera, WebGLRenderer, MeshStandardMaterial, Mesh, MeshBasicMaterial, Color, DirectionalLight, AmbientLight, Group, DoubleSide, Raycaster, Vector2, Sprite, SpriteMaterial, CanvasTexture, BufferGeometry } from "three";
 import { generateCrystal, type Diagnostic, type GeometryResult, type CrystalGeometry, type CrystalFace } from "@crystal/core";
-import { getMineral, createCrystalInput, resolveHabit, type Mineral, type MineralVariant, type HabitPreset } from "@crystal/data";
+import { loadMineral as loadMineralData, createCrystalInput, resolveHabit, resolveCrystallography, MineralDataError, type Mineral } from "@crystal/data";
 import { createThreeGeometryWithPicking } from "@crystal/three";
+import { cameraBasis } from "./camera.js";
+
+export class ViewerOperationError extends Error {
+    constructor(readonly diagnostics: readonly Diagnostic[]) {
+        super(diagnostics.map((d) => d.message).join(" "));
+        this.name = "ViewerOperationError";
+    }
+}
 
 export type GeometryStatus = "valid" | "invalid";
 
@@ -36,7 +44,7 @@ export interface FaceInfo {
     readonly symmetryGroup?: string;
 }
 
-/** Provisional viewer API for M3. Exact signatures remain deferred to M7. */
+/** Provisional viewer API for M4. Exact signatures remain deferred to M7. */
 export class CrystalViewer extends EventTarget {
     private readonly renderer: WebGLRenderer;
     private readonly scene: Scene;
@@ -55,6 +63,7 @@ export class CrystalViewer extends EventTarget {
     private currentGeometry: CrystalGeometry | null = null;
     private triangleFaces: Uint32Array | null = null;
     private disposed = false;
+    private needsInitialFrame = true;
     private animationHandle: number | null = null;
     private rotationY = 0;
     private readonly rotationSpeed = 0.005;
@@ -100,19 +109,30 @@ export class CrystalViewer extends EventTarget {
         canvas.addEventListener("click", this.onClickBound);
     }
 
-    loadMineral(id: string): void {
+    /** Accepts a bundled ID or a caller-supplied record; rejects before committing. */
+    loadMineral(source: unknown): void {
         this.assertNotDisposed();
-        const mineral = getMineral(id);
-        if (!mineral) throw new Error(`Unknown mineral "${id}".`);
+        let mineral: Mineral;
+        try {
+            mineral = loadMineralData(source);
+        } catch (error) {
+            if (!(error instanceof MineralDataError)) throw error;
+            const diagnostics: Diagnostic[] = [{ code: "viewer.load.invalid-mineral", severity: "error", message: "Mineral loading failed; the previous definition is unchanged." }, ...error.diagnostics];
+            this.dispatchEvent(new CustomEvent("mineral-load-failed", { detail: { diagnostics } }));
+            throw new ViewerOperationError(diagnostics);
+        }
         this.mineral = mineral;
         this.habitId = undefined;
         this.variantId = undefined;
         this.formDevelopment = {};
         this.formEnabled = {};
         this.lastValidGeometry = null;
+        this.needsInitialFrame = true;
         this.selectedFaceIndex = null;
         this.clearMesh();
+        this.clearLabels();
         this.regenerate();
+        this.dispatchEvent(new CustomEvent("mineral-loaded", { detail: { mineralId: mineral.id, dataRevision: mineral.dataRevision } }));
     }
 
     setHabit(habitId: string): void {
@@ -129,7 +149,7 @@ export class CrystalViewer extends EventTarget {
     setVariant(variantId: string): void {
         this.assertNotDisposed();
         if (!this.mineral) throw new Error("No mineral loaded.");
-        if (!this.mineral.variants?.some((v) => v.id === variantId)) throw new Error(`Unknown variant "${variantId}".`);
+        resolveCrystallography(this.mineral, variantId);
         this.variantId = variantId;
         this.selectedFaceIndex = null;
         this.regenerate();
@@ -138,6 +158,7 @@ export class CrystalViewer extends EventTarget {
     setFormDevelopment(formId: string, value: number): void {
         this.assertNotDisposed();
         if (!this.mineral) throw new Error("No mineral loaded.");
+        this.assertForm(formId);
         this.formDevelopment[formId] = value;
         if (!this.formEnabled[formId]) this.formEnabled[formId] = true;
         this.regenerate();
@@ -146,6 +167,7 @@ export class CrystalViewer extends EventTarget {
     setFormEnabled(formId: string, enabled: boolean): void {
         this.assertNotDisposed();
         if (!this.mineral) throw new Error("No mineral loaded.");
+        this.assertForm(formId);
         this.formEnabled[formId] = enabled;
         this.regenerate();
     }
@@ -265,6 +287,15 @@ export class CrystalViewer extends EventTarget {
         this.renderer.render(this.scene, this.camera);
     }
 
+    /** Apply the current habit's preferred view to the displayed geometry. */
+    resetCamera(): void {
+        this.assertNotDisposed();
+        if (this.lastValidGeometry?.status !== "valid") return;
+        const { bounds } = this.lastValidGeometry.geometry;
+        this.frameCamera(bounds.min, bounds.max);
+        this.renderer.render(this.scene, this.camera);
+    }
+
     start(): void {
         this.assertNotDisposed();
         if (this.animationHandle !== null) return;
@@ -342,7 +373,10 @@ export class CrystalViewer extends EventTarget {
         this.mesh = new Mesh(buffer, material);
         this.crystalGroup.add(this.mesh);
         if (this.showLabels) this.createLabels(result.geometry);
-        this.frameCamera(result.geometry.bounds.min, result.geometry.bounds.max);
+        if (this.needsInitialFrame) {
+            this.frameCamera(result.geometry.bounds.min, result.geometry.bounds.max);
+            this.needsInitialFrame = false;
+        }
     }
 
     private clearMesh(): void {
@@ -446,25 +480,20 @@ export class CrystalViewer extends EventTarget {
     }
 
     private frameCamera(min: readonly number[], max: readonly number[]): void {
+        if (!this.mineral) return;
         const habit = this.mineral ? resolveHabit(this.mineral, this.habitId) : null;
-        const preferredView = habit?.preferredView;
+        const { direction, up } = cameraBasis(resolveCrystallography(this.mineral, this.variantId), habit?.preferredView);
         const size = Math.max(max[0]! - min[0]!, max[1]! - min[1]!, max[2]! - min[2]!);
         const distance = size * 2.5 || 10;
-        if (preferredView) {
-            const dir = this.normalize(preferredView.cameraDirection);
-            this.camera.position.set(dir[0] * distance, dir[1] * distance, dir[2] * distance);
-        } else {
-            this.camera.position.set(distance * 0.7, distance * 0.5, distance * 0.7);
-        }
+        this.rotationY = 0;
+        this.crystalGroup.rotation.set(0, 0, 0);
+        this.labelGroup.rotation.set(0, 0, 0);
+        this.camera.position.set(direction[0] * distance, direction[1] * distance, direction[2] * distance);
+        this.camera.up.set(...up);
         this.camera.lookAt(0, 0, 0);
         this.camera.near = distance / 100;
         this.camera.far = distance * 100;
         this.camera.updateProjectionMatrix();
-    }
-
-    private normalize(v: readonly number[]): [number, number, number] {
-        const len = Math.hypot(v[0], v[1], v[2]) || 1;
-        return [v[0] / len, v[1] / len, v[2] / len];
     }
 
     private onPointerDown(e: PointerEvent): void {
@@ -534,6 +563,10 @@ export class CrystalViewer extends EventTarget {
     }
 
     private assertNotDisposed(): void {
-        if (this.disposed) throw new Error("Viewer is disposed.");
+        if (this.disposed) throw new ViewerOperationError([{ code: "viewer.lifecycle.disposed", severity: "error", message: "Viewer is disposed." }]);
+    }
+
+    private assertForm(id: string): void {
+        if (!this.getForms().some((form) => form.id === id)) throw new ViewerOperationError([{ code: "viewer.request.unknown-form", severity: "error", message: `Unknown form "${id}".`, formIds: [id] }]);
     }
 }

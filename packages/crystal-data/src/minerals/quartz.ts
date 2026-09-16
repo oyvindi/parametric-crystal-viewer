@@ -1,4 +1,4 @@
-import type { Mineral } from "../types.js";
+import { defineMineral } from "../validate.js";
 
 /**
  * Quartz (α-SiO₂) mineral record. Crystallographic data from the Materials
@@ -19,11 +19,11 @@ import type { Mineral } from "../types.js";
  * Within-form asymmetry is not required for these habits and is explicitly
  * deferred per the M3 asymmetry decision.
  */
-export const QUARTZ: Mineral = {
+export const QUARTZ = defineMineral({
     id: "quartz",
     name: "Quartz",
     formula: "SiO₂",
-    dataRevision: "m3-1",
+    dataRevision: "m4-1",
     crystallography: {
         crystalSystem: "trigonal",
         pointGroup: "32",
@@ -75,14 +75,14 @@ export const QUARTZ: Mineral = {
     ],
     provenance: [
         {
-            coverage: ["crystallography.unitCell", "crystallography.crystalSystem", "crystallography.pointGroup", "crystallography.spaceGroup"],
+            coverage: ["crystallography.unitCell", "crystallography.crystalSystem", "crystallography.pointGroup", "crystallography.spaceGroup", "variants.*.crystallography"],
             referenceIds: ["mp-7000", "mp-6930"],
             status: "reported",
         },
         {
-            coverage: ["habits.*.forms.*.development"],
+            coverage: ["habits", "habits.*.forms.*.development", "crystallography.setting"],
             status: "curated",
-            derivation: "Development values are curated visualization parameters chosen to produce recognizable quartz habits, not measured quantities.",
+            derivation: "Habit form selections, preferred views, and development values are curated visualization parameters, not measured quantities. The declared hexagonal setting selects the core registry basis.",
         },
     ],
     habits: [
@@ -135,4 +135,4 @@ export const QUARTZ: Mineral = {
             references: [{ id: "mp-7000" }],
         },
     ],
-};
+});

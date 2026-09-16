@@ -15,16 +15,14 @@ M3 is complete. This audit covers the [delivery list and acceptance criteria](pl
 | Face labels | `showFaceLabels` toggle renders sprite labels at face centroids showing the form ID. |
 | Left/right handedness | Two `MineralVariant` entries (right: P3_121/152, left: P3_221/154) with sourced crystallography from the Materials Project (mp-7000, mp-6930). Variant selection through `setVariant`/`getVariants`/`getVariantId`. Both variants generate valid geometry through the generic contract. |
 | Asymmetry decision | Resolved: the four shipped habits use only form-level development controls. Within-form asymmetry is explicitly deferred. Documented in the [M3 acquisition record](sources/m3-acquisition.md#asymmetry-decision). |
-| Preferred views | Each habit defines a `preferredView` with `cameraDirection` in the crystal-local Cartesian frame. The viewer applies it during initial framing and geometry regeneration. |
+| Preferred views | Each habit defines a `preferredView` with `cameraDirection` in the crystal-local Cartesian frame. The viewer applies it during initial valid framing and explicit camera reset, preserving the camera during edits. Up-vector validation and the lattice-based fallback were completed in the [M4 correction](m4-acceptance.md#m3-preferred-view-correction). |
 | Provenance | [M3 acquisition record](sources/m3-acquisition.md): reported crystallography from the Materials Project (CC-BY 4.0) for both enantiomorphs, curated habit development values with derivation statements. |
 | Quartz demo | [quartz.html](../packages/crystal-demo/quartz.html): habit selection, handedness selection, synchronized form sliders, face inspection panel showing Miller-Bravais indices, face label toggle, and geometry status display. |
 | Fluorite demo retained | [fluorite.html](../packages/crystal-demo/fluorite.html) remains runnable through the updated viewer API. |
 
 The automated evidence is in [core M3 tests](../packages/crystal-core/src/m3-acceptance.test.ts),
 [data quartz tests](../packages/crystal-data/src/quartz-acceptance.test.ts),
-and [registry tests](../packages/crystal-core/src/registry.test.ts). The viewer and demos
-run in a browser; they use the exported viewer boundary and are not exercised by
-the Node test suite.
+and [registry tests](../packages/crystal-core/src/registry.test.ts). The original M3 Node suite did not exercise the viewer. [M4](m4-acceptance.md#verification) adds viewer integration tests with a stubbed GPU boundary and records separate browser demo smoke checks.
 
 ## Success criterion evidence
 

@@ -1,4 +1,4 @@
-import type { Mineral } from "../types.js";
+import { defineMineral } from "../validate.js";
 
 /**
  * Fluorite (CaF₂) mineral record. Crystallographic data from the Materials
@@ -13,11 +13,11 @@ import type { Mineral } from "../types.js";
  * Common forms: {100} cube, {111} octahedron, {110} rhombic dodecahedron.
  * The three shipped habits cover the principal cubic morphology transitions.
  */
-export const FLUORITE: Mineral = {
+export const FLUORITE = defineMineral({
     id: "fluorite",
     name: "Fluorite",
     formula: "CaF₂",
-    dataRevision: "m2-1",
+    dataRevision: "m4-1",
     crystallography: {
         crystalSystem: "cubic",
         pointGroup: "m-3m",
@@ -40,9 +40,9 @@ export const FLUORITE: Mineral = {
             status: "reported",
         },
         {
-            coverage: ["habits.*.forms.*.development"],
+            coverage: ["habits", "habits.*.forms.*.development", "crystallography.setting"],
             status: "curated",
-            derivation: "Development values are curated visualization parameters chosen to produce recognizable fluorite habits, not measured quantities.",
+            derivation: "Habit form selections, preferred presentation, and development values are curated visualization parameters, not measured quantities. The declared standard setting selects the core registry basis.",
         },
     ],
     habits: [
@@ -80,4 +80,4 @@ export const FLUORITE: Mineral = {
             references: [{ id: "mp-2741" }],
         },
     ],
-};
+});

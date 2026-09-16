@@ -20,9 +20,10 @@ export interface MorphologyInput {
     readonly forms: readonly CrystalFormSetting[];
     readonly morphologyScale?: number;
     readonly crystalSystem?: CrystalSystem;
+    readonly setting?: string;
 }
 
-export function validateMorphology(forms: readonly CrystalFormSetting[], scale: number, crystalSystem?: CrystalSystem): readonly Diagnostic[] {
+export function validateMorphology(forms: readonly CrystalFormSetting[], scale: number, crystalSystem?: CrystalSystem, setting?: string): readonly Diagnostic[] {
     const diagnostics: Diagnostic[] = [];
     const add = (code: string, message: string, path: string, formId?: string) => diagnostics.push({ code, severity: "error", message, path, ...(formId ? { formIds: [formId] } : {}) });
     if (!Number.isFinite(scale) || scale <= 0) add("core.input.invalid-morphology-scale", "Morphology scale must be finite and positive.", "/morphologyScale");
@@ -33,7 +34,7 @@ export function validateMorphology(forms: readonly CrystalFormSetting[], scale: 
         ids.add(form.id);
         if (form.enabled !== undefined && typeof form.enabled !== "boolean") add("core.input.invalid-form", "Enabled must be boolean.", `${path}/enabled`, form.id);
         if (!Number.isFinite(form.development) || form.development < 0 || form.development > 1 || (form.development > 0 && !Number.isFinite(1 / form.development))) add("core.input.invalid-development", "Development must be in [0, 1] and positive values must have finite reciprocal support.", `${path}/development`, form.id);
-        const indices = validateMillerIndices(form.indices, { crystalSystem });
+        const indices = validateMillerIndices(form.indices, { crystalSystem, setting });
         if (!indices.ok) diagnostics.push(...indices.diagnostics.map((d) => ({ ...d, path: `${path}/indices${d.path ?? ""}`, formIds: [form.id] })));
     });
     return diagnostics;
@@ -42,7 +43,7 @@ export function validateMorphology(forms: readonly CrystalFormSetting[], scale: 
 /** Lower-level entry point for a constructed lattice; output is centered on the unit cell. */
 export function generateCrystalGeometry(input: MorphologyInput): GeometryResult {
     const scale = input.morphologyScale ?? 1;
-    const diagnostics = [...validateMorphology(input.forms, scale, input.crystalSystem)];
+    const diagnostics = [...validateMorphology(input.forms, scale, input.crystalSystem, input.setting)];
     const symmetry = validatePointOperations(input.operations, input.lattice);
     diagnostics.push(...symmetry.diagnostics);
     if (diagnostics.some((d) => d.severity === "error")) return { status: "invalid", diagnostics };

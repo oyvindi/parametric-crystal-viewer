@@ -23,6 +23,7 @@ export type MillerIndices =
 
 export interface MillerValidationOptions {
     readonly crystalSystem?: CrystalSystem;
+    readonly setting?: string;
 }
 
 function greatestCommonDivisor(left: number, right: number): number {
@@ -70,6 +71,7 @@ export function validateMillerIndices(
         return invalid("/", "Miller indices must not all be zero.");
     }
     if (indices.notation === "miller-bravais") {
+        if (options.setting?.startsWith("rhombohedral")) return invalid("/notation", "Miller–Bravais indices require hexagonal axes, not a rhombohedral primitive basis.");
         if (options.crystalSystem !== "hexagonal" && options.crystalSystem !== "trigonal") {
             return invalid("/notation", "Miller–Bravais indices require a trigonal or hexagonal crystal system.");
         }

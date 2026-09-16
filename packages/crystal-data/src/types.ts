@@ -44,6 +44,8 @@ export interface MineralCrystallography {
     readonly pointOperations?: readonly PointOperation[];
     readonly spaceOperations?: readonly SpaceOperation[];
     readonly identityOnly?: boolean;
+    /** Original length unit retained when normalization converts to Ångström. */
+    readonly sourceLengthUnit?: "angstrom" | "nanometre";
 }
 
 /** A single crystallographic form with viewer-facing development control. */
@@ -64,7 +66,7 @@ export interface PreferredView {
 export interface HabitPreset {
     readonly id: string;
     readonly name: string;
-    readonly description?: string;
+    readonly description: string;
     readonly forms: readonly CrystalFormSetting[];
     readonly preferredView?: PreferredView;
     readonly references?: readonly Reference[];
@@ -78,9 +80,9 @@ export interface Mineral {
     readonly crystallography: MineralCrystallography;
     readonly habits: readonly HabitPreset[];
     readonly variants?: readonly MineralVariant[];
-    readonly references?: readonly Reference[];
-    readonly provenance?: readonly ProvenanceEntry[];
-    readonly dataRevision?: string;
+    readonly references: readonly Reference[];
+    readonly provenance: readonly ProvenanceEntry[];
+    readonly dataRevision: string;
 }
 
 /** A structural variant of the mineral (e.g. left/right-handed quartz). */

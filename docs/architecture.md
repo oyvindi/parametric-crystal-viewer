@@ -215,6 +215,8 @@ selection highlighting
 
 Add automated tests to the code for all packages. Use published crystallographic examples as test fixtures where applicable.
 
+The viewer's Node integration tests use real Three.js scenes, cameras, and geometry with a stubbed WebGL renderer. They exercise public loading and camera behavior without browser globals. Keep real-browser demo smoke checks as separate evidence; the M4 results are recorded in its [acceptance audit](m4-acceptance.md#verification).
+
 ### Appearance Validation
 
 Use documented quartz, fluorite, and pyrite reference scenes to validate the V1 appearance fields defined in [Mineral Appearance](data-model.md#mineral-appearance). For each property, document the intended visible effect and scene conditions used to assess it. Appearance changes must preserve scientific geometry.

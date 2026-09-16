@@ -1,5 +1,7 @@
 import type { Crystallography, Morphology } from "@crystal/core";
 import type { Mineral, MineralCrystallography, HabitPreset, CrystalFormSetting } from "./types.js";
+import { dataError } from "./diagnostics.js";
+import { defineMineral } from "./validate.js";
 
 export interface MorphologyRequest {
     /** Habit preset to start from; defaults to the first habit. */
@@ -33,12 +35,14 @@ function toCoreCrystallography(source: MineralCrystallography): Crystallography 
 
 /** Resolves a habit preset from a mineral record. */
 export function resolveHabit(mineral: Mineral, habitId?: string): HabitPreset {
-    if (habitId) {
+    if (habitId !== undefined) {
         const habit = mineral.habits.find((h) => h.id === habitId);
-        if (!habit) throw new Error(`Unknown habit "${habitId}" for mineral "${mineral.id}".`);
+        if (!habit) throw dataError("data.request.unknown-habit", `Unknown habit "${habitId}" for mineral "${mineral.id}".`, "/habitId");
         return habit;
     }
-    return mineral.habits[0]!;
+    const habit = mineral.habits[0];
+    if (!habit) throw dataError("data.request.unknown-habit", "The mineral has no morphology habits.", "/habitId");
+    return habit;
 }
 
 function applyOverrides(habit: HabitPreset, request: MorphologyRequest): readonly CrystalFormSetting[] {
@@ -55,9 +59,9 @@ function applyOverrides(habit: HabitPreset, request: MorphologyRequest): readonl
 
 /** Resolves the crystallography for the selected variant, or the mineral's primary crystallography. */
 export function resolveCrystallography(mineral: Mineral, variantId?: string): MineralCrystallography {
-    if (variantId) {
+    if (variantId !== undefined) {
         const variant = mineral.variants?.find((v) => v.id === variantId);
-        if (!variant) throw new Error(`Unknown variant "${variantId}" for mineral "${mineral.id}".`);
+        if (!variant) throw dataError("data.request.unknown-variant", `Unknown variant "${variantId}" for mineral "${mineral.id}".`, "/variantId");
         return variant.crystallography;
     }
     return mineral.crystallography;
@@ -65,8 +69,14 @@ export function resolveCrystallography(mineral: Mineral, variantId?: string): Mi
 
 /** Converts a mineral record and morphology request into core generator inputs. */
 export function createCrystalInput(mineral: Mineral, request: MorphologyRequest = {}): CrystalInput {
+    mineral = defineMineral(mineral);
     const habit = resolveHabit(mineral, request.habitId);
     const crystallography = resolveCrystallography(mineral, request.variantId);
+    for (const key of ["formDevelopment", "formEnabled"] as const) {
+        for (const id of Object.keys(request[key] ?? {}).sort()) {
+            if (!habit.forms.some((form) => form.id === id)) throw dataError("data.request.unknown-form", `Unknown form "${id}".`, `/${key}/${id.replaceAll("~", "~0").replaceAll("/", "~1")}`);
+        }
+    }
     const forms = applyOverrides(habit, request);
     return {
         crystallography: toCoreCrystallography(crystallography),

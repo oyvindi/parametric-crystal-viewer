@@ -6,7 +6,7 @@ Mineral and morphology records, atomic structure, imports, phases, and provenanc
 
 ## Core Data Model
 
-All interfaces in this document are illustrative pseudocode. They describe what data the system must handle, not final type definitions or package ownership. Interfaces will be designed during implementation.
+Interfaces in this document are illustrative pseudocode describing required behavior. The implemented M4 mineral, morphology, reference, and provenance types live in [crystal-data](../packages/crystal-data/src/types.ts); its [package documentation](../packages/crystal-data/README.md) describes validation and loading. Structural and later-scope examples remain illustrative until their implementation milestones.
 
 ### Mineral
 

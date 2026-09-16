@@ -2,12 +2,16 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<title>Quartz — M3 Demo</title>
+<title>Minerals — M5 Demo</title>
 <style>
   body { margin: 0; font-family: system-ui, sans-serif; background: #2a2a2a; color: #ddd; display: flex; height: 100vh; }
   #panel { width: 340px; padding: 16px; overflow-y: auto; background: #333; border-right: 1px solid #555; }
   #panel h1 { font-size: 1.2em; margin: 0 0 4px; }
-  #panel .formula { color: #999; font-size: 0.85em; margin-bottom: 12px; }
+  #panel .formula { color: #999; font-size: 0.85em; margin-bottom: 8px; }
+  #panel .crystal-info { color: #bbb; font-size: 0.82em; margin-bottom: 12px; line-height: 1.5; }
+  #panel .crystal-info .row { display: flex; justify-content: space-between; }
+  #panel .crystal-info .row .k { color: #888; }
+  #panel .crystal-info .row .v { color: #9cf; }
   #panel h2 { font-size: 0.95em; margin: 16px 0 6px; color: #ccc; border-bottom: 1px solid #555; padding-bottom: 2px; }
   #panel label { display: block; margin-bottom: 8px; font-size: 0.85em; }
   #panel select { width: 100%; margin-bottom: 8px; }
@@ -42,8 +46,12 @@
 </head>
 <body>
 <div id="panel">
-  <h1 id="mineral-name">Quartz</h1>
-  <div class="formula" id="mineral-formula">SiO₂ — Trigonal, Point Group 32</div>
+  <h1 id="mineral-name">Loading…</h1>
+  <div class="formula" id="mineral-formula"></div>
+  <div class="crystal-info" id="crystal-info"></div>
+
+  <h2>Mineral</h2>
+  <select id="mineral-select"></select>
 
   <h2>Variant</h2>
   <select id="variant-select"></select>
@@ -75,14 +83,58 @@
 
 <script type="module">
 import { CrystalViewer } from "@crystal/viewer";
+import { listMinerals, getMineral } from "@crystal/data";
+
+const capitalize = (s) => s ? s.charAt(0).toUpperCase() + s.slice(1) : s;
 
 const canvas = document.getElementById("canvas");
 const viewer = new CrystalViewer(canvas);
-viewer.loadMineral("quartz");
 viewer.start();
 document.getElementById("reset-camera").addEventListener("click", () => viewer.resetCamera());
 
-// Variant selector
+// --- Mineral catalog ---
+const mineralSelect = document.getElementById("mineral-select");
+function populateMinerals() {
+  const ids = listMinerals();
+  mineralSelect.innerHTML = "";
+  for (const id of ids) {
+    const m = getMineral(id);
+    const opt = document.createElement("option");
+    opt.value = id;
+    opt.textContent = m.name;
+    mineralSelect.appendChild(opt);
+  }
+}
+populateMinerals();
+
+function loadMineral(id) {
+  viewer.loadMineral(id);
+  updateMineralInfo(id);
+  populateVariants();
+  populateHabits();
+  populateForms();
+  updateStatus();
+  clearFaceInfo();
+}
+
+function updateMineralInfo(id) {
+  const m = getMineral(id);
+  document.getElementById("mineral-name").textContent = m.name;
+  document.getElementById("mineral-formula").textContent = `${m.formula}`;
+  const c = m.crystallography;
+  const rows = [
+    ["Crystal system", capitalize(c.crystalSystem)],
+    ["Point group", c.pointGroup ?? "—"],
+    ["Setting", c.setting ?? "—"],
+    ["Space group", c.spaceGroup ?? "—"],
+  ];
+  document.getElementById("crystal-info").innerHTML = rows.map(([k, v]) =>
+    `<div class="row"><span class="k">${k}</span><span class="v">${v}</span></div>`).join("");
+}
+
+mineralSelect.addEventListener("change", () => loadMineral(mineralSelect.value));
+
+// --- Variant selector ---
 const variantSelect = document.getElementById("variant-select");
 function populateVariants() {
   const variants = viewer.getVariants();
@@ -108,7 +160,7 @@ variantSelect.addEventListener("change", () => {
   clearFaceInfo();
 });
 
-// Habit selector
+// --- Habit selector ---
 const habitSelect = document.getElementById("habit-select");
 function populateHabits() {
   const habits = viewer.getHabits();
@@ -129,7 +181,7 @@ habitSelect.addEventListener("change", () => {
   clearFaceInfo();
 });
 
-// Form sliders
+// --- Form sliders ---
 const formsContainer = document.getElementById("forms");
 function populateForms() {
   formsContainer.innerHTML = "";
@@ -160,7 +212,7 @@ function populateForms() {
   }
 }
 
-// Geometry status display
+// --- Geometry status display ---
 const statusEl = document.getElementById("status");
 function updateStatus() {
   const s = viewer.getGeometryStatus();
@@ -175,13 +227,13 @@ function updateStatus() {
   }
 }
 
-// Face labels toggle
+// --- Face labels toggle ---
 const labelsToggle = document.getElementById("labels-toggle");
 labelsToggle.addEventListener("change", () => {
   viewer.showFaceLabels(labelsToggle.checked);
 });
 
-// Face inspection
+// --- Face inspection ---
 const faceInfoEl = document.getElementById("face-info");
 const faceInfoContent = document.getElementById("face-info-content");
 function clearFaceInfo() {
@@ -223,13 +275,11 @@ viewer.addEventListener("face-selected", (e) => showFaceInfo(e.detail));
 viewer.addEventListener("geometry-changed", () => updateStatus());
 viewer.addEventListener("geometry-invalid", () => updateStatus());
 
-// Initialize
-populateVariants();
-populateHabits();
-populateForms();
-updateStatus();
+// --- Initialize with the first mineral ---
+mineralSelect.value = mineralSelect.options[0].value;
+loadMineral(mineralSelect.value);
 
-// Resize handling
+// --- Resize handling ---
 function resize() {
   const container = document.getElementById("canvas-container");
   viewer.resize(container.clientWidth, container.clientHeight);
