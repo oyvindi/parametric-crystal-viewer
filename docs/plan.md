@@ -43,6 +43,8 @@ This establishes whether the architecture can correctly generate recognizable cr
 
 ### M1 — Geometry Prototype
 
+**Status: complete.** See the [M1 acceptance audit](m1-acceptance.md) for bootstrap, delivery, tests, acquisition integrity, and benchmark evidence.
+
 Begin M1 with a repository bootstrap gate. Before scientific feature implementation, establish and document:
 
 * the package manager and workspace configuration;

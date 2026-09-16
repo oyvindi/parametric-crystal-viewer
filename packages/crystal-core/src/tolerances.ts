@@ -9,5 +9,8 @@ export const TOLERANCES = Object.freeze({
     volume: 1e-12,
     cellVolume: 1e-12,
 });
-export const relativeTolerance = (epsilon: number, ...values: number[]): number =>
-    epsilon * Math.max(1, ...values.map(Math.abs));
+export function relativeTolerance(epsilon: number, ...values: number[]): number {
+    let magnitude = 1;
+    for (const value of values) magnitude = Math.max(magnitude, Math.abs(value));
+    return epsilon * magnitude;
+}

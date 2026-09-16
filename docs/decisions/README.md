@@ -17,3 +17,5 @@ Decision records explain why a choice was made. Update the owning contract when 
 
 * [0001 — Scientific Core Dependency Boundary](0001-scientific-core-dependency-boundary.md) — accepted.
 * [0002 — Direct Half-Space Intersection and Polygon Output](0002-direct-half-space-intersection.md) — accepted.
+
+* [M1 Intersection Performance Envelope](0003-m1-intersection-performance.md)

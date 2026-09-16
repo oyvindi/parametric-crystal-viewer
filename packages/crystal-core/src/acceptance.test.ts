@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { createLattice, generateCrystal, intersectHalfSpaces, getPointOperationRegistryEntry, validatePointOperations, validateSpaceOperations, expandEquivalentPlaneDirections, removeCollinearVertices, TOLERANCES as T, type HalfSpace, type Vec3, type Mat3, type GeometryResult, type Crystallography } from "./index.js";
+import { applySpaceOperation, createLattice, generateCrystal, intersectHalfSpaces, getPointOperationRegistryEntry, validatePointOperations, validateSpaceOperations, expandEquivalentPlaneDirections, removeCollinearVertices, TOLERANCES as T, type HalfSpace, type Vec3, type Mat3, type GeometryResult, type Crystallography } from "./index.js";
 
 const cell = { a: 4, b: 4, c: 4, alpha: 90, beta: 90, gamma: 90 };
 const crystal: Crystallography = { crystalSystem: "cubic", unitCell: cell, pointGroup: "m-3m", setting: "cubic-standard" };
@@ -179,7 +179,7 @@ describe("M1 lattice and affine symmetry acceptance", () => {
         const lattice = createLattice(cell); if (!lattice.ok) throw Error("Invalid fixture");
         const space = [{ id: "e", linear: identity, translation: [0, 0, 0] as Vec3 }, { id: "t", linear: identity, translation: [0.5, 0, 0] as Vec3 }];
         expect(validateSpaceOperations(space, lattice.value).ok).toBe(true);
-        expect(space[1]!.translation[0] + 0.1).toBe(0.6);
+        expect(applySpaceOperation(space[1]!, [0.1, 0.2, 0.3])).toEqual({ ok: true, value: [0.6, 0.2, 0.3], diagnostics: [] });
         const forms = normals.map((n, i) => ({ id: `f${i}`, indices: { notation: "miller" as const, h: n[0], k: n[1], l: n[2] }, development: 1 }));
         const explicit: Crystallography = { crystalSystem: "cubic", unitCell: cell, spaceOperations: space };
         expect(generateCrystal(explicit, { forms })).toEqual(generateCrystal({ ...explicit, spaceOperations: undefined, pointOperations: [{ id: "e", linear: identity }] }, { forms }));
@@ -187,4 +187,15 @@ describe("M1 lattice and affine symmetry acceptance", () => {
         expect(validateSpaceOperations([space[0]!, { ...space[1]!, translation: [0.3, 0, 0] }], lattice.value).ok).toBe(false);
         expect(validateSpaceOperations([space[0]!, { ...space[1]!, translation: [Infinity, 0, 0] }], lattice.value).ok).toBe(false);
     });
+});
+
+it("reports uncertainty near the matrix rank threshold instead of inventing a bounded solid", () => {
+    const normals: Vec3[] = [[1, 0, 0], [0, 1, 0], [-1, -1, T.matrix / 10]];
+    const planes = normals.flatMap((normal, i): HalfSpace[] => [{ id: `a${i}`, normal, distance: 1 }, { id: `b${i}`, normal: normal.map((x) => -x) as unknown as Vec3, distance: 1 }]);
+    expect(codes(intersectHalfSpaces(planes))).toEqual(["core.geometry.numerical-failure"]);
+});
+it("keeps distinct vertices above the merge tolerance on a shallow corner cut", () => {
+    const geometry = valid(intersectHalfSpaces([...box(), { id: "cut", normal: [1, 1, 1], distance: 3 - T.vertex * 100 }]));
+    expect(geometry.faces).toHaveLength(7);
+    expect(geometry.vertices).toHaveLength(30);
 });

@@ -1,4 +1,5 @@
 import type { Diagnostic, Result } from "./diagnostics.js";
+import { TOLERANCES } from "./tolerances.js";
 
 export type Vec3 = readonly [number, number, number];
 
@@ -25,7 +26,7 @@ export interface Lattice {
 }
 
 const DEGREES_TO_RADIANS = Math.PI / 180;
-const MINIMUM_RELATIVE_VOLUME = 1e-12;
+const MINIMUM_RELATIVE_VOLUME = TOLERANCES.cellVolume;
 
 function invalidCell(path: string, message: string): Result<never> {
     const diagnostic: Diagnostic = {

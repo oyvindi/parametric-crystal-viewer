@@ -71,12 +71,13 @@ export function validatePointOperations(operations: readonly PointOperation[], l
     if (!operations.some((operation) => equal(operation.linear, IDENTITY))) {
         diagnostics.push(...diagnostic("core.symmetry.missing-identity", "Point-operation set must contain identity.").diagnostics);
     }
+    const matrixKeys = new Set(operations.map((op) => op.linear.flat().join(",")));
     for (const operation of operations) {
         const hasInverse = operations.some((candidate) => equal(multiply(operation.linear, candidate.linear), IDENTITY));
         if (!hasInverse) diagnostics.push(...diagnostic("core.symmetry.missing-inverse", "Point-operation set must contain every inverse.", [operation.id]).diagnostics);
         for (const candidate of operations) {
             const composition = multiply(operation.linear, candidate.linear);
-            if (!operations.some((member) => equal(member.linear, composition))) {
+            if (!matrixKeys.has(composition.flat().join(","))) {
                 diagnostics.push(...diagnostic("core.symmetry.not-closed", "Point-operation set must be closed under composition.", [operation.id, candidate.id]).diagnostics);
             }
         }
@@ -137,3 +138,11 @@ export function derivePointOperations(operations: readonly SpaceOperation[]): re
 }
 
 export const equivalentPointOperationSets = sameOperationSet;
+
+/** Applies the active affine action in fractional coordinates without wrapping. */
+export function applySpaceOperation(operation: SpaceOperation, position: Vec3): Result<Vec3> {
+    if (!position.every(Number.isFinite) || !operation.translation.every(Number.isFinite) || !isFiniteMatrix(operation.linear)) return diagnostic("core.symmetry.invalid-operation", "Affine action requires finite position, matrix and translation values.", [operation.id]);
+    const value = operation.linear.map((row, i) => row.reduce((sum, x, j) => sum + x * position[j]!, operation.translation[i]!)) as unknown as Vec3;
+    if (!value.every(Number.isFinite)) return diagnostic("core.symmetry.invalid-operation", "Affine action exceeds the finite numerical range.", [operation.id]);
+    return { ok: true, value, diagnostics: [] };
+}

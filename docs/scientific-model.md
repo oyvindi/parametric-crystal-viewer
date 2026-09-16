@@ -456,3 +456,47 @@ Failures must produce the diagnostic result described in [Geometry Output](#geom
 Follow the [numeric policy](#numeric-policy) for intersection and geometry-validation tolerances. Within the supported numerical range, changing only `morphologyScale` must not change whether the same shape is classified as valid.
 
 Distinguish symmetry-equivalent input planes from surviving polygon faces. A redundant plane may produce no face without invalidating the crystal; validation must allow this.
+
+## Implemented M1 Numerical Envelope
+
+Exact constants are exported as `TOLERANCES` from
+[core tolerances](../packages/crystal-core/src/tolerances.ts). The comparison
+policies are:
+
+| Operation | Policy |
+|---|---|
+| Matrix triple solve | Skip normalized-normal determinants at or below `matrix` (`1e-12`). |
+| Symmetry | Integer lattice matrices; group composition is exact. Metric comparisons use `symmetry` (`1e-10`) times the largest absolute metric entry. Affine translations compare modulo integers with that dimensionless tolerance. |
+| Plane direction | Euclidean difference of unit normals at or below `normal` (`1e-10`); opposite directions remain distinct. |
+| Plane support/coincidence | `plane` (`1e-9`) times the maximum of one and support magnitude; vertex-plane incidence also accounts for normalized vertex-coordinate magnitude. |
+| Vertex merging | Euclidean separation at or below `vertex` (`1e-8`) times the maximum of one and the compared coordinate magnitudes. |
+| Collinearity | Cross-product magnitude at or below `collinear` (`1e-10`) times the adjacent edge-length product, with edges pointing in the same direction. |
+| Usable volume | Signed polyhedral volume must exceed `volume` (`1e-12`) times the maximum of one and the cubed largest extent. |
+| Cell volume | Positive cell volume must exceed `cellVolume` (`1e-12`) times the cube of the largest cell length. |
+
+The floor of one above is in normalized morphology units. Direction reduction
+orders constraints by support and stable ID before grouping; all ties are
+compared with the actual minimum, preventing tolerance chains from making
+attribution input-order dependent. Polygon loops begin at their smallest
+vertex index. Vertex and face indices are deterministic for an unchanged set,
+not persistent identities across shape edits.
+
+M1 tests morphology scales from `1e-6` through `1e6` Å on ordinary cells, and
+metric validation on cell lengths from `1e-4` through `1e4` Å. These are tested
+ranges, not arbitrary input clamps. Other finite positive values are attempted;
+overflow, unresolved boundedness, failed closure, or unrepresentable placement
+at the unit-cell center produces numerical-failure diagnostics. Strongly
+anisotropic intersections can fail the relative usable-volume criterion.
+
+The low-level half-space primitive accepts non-negative support distances to
+allow tests of lower-dimensional intersections. Public form development always
+produces strictly positive support. Missing volume after boundedness is
+established is a degeneracy; arithmetic or topology that cannot be resolved
+reliably is a numerical failure. Recession candidates include both signs of
+pairwise normal cross products, normals, Cartesian axes, and normal-axis cross
+products for rank-deficient sets. Dot products within roundoff of zero use a
+`16 * Number.EPSILON` floor; positive margins below the matrix threshold report
+uncertainty rather than asserting reliable boundedness.
+
+See the [M1 acceptance evidence](m1-acceptance.md) for tests and measured
+performance, including the documented stress-size limitation.

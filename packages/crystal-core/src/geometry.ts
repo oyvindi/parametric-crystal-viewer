@@ -80,7 +80,11 @@ function recession(constraints: readonly HalfSpace[]): "bounded" | "unbounded" |
         const ray = normalize(candidate);
         if (!ray) continue;
         for (const sign of [-1, 1]) {
-            const maximum = Math.max(...constraints.map((p) => sign * dot(p.normal, ray)));
+            let maximum = -Infinity;
+            for (const plane of constraints) {
+                maximum = Math.max(maximum, sign * dot(plane.normal, ray));
+                if (maximum > T.matrix) break;
+            }
             if (maximum <= 16 * Number.EPSILON) return "unbounded";
             if (maximum <= T.matrix) uncertain = true;
         }
@@ -154,11 +158,11 @@ export function intersectHalfSpaces(halfSpaces: readonly HalfSpace[]): GeometryR
         const point = intersection(constraints[first]!, constraints[second]!, constraints[third]!);
         if (!point) continue;
         if (!point.every(Number.isFinite)) { arithmeticFailure = true; continue; }
-        if (constraints.every((plane) => dot(plane.normal, point) <= plane.distance + relativeTolerance(T.plane, plane.distance, ...point))
+        if (constraints.every((plane) => dot(plane.normal, point) <= plane.distance + T.plane * Math.max(1, Math.abs(plane.distance), Math.abs(point[0]), Math.abs(point[1]), Math.abs(point[2])))
             && !vertices.some((vertex) => Math.hypot(...subtract(vertex, point)) <= relativeTolerance(T.vertex, ...vertex, ...point))) vertices.push(point);
     }
     if (arithmeticFailure) return invalid("core.geometry.numerical-failure", "Triple-plane arithmetic exceeded the finite numerical range.");
-    if (vertices.length < 4) return invalid(constraints.some((p) => p.distance === 0) ? "core.geometry.degenerate" : "core.geometry.numerical-failure", "Bounded intersection could not resolve four distinct vertices.");
+    if (vertices.length < 4) return invalid("core.geometry.degenerate", "Bounded intersection has fewer than four distinct vertices under the vertex tolerance.");
     vertices.sort((left, right) => left[0] - right[0] || left[1] - right[1] || left[2] - right[2]);
     const faces: CrystalFace[] = [];
     for (const plane of constraints) {
