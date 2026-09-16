@@ -1,0 +1,23 @@
+{
+  "name": "parametric-mineral-crystal-viewer",
+  "private": true,
+  "version": "0.0.0",
+  "description": "Framework-agnostic procedural mineral crystal viewer",
+  "packageManager": "npm@11.19.0",
+  "workspaces": [
+    "packages/*"
+  ],
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "build": "bash -lc 'node ./node_modules/typescript/bin/tsc --build'",
+    "clean": "bash -lc 'node ./node_modules/typescript/bin/tsc --build --clean'",
+    "test": "bash -lc 'node ./node_modules/typescript/bin/tsc --build && node --test packages/crystal-core/dist/index.test.js'",
+    "check": "bash -lc 'node ./node_modules/typescript/bin/tsc --build && node --test packages/crystal-core/dist/index.test.js'"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "typescript": "^5.9.0"
+  }
+}

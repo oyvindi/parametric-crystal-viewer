@@ -134,6 +134,16 @@ The rationale is recorded in [Scientific Core Dependency Boundary](decisions/000
 
 Select and document the monorepo tooling, package manager, build configuration, module format, runtime targets, and test runner during the [M1 repository bootstrap](plan.md#m1--geometry-prototype), before scientific feature implementation begins. These choices remain implementation decisions until that gate, but must not remain unresolved after it.
 
+### Repository Tooling
+
+M1 uses npm workspaces (npm 11.19.0) with the `packages/*` workspace layout. The root `package.json` is the workspace manifest and records the required Node.js version: Node 22 or later. The repository currently uses Node 26.8.1.
+
+Packages compile as native ECMAScript modules using TypeScript's `NodeNext` module and resolution modes, targeting ECMAScript 2022. The root TypeScript build uses project references to compile packages in dependency order. Each package emits its own declaration files and JavaScript under `dist/`; those artifacts are not committed.
+
+The package manifests encode the allowed project dependency graph in [Package Dependencies and Ownership](#package-dependencies-and-ownership), using npm-compatible local `file:` references. No package may add another `@crystal/*` dependency unless that graph permits it.
+
+Run `npm install` after cloning, `npm run build` to compile all packages, and `npm test` to build then run the non-browser `crystal-core` tests with Node's built-in test runner. `npm run check` runs the complete initial verification sequence. Until the development shell's `npm` launcher is repaired, invoke the installed npm CLI through Node directly: `node /home/oyvind/bin/node/lib/node_modules/npm/bin/npm-cli.js <command>`. This development shell requires Bash to launch Node: `/bin/sh` cannot execute the configured Node binary, so the repository scripts use `bash -lc` explicitly.
+
 ---
 
 ## Diagnostics

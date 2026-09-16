@@ -28,3 +28,7 @@ Start with [docs/spec.md](docs/spec.md), the documentation entry point and autho
 ## Implementation boundaries
 
 Follow [architecture](docs/architecture.md): keep crystallographic calculations and generated geometry independent of Three.js and browser APIs. Keep mineral data, scientific geometry, rendering, and application controls separate. The viewer is framework-agnostic; framework-specific wrappers are left to consumers.
+
+## Working-tree hygiene
+
+Keep generated, machine-local, and secret-bearing artifacts out of version control. Before adding a tool, build output, cache, local environment file, or generated artifact, update `.gitignore` when it should not be committed. Do not ignore source data, scientific fixtures, or reproducible generated registry artifacts that the project contract requires to be version-controlled. Check `git status` before staging so ignored artifacts are not added with force.

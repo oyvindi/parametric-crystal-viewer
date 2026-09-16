@@ -1,0 +1,12 @@
+{
+  "name": "@crystal/data",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "exports": {
+    ".": "./dist/index.js"
+  },
+  "dependencies": {
+    "@crystal/core": "file:../crystal-core"
+  }
+}

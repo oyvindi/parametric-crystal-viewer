@@ -1,0 +1,10 @@
+{
+  "files": [],
+  "references": [
+    { "path": "./packages/crystal-core" },
+    { "path": "./packages/crystal-data" },
+    { "path": "./packages/crystal-three" },
+    { "path": "./packages/crystal-viewer" },
+    { "path": "./packages/crystal-demo" }
+  ]
+}
