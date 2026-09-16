@@ -1,4 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
+import { readFileSync } from "node:fs";
 import { Group, InstancedMesh, LineSegments, PerspectiveCamera, Scene } from "three";
 import { CrystalViewer } from "./index.js";
 
@@ -69,9 +70,24 @@ Na 0.0 0.0 0.0
 Cl 0.5 0.5 0.5
 `;
 
+// Calcite in hexagonal axes (COD 9000095): a=4.99, c=17.06, gamma=120, R-3c.
+const CALCITE_HEX_CIF = readFileSync(new URL("../../crystal-core/test-fixtures/m5/9000095.cif", import.meta.url), "utf8");
+// Calcite in rhombohedral axes: a_r=6.3753, alpha=46.08, complete-cell, trigonal.
+const CALCITE_RHOM_CIF = readFileSync(new URL("../../crystal-data/test-fixtures/m6/calcite-rhombohedral.cif", import.meta.url), "utf8");
+
 function groupOf(viewer: CrystalViewer): Group {
     const [scene] = render.mock.lastCall!;
     return scene.children.find((c) => c instanceof Group) as Group;
+}
+
+/** Extracts the 12 edge lengths from a unit-cell wireframe LineSegments. */
+function wireframeEdges(ls: LineSegments): number[] {
+    const pos = ls.geometry.getAttribute("position");
+    const edges: number[] = [];
+    for (let i = 0; i < pos.count; i += 2) {
+        edges.push(Math.hypot(pos.getX(i + 1) - pos.getX(i), pos.getY(i + 1) - pos.getY(i), pos.getZ(i + 1) - pos.getZ(i)));
+    }
+    return edges;
 }
 
 describe("M6 viewer atomic structure view", () => {
@@ -175,17 +191,43 @@ describe("M6 viewer atomic structure view", () => {
         expect(viewer.getStructureInfo()).toBeNull();
     });
 
-    it("preserves the declared setting for the paired trigonal (hexagonal) fixture", () => {
+    it("displays the unit cell appropriate to each declared trigonal setting", () => {
+        // Hexagonal calcite: a≈4.99, c≈17.06, gamma=120, setting hexagonal-standard.
         const viewer = new CrystalViewer(canvas());
         viewers.push(viewer);
-        // Calcite in hexagonal axes (COD 9000095) declares the hexagonal setting.
-        viewer.loadCif(P1_CIF); // load any structure first
-        const info = viewer.getStructureInfo()!;
-        // The setting from the CIF is reflected in the structural definition.
-        expect(info.setting).toBe("triclinic-standard");
-        // Switching to morphology and back preserves the atomic view's crystal-local frame.
-        viewer.setViewMode("morphology");
-        viewer.setViewMode("atomic");
-        expect(viewer.getViewMode()).toBe("atomic");
+        viewer.loadCif(CALCITE_HEX_CIF);
+        const hexInfo = viewer.getStructureInfo()!;
+        expect(hexInfo.crystalSystem).toBe("trigonal");
+        expect(hexInfo.setting).toBe("hexagonal-standard");
+        // Enable the unit-cell overlay in the atomic view and extract the wireframe edges.
+        viewer.setShowUnitCell(true);
+        const hexAtomic = groupOf(viewer).children.find((c) => c instanceof Group) as Group;
+        const hexWire = hexAtomic.children.find((c) => c instanceof LineSegments) as LineSegments;
+        expect(hexWire).toBeDefined();
+        // The wireframe has 12 edges; collect their lengths.
+        const hexEdges = wireframeEdges(hexWire);
+        // The 4 c-axis edges (length ≈ 17.06) are the longest; the 8 a/b edges (≈ 4.99) are shorter.
+        const hexSorted = [...hexEdges].sort((a, b) => a - b);
+        const hexShort = hexSorted[0]!;
+        const hexLong = hexSorted[hexSorted.length - 1]!;
+        expect(hexLong / hexShort).toBeCloseTo(17.0615 / 4.99, 1);
+
+        // Rhombohedral calcite: a=b=c≈6.375, all angles ≈ 46.08, trigonal (no registry setting).
+        const viewer2 = new CrystalViewer(canvas());
+        viewers.push(viewer2);
+        viewer2.loadCif(CALCITE_RHOM_CIF);
+        const rhomInfo = viewer2.getStructureInfo()!;
+        expect(rhomInfo.crystalSystem).toBe("trigonal");
+        viewer2.setShowUnitCell(true);
+        const rhomAtomic = groupOf(viewer2).children.find((c) => c instanceof Group) as Group;
+        const rhomWire = rhomAtomic.children.find((c) => c instanceof LineSegments) as LineSegments;
+        expect(rhomWire).toBeDefined();
+        const rhomEdges = wireframeEdges(rhomWire);
+        // All 12 edges are equal in the rhombohedral cell (a_r ≈ 6.375).
+        const rhomSorted = [...rhomEdges].sort((a, b) => a - b);
+        for (const len of rhomSorted) expect(len).toBeCloseTo(rhomSorted[0]!, 1);
+        // The rhombohedral edge is longer than the hexagonal short edge but shorter than the hexagonal long edge.
+        expect(rhomSorted[0]!).toBeGreaterThan(hexShort);
+        expect(rhomSorted[0]!).toBeLessThan(hexLong);
     });
 });

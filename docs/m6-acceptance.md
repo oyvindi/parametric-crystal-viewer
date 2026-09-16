@@ -56,8 +56,9 @@ orchestration. No package gained a disallowed dependency.
   switches to atomic view with structure info and import diagnostics; instanced atoms
   render and visibility toggles between modes; lattice repetition changes atom count;
   bond and unit-cell toggles; atoms-only view with no bonds and derived bonds when
-  present; invalid CIF emits a failure event with diagnostics; declared setting
-  preserved across view-mode switches.
+  present; invalid CIF emits a failure event with diagnostics; paired trigonal-setting
+  fixture displays the unit cell appropriate to each declared setting (hexagonal
+  a≠c vs rhombohedral a=b=c, verified through wireframe edge lengths).
 
 ## Rejection fixtures
 
@@ -92,5 +93,11 @@ node scripts/check-docs.mjs
 ```
 
 Verification passed: 256 tests across 16 test files, the TypeScript workspace
-build, documentation links/anchors/code fences, and `git diff --check`. M7
-(viewer API stabilization) is next.
+build, documentation links/anchors/code fences, and `git diff --check`.
+
+On 2026-09-16, headless Chrome (Google Chrome, WebGL2/SwiftShader) loaded the
+[structure demo](../packages/crystal-demo/structure.html) successfully. The page
+rendered all controls (view-mode, unit-cell, bonds, axes, lattice-repetition), the
+minerals dropdown was populated by `listMinerals()`, the sample CIF fixtures were
+fetchable, and no JavaScript console errors occurred. This is a rendering smoke
+check, not the M8 appearance review. M7 (viewer API stabilization) is next.

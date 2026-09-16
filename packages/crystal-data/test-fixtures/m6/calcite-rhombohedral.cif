@@ -1,0 +1,18 @@
+data_calcite_rhom
+_cell_length_a               6.3753
+_cell_length_b               6.3753
+_cell_length_c               6.3753
+_cell_angle_alpha            46.08
+_cell_angle_beta             46.08
+_cell_angle_gamma            46.08
+_space_group_crystal_system  trigonal
+loop_
+_atom_site_label
+_atom_site_type_symbol
+_atom_site_fract_x
+_atom_site_fract_y
+_atom_site_fract_z
+_atom_site_symmetry_multiplicity
+Ca1 Ca 0.0 0.0 0.0 1
+C1  C  0.0 0.0 0.5 1
+O1  O  0.3 0.3 0.25 1
