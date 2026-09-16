@@ -173,4 +173,15 @@ it("generates cubic morphology from a developed {100} form", () => {
         expect(result.geometry.faces.every((face) => face.contributors[0]?.formId === "cube")).toBe(true);
     }
 });
+
+it("reports typed morphology input diagnostics", () => {
+    const lattice = createLattice({ a: 4, b: 4, c: 4, alpha: 90, beta: 90, gamma: 90 });
+    if (!lattice.ok) throw new Error("Expected valid cubic lattice");
+    const operations = resolvePointOperations({ identityOnly: true }, lattice.value);
+    if (!operations.ok) throw new Error("Expected identity symmetry");
+    const base = { lattice: lattice.value, operations: operations.value, forms: [{ id: "form", indices: { notation: "miller" as const, h: 1, k: 0, l: 0 }, development: 0 }] };
+    expect(generateCrystalGeometry(base)).toMatchObject({ status: "invalid", diagnostics: [{ code: "core.geometry.no-active-forms" }] });
+    expect(generateCrystalGeometry({ ...base, forms: [{ ...base.forms[0]!, development: -1 }] })).toMatchObject({ status: "invalid", diagnostics: [{ code: "core.input.invalid-development" }] });
+    expect(generateCrystalGeometry({ ...base, morphologyScale: 0 })).toMatchObject({ status: "invalid", diagnostics: [{ code: "core.input.invalid-morphology-scale" }] });
+});
 });
