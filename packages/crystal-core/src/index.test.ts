@@ -39,6 +39,12 @@ it("preserves metric and reciprocal identities for a triclinic cell", () => {
     for (let column = 0; column < 3; column += 1) for (let row = 0; row < 3; row += 1) expect(product(column, row)).toBeCloseTo(column === row ? 1 : 0, 12);
 });
 
+it("normalizes supported nanometre cell lengths to Ångström", () => {
+    const angstrom = createLattice({ a: 4, b: 4, c: 4, alpha: 90, beta: 90, gamma: 90 });
+    const nanometre = createLattice({ a: 0.4, b: 0.4, c: 0.4, alpha: 90, beta: 90, gamma: 90, lengthUnit: "nanometre" });
+    expect(nanometre).toEqual(angstrom);
+});
+
 it("rejects impossible and degenerate cells with a diagnostic", () => {
     const result = createLattice({ a: 1, b: 1, c: 1, alpha: 1, beta: 1, gamma: 179 });
     expect(result.ok).toBe(false);

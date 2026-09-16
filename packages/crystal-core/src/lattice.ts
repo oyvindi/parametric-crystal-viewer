@@ -14,6 +14,7 @@ export interface UnitCell {
     readonly alpha: number;
     readonly beta: number;
     readonly gamma: number;
+    readonly lengthUnit?: "angstrom" | "nanometre";
 }
 
 export interface Lattice {
@@ -63,6 +64,10 @@ function inverse(matrix: Mat3): Mat3 | undefined {
 
 /** Constructs direct and reciprocal bases from a cell expressed in Å and degrees. */
 export function createLattice(cell: UnitCell): Result<Lattice> {
+    const lengthFactor = cell.lengthUnit === "nanometre" ? 10 : 1;
+    if (cell.lengthUnit !== undefined && cell.lengthUnit !== "angstrom" && cell.lengthUnit !== "nanometre") return invalidCell("/lengthUnit", "Unsupported unit-cell length unit.");
+    const normalized = { ...cell, a: cell.a * lengthFactor, b: cell.b * lengthFactor, c: cell.c * lengthFactor };
+    cell = normalized;
     const lengths: ReadonlyArray<readonly [keyof UnitCell, number]> = [
         ["a", cell.a],
         ["b", cell.b],
