@@ -27,6 +27,14 @@ This ensures the resulting crystal remains crystallographically meaningful.
 
 ---
 
+## Appearance Controls
+
+Appearance controls operate on the V1 [mineral appearance](data-model.md#mineral-appearance) fields and never modify scientific geometry. A loaded mineral exposes its curated appearance presets; the host selects one and may override individual fields. Selecting a preset clears prior overrides, mirroring the morphology habit/forms pattern. The effective appearance (preset merged with overrides) is applied to the rendered material in place, without regenerating geometry.
+
+The API exposes `getAppearances`, `getAppearanceId`, `getAppearance`, `setAppearance`, and `setAppearanceField`. State serialization covers the selected appearance and user overrides under [Persistent State Coverage](#persistent-state-coverage). Changes emit `appearance-changed` so host controls stay synchronized, including after programmatic changes and state restoration.
+
+---
+
 ## Viewer API
 
 ### Web Component
@@ -143,6 +151,7 @@ structure-load-failed
 habit-changed
 variant-changed
 form-changed
+appearance-changed
 geometry-changed
 geometry-invalid
 view-mode-changed

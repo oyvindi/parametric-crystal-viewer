@@ -5,7 +5,7 @@ export const PYRITE = defineMineral({
     "id": "pyrite",
     "name": "Pyrite",
     "formula": "FeS₂",
-    "dataRevision": "m5-1",
+    "dataRevision": "m8-1",
     "crystallography": {
         "crystalSystem": "cubic",
         "pointGroup": "m-3",
@@ -62,7 +62,18 @@ export const PYRITE = defineMineral({
             ],
             "status": "curated",
             "derivation": "Named idealized habit presets use documented forms. Development values, disabled forms and preferred views are curated visualization choices, not measured growth or surface-energy parameters."
+        },
+        {
+            "coverage": [
+                "appearance"
+            ],
+            "status": "curated",
+            "derivation": "Appearance presets use curated visualization parameters (base color, roughness, metalness, transmission, IOR, absorption color and density) selected to represent pyrite's metallic brass-yellow luster and tarnished surfaces. Values are not measured optical constants."
         }
+    ],
+    "appearance": [
+        { "id": "brass", "name": "Brass", "baseColor": "#c8a848", "roughness": 0.35, "metalness": 0.85, "transmission": 0, "ior": 1.5, "absorptionColor": "#ffffff", "absorptionDensity": 0 },
+        { "id": "tarnished", "name": "Tarnished", "baseColor": "#a89048", "roughness": 0.5, "metalness": 0.8, "transmission": 0, "ior": 1.5, "absorptionColor": "#ffffff", "absorptionDensity": 0 }
     ],
     "habits": [
         {

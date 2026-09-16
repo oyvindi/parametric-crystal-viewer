@@ -445,6 +445,8 @@ In V1, `transmission` is the mineral-transparency control and uses a normalized 
 
 `opacity` is deferred beyond V1. Renderer-level fading for interaction or illustrative overlays is not part of the mineral appearance record. Before `opacity` can be used in mineral presets or serialized appearance overrides, define its alpha-compositing behavior and interaction with transmission. The two properties must not be treated as complements.
 
+The implemented V1 material mapping lives in [`crystal-three`](../packages/crystal-three/src/appearance.ts). Appearance fields map to a Three.js `MeshPhysicalMaterial`: `baseColor → color`, `roughness → roughness`, `metalness → metalness`, `transmission → transmission`, `ior → ior`, `absorptionColor → attenuationColor`, and `absorptionDensity → attenuationDistance` as `1 / density` (a density of `0` disables absorption, mapped to `Infinity`). Omitted fields resolve to the V1 defaults: base color `#6fb7d4`, roughness `0.3`, metalness `0.1`, transmission `0`, IOR `1.5`, absorption color `#ffffff`, absorption density `0`. A transmissive material (`transmission > 0`) is marked transparent so the renderer sorts it correctly; the volumetric `thickness` is set from the displayed crystal's bounds so absorption scales with the model.
+
 Examples for quartz may include:
 
 ```text

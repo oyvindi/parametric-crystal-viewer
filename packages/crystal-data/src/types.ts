@@ -79,10 +79,24 @@ export interface Mineral {
     readonly formula: string;
     readonly crystallography: MineralCrystallography;
     readonly habits: readonly HabitPreset[];
+    readonly appearance?: readonly MineralAppearance[];
     readonly variants?: readonly MineralVariant[];
     readonly references: readonly Reference[];
     readonly provenance: readonly ProvenanceEntry[];
     readonly dataRevision: string;
+}
+
+/** A named appearance preset: curated visual material parameters separate from geometry. */
+export interface MineralAppearance {
+    readonly id: string;
+    readonly name: string;
+    readonly baseColor?: string;
+    readonly roughness?: number;
+    readonly metalness?: number;
+    readonly transmission?: number;
+    readonly ior?: number;
+    readonly absorptionColor?: string;
+    readonly absorptionDensity?: number;
 }
 
 /** A structural variant of the mineral (e.g. left/right-handed quartz). */

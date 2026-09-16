@@ -57,12 +57,30 @@ export interface StructureState {
     readonly definition: StructuralDefinition;
 }
 
+/** User overrides on top of a selected appearance preset (V1 fields only). */
+export interface AppearanceOverride {
+    readonly baseColor?: string;
+    readonly roughness?: number;
+    readonly metalness?: number;
+    readonly transmission?: number;
+    readonly ior?: number;
+    readonly absorptionColor?: string;
+    readonly absorptionDensity?: number;
+}
+
+/** Serialized appearance: the selected preset and any user overrides. */
+export interface AppearanceState {
+    readonly id?: string;
+    readonly overrides?: AppearanceOverride;
+}
+
 export interface ViewerState {
     readonly version: 1;
     readonly mineral?: MineralRefState;
     readonly habit?: string;
     readonly forms: Readonly<Record<string, FormState>>;
     readonly morphologyScale?: number;
+    readonly appearance?: AppearanceState;
     readonly display: DisplayState;
     readonly camera: CameraState;
     readonly atomic: AtomicState;
@@ -135,6 +153,28 @@ export function validateStateShape(input: unknown): { ok: true; value: ViewerSta
     }
 
     if (input["morphologyScale"] !== undefined && !isNumber(input["morphologyScale"])) diagnostics.push(diag("viewer.state.malformed", "morphologyScale must be a number.", "/morphologyScale"));
+
+    const appearance = input["appearance"];
+    if (appearance !== undefined) {
+        if (!isObject(appearance)) {
+            diagnostics.push(diag("viewer.state.malformed", "appearance must be an object.", "/appearance"));
+        } else {
+            if (appearance["id"] !== undefined && !isString(appearance["id"])) diagnostics.push(diag("viewer.state.malformed", "appearance.id must be a string.", "/appearance/id"));
+            const overrides = appearance["overrides"];
+            if (overrides !== undefined) {
+                if (!isObject(overrides)) {
+                    diagnostics.push(diag("viewer.state.malformed", "appearance.overrides must be an object.", "/appearance/overrides"));
+                } else {
+                    for (const key of ["baseColor", "absorptionColor"] as const) {
+                        if (overrides[key] !== undefined && !isString(overrides[key])) diagnostics.push(diag("viewer.state.malformed", `appearance.overrides.${key} must be a string.`, `/appearance/overrides/${key}`));
+                    }
+                    for (const key of ["roughness", "metalness", "transmission", "ior", "absorptionDensity"] as const) {
+                        if (overrides[key] !== undefined && !isNumber(overrides[key])) diagnostics.push(diag("viewer.state.malformed", `appearance.overrides.${key} must be a number.`, `/appearance/overrides/${key}`));
+                    }
+                }
+            }
+        }
+    }
 
     const display = input["display"];
     if (!isObject(display)) {

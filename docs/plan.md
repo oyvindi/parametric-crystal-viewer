@@ -369,6 +369,8 @@ Resolve the versioning, data-compatibility, and face-selection decisions identif
 
 ### M8 — Appearance
 
+**Status: complete.** See the [M8 acceptance audit](m8-acceptance.md) for the appearance fields, material mapping, data model, viewer API, state restoration, reference-scene review, and demo evidence.
+
 Add:
 
 ```text

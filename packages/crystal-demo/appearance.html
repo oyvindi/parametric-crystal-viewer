@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Appearance — M8 Demo</title>
+<style>
+  body { margin: 0; font-family: system-ui, sans-serif; background: #2a2a2a; color: #ddd; display: flex; height: 100vh; }
+  #panel { width: 340px; padding: 16px; overflow-y: auto; background: #333; border-right: 1px solid #555; }
+  #panel h1 { font-size: 1.2em; margin: 0 0 4px; }
+  #panel .formula { color: #999; font-size: 0.85em; margin-bottom: 12px; }
+  #panel h2 { font-size: 0.95em; margin: 16px 0 6px; color: #ccc; border-bottom: 1px solid #555; padding-bottom: 2px; }
+  #panel select { width: 100%; margin-bottom: 8px; }
+  #panel .field { margin-bottom: 10px; }
+  #panel .field .label-line { display: flex; justify-content: space-between; font-size: 0.82em; }
+  #panel input[type="range"] { width: 100%; }
+  #panel input[type="color"] { width: 100%; height: 28px; padding: 0; border: none; background: none; cursor: pointer; }
+  #panel input[type="number"] { width: 100%; }
+  #panel .value { color: #8cf; font-variant-numeric: tabular-nums; }
+  #panel .status { margin-top: 12px; padding: 8px; border-radius: 4px; font-size: 0.82em; }
+  #panel .status.valid { background: #2d4a2d; color: #8e8; }
+  #panel .status.invalid { background: #4a2d2d; color: #e88; }
+  #panel button { margin-top: 8px; }
+  #canvas-container { flex: 1; position: relative; }
+  canvas { display: block; width: 100%; height: 100%; }
+  .hint { position: absolute; bottom: 8px; right: 12px; font-size: 0.75em; color: #888; }
+</style>
+<script type="importmap">
+{
+  "imports": {
+    "three": "../../node_modules/three/build/three.module.js",
+    "@crystal/core": "../crystal-core/dist/index.js",
+    "@crystal/data": "../crystal-data/dist/index.js",
+    "@crystal/three": "../crystal-three/dist/index.js",
+    "@crystal/viewer": "../crystal-viewer/dist/index.js"
+  }
+}
+</script>
+</head>
+<body>
+<div id="panel">
+  <h1 id="mineral-name">Loading…</h1>
+  <div class="formula" id="mineral-formula"></div>
+
+  <h2>Mineral (reference scene)</h2>
+  <select id="mineral-select"></select>
+
+  <h2>Appearance preset</h2>
+  <select id="appearance-select"></select>
+
+  <h2>Appearance fields</h2>
+  <div id="fields"></div>
+
+  <button type="button" id="reset-camera">Reset camera</button>
+
+  <div class="status" id="status">Loading…</div>
+</div>
+<div id="canvas-container">
+  <canvas id="canvas"></canvas>
+  <span class="hint">Drag to rotate · Adjust fields to change material without altering geometry</span>
+</div>
+
+<script type="module">
+import { CrystalViewer } from "@crystal/viewer";
+import { getMineral } from "@crystal/data";
+
+// The three documented reference scenes for appearance validation.
+const REFERENCE_MINERALS = ["quartz", "fluorite", "pyrite"];
+const NUMERIC_FIELDS = [
+  { key: "roughness", min: 0, max: 1, step: 0.01 },
+  { key: "metalness", min: 0, max: 1, step: 0.01 },
+  { key: "transmission", min: 0, max: 1, step: 0.01 },
+  { key: "absorptionDensity", min: 0, max: 5, step: 0.01 },
+];
+const COLOR_FIELDS = ["baseColor", "absorptionColor"];
+
+const canvas = document.getElementById("canvas");
+const viewer = new CrystalViewer(canvas);
+viewer.start();
+document.getElementById("reset-camera").addEventListener("click", () => viewer.resetCamera());
+
+const mineralSelect = document.getElementById("mineral-select");
+for (const id of REFERENCE_MINERALS) {
+  const opt = document.createElement("option");
+  opt.value = id;
+  opt.textContent = getMineral(id).name;
+  mineralSelect.appendChild(opt);
+}
+
+const appearanceSelect = document.getElementById("appearance-select");
+const fieldsContainer = document.getElementById("fields");
+const statusEl = document.getElementById("status");
+
+async function loadMineral(id) {
+  await viewer.loadMineral(id);
+  document.getElementById("mineral-name").textContent = getMineral(id).name;
+  document.getElementById("mineral-formula").textContent = getMineral(id).formula;
+  populateAppearances();
+  populateFields();
+  updateStatus();
+}
+
+function populateAppearances() {
+  appearanceSelect.innerHTML = "";
+  const appearances = viewer.getAppearances();
+  for (const a of appearances) {
+    const opt = document.createElement("option");
+    opt.value = a.id;
+    opt.textContent = a.name;
+    appearanceSelect.appendChild(opt);
+  }
+  const current = viewer.getAppearanceId();
+  if (current) appearanceSelect.value = current;
+}
+
+appearanceSelect.addEventListener("change", () => {
+  viewer.setAppearance(appearanceSelect.value);
+  populateFields();
+});
+
+function populateFields() {
+  fieldsContainer.innerHTML = "";
+  const a = viewer.getAppearance();
+
+  // Color fields
+  for (const key of COLOR_FIELDS) {
+    const row = document.createElement("div");
+    row.className = "field";
+    const labelLine = document.createElement("div");
+    labelLine.className = "label-line";
+    labelLine.innerHTML = `<span>${labelFor(key)}</span><span class="value" id="val-${key}">${a[key]}</span>`;
+    row.appendChild(labelLine);
+    const input = document.createElement("input");
+    input.type = "color";
+    input.value = a[key];
+    input.addEventListener("input", () => {
+      viewer.setAppearanceField(key, input.value);
+      document.getElementById("val-" + key).textContent = input.value;
+    });
+    row.appendChild(input);
+    fieldsContainer.appendChild(row);
+  }
+
+  // Numeric range fields
+  for (const f of NUMERIC_FIELDS) {
+    const row = document.createElement("div");
+    row.className = "field";
+    const labelLine = document.createElement("div");
+    labelLine.className = "label-line";
+    labelLine.innerHTML = `<span>${labelFor(f.key)}</span><span class="value" id="val-${f.key}">${a[f.key].toFixed(2)}</span>`;
+    row.appendChild(labelLine);
+    const input = document.createElement("input");
+    input.type = "range";
+    input.min = String(f.min);
+    input.max = String(f.max);
+    input.step = String(f.step);
+    input.value = String(a[f.key]);
+    input.addEventListener("input", () => {
+      const val = parseFloat(input.value);
+      viewer.setAppearanceField(f.key, val);
+      document.getElementById("val-" + f.key).textContent = val.toFixed(2);
+    });
+    row.appendChild(input);
+    fieldsContainer.appendChild(row);
+  }
+
+  // IOR as a number input
+  const row = document.createElement("div");
+  row.className = "field";
+  const labelLine = document.createElement("div");
+  labelLine.className = "label-line";
+  labelLine.innerHTML = `<span>${labelFor("ior")}</span><span class="value" id="val-ior">${a.ior.toFixed(3)}</span>`;
+  row.appendChild(labelLine);
+  const input = document.createElement("input");
+  input.type = "number";
+  input.min = "0.01";
+  input.step = "0.01";
+  input.value = String(a.ior);
+  input.addEventListener("change", () => {
+    const val = parseFloat(input.value);
+    if (Number.isFinite(val) && val > 0) {
+      viewer.setAppearanceField("ior", val);
+      document.getElementById("val-ior").textContent = val.toFixed(3);
+    }
+  });
+  row.appendChild(input);
+  fieldsContainer.appendChild(row);
+}
+
+function labelFor(key) {
+  return {
+    baseColor: "Base color",
+    roughness: "Roughness",
+    metalness: "Metalness",
+    transmission: "Transmission",
+    ior: "IOR",
+    absorptionColor: "Absorption color",
+    absorptionDensity: "Absorption density",
+  }[key];
+}
+
+function updateStatus() {
+  const s = viewer.getGeometryStatus();
+  statusEl.className = "status " + (s.stale ? "stale" : s.status);
+  statusEl.textContent = s.status === "valid" && !s.stale ? "Valid geometry" : "Invalid geometry";
+}
+
+mineralSelect.addEventListener("change", () => loadMineral(mineralSelect.value));
+
+// Resync controls after programmatic changes and state restoration.
+viewer.addEventListener("appearance-changed", populateFields);
+viewer.addEventListener("state-restored", () => { populateAppearances(); populateFields(); });
+
+// Initialize with the first reference mineral.
+mineralSelect.value = REFERENCE_MINERALS[0];
+await loadMineral(mineralSelect.value);
+
+function resize() {
+  const container = document.getElementById("canvas-container");
+  viewer.resize(container.clientWidth, container.clientHeight);
+}
+window.addEventListener("resize", resize);
+resize();
+</script>
+</body>
+</html>

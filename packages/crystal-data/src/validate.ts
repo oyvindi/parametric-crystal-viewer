@@ -130,7 +130,7 @@ export function validateMineral(value: unknown): Result<Mineral> {
     if (object(value) && validated.has(value)) return { ok: true, value: value as unknown as Mineral, diagnostics: [] };
     const v = new RecordValidator();
     if (!v.record(value, "")) return { ok: false, diagnostics: v.diagnostics };
-    v.keys(value, ["id", "name", "formula", "dataRevision", "crystallography", "variants", "habits", "references", "provenance"], "");
+    v.keys(value, ["id", "name", "formula", "dataRevision", "crystallography", "variants", "habits", "appearance", "references", "provenance"], "");
     for (const key of ["id", "name", "formula", "dataRevision"]) v.string(value[key], `/${key}`);
     const scientific: { value: MineralCrystallography; path: string }[] = [];
     if (v.crystallography(value.crystallography, "/crystallography")) scientific.push({ value: value.crystallography as unknown as MineralCrystallography, path: "/crystallography" });
@@ -142,6 +142,25 @@ export function validateMineral(value: unknown): Result<Mineral> {
         if (variant.references !== undefined) v.references(variant.references, `${path}/references`);
     }, false);
     v.references(value.references, "/references");
+    if (value.appearance !== undefined) v.entries(value.appearance, "/appearance", (ap, path) => {
+        v.keys(ap, ["id", "name", "baseColor", "roughness", "metalness", "transmission", "ior", "absorptionColor", "absorptionDensity"], path);
+        v.string(ap.name, `${path}/name`);
+        for (const key of ["baseColor", "absorptionColor"] as const) if (ap[key] !== undefined) v.string(ap[key], `${path}/${key}`);
+        for (const key of ["roughness", "metalness", "transmission"] as const) {
+            if (ap[key] !== undefined) {
+                v.number(ap[key], `${path}/${key}`);
+                if (typeof ap[key] === "number" && (ap[key] < 0 || ap[key] > 1)) v.error(`${path}/${key}`, "Expected a value in [0, 1].");
+            }
+        }
+        if (ap.ior !== undefined) {
+            v.number(ap.ior, `${path}/ior`);
+            if (typeof ap.ior === "number" && ap.ior <= 0) v.error(`${path}/ior`, "IOR must be strictly positive.");
+        }
+        if (ap.absorptionDensity !== undefined) {
+            v.number(ap.absorptionDensity, `${path}/absorptionDensity`);
+            if (typeof ap.absorptionDensity === "number" && ap.absorptionDensity < 0) v.error(`${path}/absorptionDensity`, "Absorption density must be non-negative.");
+        }
+    });
     const formLists: { forms: readonly CrystalFormSetting[]; path: string }[] = [];
     v.entries(value.habits, "/habits", (habit, path) => {
         v.keys(habit, ["id", "name", "description", "forms", "preferredView", "references"], path);
@@ -229,12 +248,18 @@ export function validateMineral(value: unknown): Result<Mineral> {
         for (const key of Object.keys(form.indices)) requireCoverage(`habits.${i}.forms.${j}.indices.${key}`);
         for (const key of ["development", ...(form.enabled !== undefined ? ["enabled"] : [])]) requireCoverage(`habits.${i}.forms.${j}.${key}`);
     }));
+    mineral.appearance?.forEach((preset, i) => {
+        for (const key of ["baseColor", "roughness", "metalness", "transmission", "ior", "absorptionColor", "absorptionDensity"] as const) {
+            if (preset[key] !== undefined) requireCoverage(`appearance.${i}.${key}`);
+        }
+    });
     if (v.diagnostics.some((d) => d.severity === "error")) return { ok: false, diagnostics: v.diagnostics };
     // Select supported fields before cloning: extra caller metadata is not part of this schema.
     const snapshot: Mineral = structuredClone({
         id: mineral.id, name: mineral.name, formula: mineral.formula, dataRevision: mineral.dataRevision,
         crystallography: normalizeCrystallography(mineral.crystallography),
         habits: mineral.habits, references: mineral.references, provenance: mineral.provenance,
+        ...(mineral.appearance ? { appearance: mineral.appearance } : {}),
         ...(mineral.variants ? { variants: mineral.variants.map((variant) => ({ ...variant, crystallography: normalizeCrystallography(variant.crystallography) })) } : {}),
     });
     freeze(snapshot);

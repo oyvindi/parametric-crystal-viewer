@@ -17,7 +17,7 @@ export const FLUORITE = defineMineral({
     id: "fluorite",
     name: "Fluorite",
     formula: "CaF₂",
-    dataRevision: "m4-1",
+    dataRevision: "m8-1",
     crystallography: {
         crystalSystem: "cubic",
         pointGroup: "m-3m",
@@ -44,6 +44,16 @@ export const FLUORITE = defineMineral({
             status: "curated",
             derivation: "Habit form selections, preferred presentation, and development values are curated visualization parameters, not measured quantities. The declared standard setting selects the core registry basis.",
         },
+        {
+            coverage: ["appearance"],
+            status: "curated",
+            derivation: "Appearance presets use curated visualization parameters (base color, roughness, metalness, transmission, IOR, absorption color and density) selected to represent common fluorite varieties. The IOR approximates fluorite's refractive index, not a measured optical constant.",
+        },
+    ],
+    appearance: [
+        { id: "violet", name: "Violet", baseColor: "#8a5cd4", roughness: 0.08, metalness: 0, transmission: 0.8, ior: 1.434, absorptionColor: "#6a3cb4", absorptionDensity: 0.5 },
+        { id: "green", name: "Green", baseColor: "#3cb46a", roughness: 0.1, metalness: 0, transmission: 0.7, ior: 1.434, absorptionColor: "#2a8a4a", absorptionDensity: 0.6 },
+        { id: "colorless", name: "Colorless", baseColor: "#eef0f2", roughness: 0.05, metalness: 0, transmission: 0.9, ior: 1.434, absorptionColor: "#ffffff", absorptionDensity: 0 },
     ],
     habits: [
         {

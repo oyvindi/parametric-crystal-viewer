@@ -222,3 +222,5 @@ The viewer's Node integration tests use real Three.js scenes, cameras, and geome
 Use documented quartz, fluorite, and pyrite reference scenes to validate the V1 appearance fields defined in [Mineral Appearance](data-model.md#mineral-appearance). For each property, document the intended visible effect and scene conditions used to assess it. Appearance changes must preserve scientific geometry.
 
 Review face and edge readability during rotation and zoom. Record visual review results alongside automated checks for appearance parameter mapping and state restoration. These checks assess the required rendering behavior without requiring identical pixels across environments.
+
+The M8 results are recorded in the [M8 acceptance audit](m8-acceptance.md#reference-scene-visual-review): each V1 field's intended effect, the quartz/fluorite/pyrite reference scenes used, and the rotation/zoom readability outcome. Automated parameter-mapping and state-restoration checks live with the [crystal-three](../packages/crystal-three/src/appearance.test.ts) and [crystal-viewer](../packages/crystal-viewer/src/m8-acceptance.test.ts) tests.

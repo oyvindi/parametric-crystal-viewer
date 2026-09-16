@@ -23,7 +23,7 @@ export const QUARTZ = defineMineral({
     id: "quartz",
     name: "Quartz",
     formula: "SiO₂",
-    dataRevision: "m4-1",
+    dataRevision: "m8-1",
     crystallography: {
         crystalSystem: "trigonal",
         pointGroup: "32",
@@ -84,6 +84,18 @@ export const QUARTZ = defineMineral({
             status: "curated",
             derivation: "Habit form selections, preferred views, and development values are curated visualization parameters, not measured quantities. The declared hexagonal setting selects the core registry basis.",
         },
+        {
+            coverage: ["appearance"],
+            status: "curated",
+            derivation: "Appearance presets use curated visualization parameters (base color, roughness, metalness, transmission, IOR, absorption color and density) selected to represent common quartz varieties. IOR values are representative approximations, not measured optical constants.",
+        },
+    ],
+    appearance: [
+        { id: "rock-crystal", name: "Rock crystal", baseColor: "#eef0f2", roughness: 0.05, metalness: 0, transmission: 0.92, ior: 1.544, absorptionColor: "#ffffff", absorptionDensity: 0 },
+        { id: "amethyst", name: "Amethyst", baseColor: "#9b6dd4", roughness: 0.1, metalness: 0, transmission: 0.5, ior: 1.544, absorptionColor: "#6b4a8f", absorptionDensity: 0.5 },
+        { id: "smoky", name: "Smoky quartz", baseColor: "#5a4a3a", roughness: 0.15, metalness: 0, transmission: 0.35, ior: 1.544, absorptionColor: "#2a1a0a", absorptionDensity: 1.0 },
+        { id: "citrine", name: "Citrine", baseColor: "#d4a017", roughness: 0.1, metalness: 0, transmission: 0.6, ior: 1.544, absorptionColor: "#b8860b", absorptionDensity: 0.6 },
+        { id: "rose", name: "Rose quartz", baseColor: "#d4a0a0", roughness: 0.12, metalness: 0, transmission: 0.7, ior: 1.544, absorptionColor: "#c47070", absorptionDensity: 0.4 },
     ],
     habits: [
         {

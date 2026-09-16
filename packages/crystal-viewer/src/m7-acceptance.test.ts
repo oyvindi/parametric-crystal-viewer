@@ -329,10 +329,29 @@ describe("M7 state serialization", () => {
         expect(fr.getState().structure!.definition).toEqual(sr.structure!.definition);
     });
 
-    // M8 appearance-state coverage placeholder: appearance fields are defined in
-    // the serialization contract but round-trip verification is deferred to M8,
-    // which delivers appearance support. See docs/m7-acceptance.md.
-    it.todo("appearance state and user-override round trips (deferred to M8)");
+    // M8 appearance-state round trip: the placeholder is now verified. See
+    // m8-acceptance.test.ts for parameter-mapping and visual-review evidence.
+    it("appearance state and user-override round trips", async () => {
+        const viewer = await loaded("quartz");
+        viewer.setAppearance("amethyst");
+        viewer.setAppearanceField("roughness", 0.2);
+        const saved = viewer.getState();
+        expect(saved.appearance).toMatchObject({ id: "amethyst", overrides: { roughness: 0.2 } });
+
+        // Same viewer.
+        viewer.setState(saved);
+        expect(viewer.getAppearanceId()).toBe("amethyst");
+        expect(viewer.getAppearance().roughness).toBe(0.2);
+        expect(viewer.getState().appearance).toEqual(saved.appearance);
+
+        // Fresh viewer (portability).
+        const fresh = new CrystalViewer(canvas());
+        viewers.push(fresh);
+        fresh.setState(saved);
+        expect(fresh.getAppearanceId()).toBe("amethyst");
+        expect(fresh.getAppearance().roughness).toBe(0.2);
+        expect(fresh.getState().appearance).toEqual(saved.appearance);
+    });
 });
 
 describe("M7 demo synchronization through events", () => {

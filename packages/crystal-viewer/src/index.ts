@@ -1,11 +1,11 @@
-import { Scene, PerspectiveCamera, WebGLRenderer, MeshStandardMaterial, Mesh, MeshBasicMaterial, Color, DirectionalLight, AmbientLight, Group, DoubleSide, Raycaster, Vector2, Vector3, Sprite, SpriteMaterial, CanvasTexture, BufferGeometry, Float32BufferAttribute, LineSegments, LineBasicMaterial } from "three";
+import { Scene, PerspectiveCamera, WebGLRenderer, MeshPhysicalMaterial, Mesh, MeshBasicMaterial, Color, DirectionalLight, AmbientLight, Group, DoubleSide, Raycaster, Vector2, Vector3, Sprite, SpriteMaterial, CanvasTexture, BufferGeometry, Float32BufferAttribute, LineSegments, LineBasicMaterial, PMREMGenerator, EquirectangularReflectionMapping } from "three";
 import { createLattice, expandAtomicStructure, generateCrystal, inferBonds, type Diagnostic, type GeometryResult, type CrystalGeometry, type CrystalFace, type ExpandedAtom, type Lattice, type PeriodicBond } from "@crystal/core";
 import { loadMineral as loadMineralData, createCrystalInput, resolveHabit, resolveCrystallography, importCif, getMineral, MineralDataError, type Mineral, type StructuralDefinition } from "@crystal/data";
-import { createThreeGeometryWithPicking, createAtomicStructure, atomicBounds } from "@crystal/three";
+import { createThreeGeometryWithPicking, createAtomicStructure, atomicBounds, createCrystalMaterial, applyAppearance, resolveAppearance, APPEARANCE_FIELDS, type AppearanceParams, type AppearanceField } from "@crystal/three";
 import { cameraBasis } from "./camera.js";
-import { STATE_VERSION, validateStateShape, type ViewerState, type ViewMode, type FormState, type MineralRefState } from "./state.js";
+import { STATE_VERSION, validateStateShape, type ViewerState, type ViewMode, type FormState, type MineralRefState, type AppearanceState, type AppearanceOverride } from "./state.js";
 
-export type { ViewerState, ViewMode } from "./state.js";
+export type { ViewerState, ViewMode, AppearanceState, AppearanceOverride } from "./state.js";
 export { STATE_VERSION } from "./state.js";
 
 export class ViewerOperationError extends Error {
@@ -34,6 +34,13 @@ export interface VariantInfo {
     readonly name: string;
     readonly description?: string;
 }
+
+export interface AppearanceInfo {
+    readonly id: string;
+    readonly name: string;
+}
+
+export interface AppearanceValues extends Required<AppearanceParams> {}
 
 export interface FaceContributorInfo {
     readonly formId: string;
@@ -68,7 +75,7 @@ export class CrystalViewer extends EventTarget {
     private readonly camera: PerspectiveCamera;
     private readonly crystalGroup: Group;
     private readonly labelGroup: Group;
-    private mesh: Mesh<BufferGeometry, MeshStandardMaterial> | null = null;
+    private mesh: Mesh<BufferGeometry, MeshPhysicalMaterial> | null = null;
     private highlightMesh: Mesh<BufferGeometry, MeshBasicMaterial> | null = null;
     private mineral: Mineral | null = null;
     private habitId: string | undefined;
@@ -104,6 +111,8 @@ export class CrystalViewer extends EventTarget {
     private showBonds = true;
     private showAxes = false;
     private showWireframe = false;
+    private appearanceId: string | undefined;
+    private appearanceOverrides: Partial<AppearanceParams> = {};
     private importDiagnostics: readonly Diagnostic[] = [];
     private readonly raycaster = new Raycaster();
     private readonly canvas: HTMLCanvasElement;
@@ -118,7 +127,7 @@ export class CrystalViewer extends EventTarget {
         this.renderer = new WebGLRenderer({ canvas, antialias: true });
         this.renderer.setSize(canvas.clientWidth || 400, canvas.clientHeight || 300);
         this.scene = new Scene();
-        this.scene.background = new Color(0x222222);
+        this.scene.background = new Color(0x2a2e33); // neutral fallback; replaced by a gradient when WebGL is available
         this.camera = new PerspectiveCamera(45, 1, 0.01, 1000);
         this.camera.position.set(8, 6, 8);
         this.camera.lookAt(0, 0, 0);
@@ -134,11 +143,18 @@ export class CrystalViewer extends EventTarget {
         const fill = new DirectionalLight(0xffffff, 0.3);
         fill.position.set(-5, -3, -5);
         this.scene.add(fill);
+        // Frontal key light near the camera so camera-facing polygons receive a
+        // specular highlight even on metals (which derive color from reflections,
+        // not diffuse). Without this, front faces reflect only the dark floor.
+        const key = new DirectionalLight(0xffffff, 0.6);
+        key.position.set(6, 5, 8);
+        this.scene.add(key);
         this.onPointerDownBound = this.onPointerDown.bind(this);
         this.onPointerMoveBound = this.onPointerMove.bind(this);
         this.onPointerUpBound = this.onPointerUp.bind(this);
         this.onClickBound = this.onCanvasClick.bind(this);
         this.attachCanvasListeners();
+        this.setupEnvironment();
     }
 
     private attachCanvasListeners(): void {
@@ -197,6 +213,8 @@ export class CrystalViewer extends EventTarget {
         this.formDevelopment = {};
         this.formEnabled = {};
         this.morphologyScale = undefined;
+        this.appearanceId = mineral.appearance?.[0]?.id;
+        this.appearanceOverrides = {};
         this.lastValidGeometry = null;
         this.needsInitialFrame = true;
         this.selectedFaceIndex = null;
@@ -283,6 +301,79 @@ export class CrystalViewer extends EventTarget {
 
     getVariantId(): string | null {
         return this.variantId ?? null;
+    }
+
+    // --- Appearance (M8) ---
+
+    /** Lists the loaded mineral's appearance presets. */
+    getAppearances(): AppearanceInfo[] {
+        if (!this.mineral?.appearance) return [];
+        return this.mineral.appearance.map((a) => ({ id: a.id, name: a.name }));
+    }
+
+    /** Returns the selected appearance preset id, or null when none is selected. */
+    getAppearanceId(): string | null {
+        return this.appearanceId ?? null;
+    }
+
+    /** Returns the effective appearance values (preset merged with user overrides, resolved against defaults). */
+    getAppearance(): AppearanceValues {
+        return resolveAppearance(this.effectiveAppearance());
+    }
+
+    /** Selects an appearance preset and clears user overrides. */
+    setAppearance(id: string): void {
+        this.assertNotDisposed();
+        if (!this.mineral?.appearance) throw new ViewerOperationError([{ code: "viewer.request.unknown-appearance", severity: "error", message: "The loaded mineral defines no appearance presets." }]);
+        if (!this.mineral.appearance.some((a) => a.id === id)) throw new ViewerOperationError([{ code: "viewer.request.unknown-appearance", severity: "error", message: `Unknown appearance "${id}" for mineral "${this.mineral.id}".` }]);
+        this.appearanceId = id;
+        this.appearanceOverrides = {};
+        this.applyAppearanceToMesh();
+        this.dispatchEvent(new CustomEvent("appearance-changed", { detail: { id } }));
+    }
+
+    /** Sets a single appearance field as a user override on top of the selected preset. */
+    setAppearanceField(field: AppearanceField, value: string | number): void {
+        this.assertNotDisposed();
+        if (!APPEARANCE_FIELDS.includes(field)) throw new ViewerOperationError([{ code: "viewer.request.unknown-appearance-field", severity: "error", message: `Unknown appearance field "${field}".` }]);
+        if (field === "baseColor" || field === "absorptionColor") {
+            if (typeof value !== "string") throw new ViewerOperationError([{ code: "viewer.request.invalid-appearance", severity: "error", message: `${field} must be a string.` }]);
+        } else {
+            if (typeof value !== "number" || !Number.isFinite(value)) throw new ViewerOperationError([{ code: "viewer.request.invalid-appearance", severity: "error", message: `${field} must be a finite number.` }]);
+            if (field === "roughness" || field === "metalness" || field === "transmission") {
+                if (value < 0 || value > 1) throw new ViewerOperationError([{ code: "viewer.request.invalid-appearance", severity: "error", message: `${field} must be in [0, 1].` }]);
+            } else if (field === "ior") {
+                if (value <= 0) throw new ViewerOperationError([{ code: "viewer.request.invalid-appearance", severity: "error", message: "ior must be strictly positive." }]);
+            } else if (field === "absorptionDensity") {
+                if (value < 0) throw new ViewerOperationError([{ code: "viewer.request.invalid-appearance", severity: "error", message: "absorptionDensity must be non-negative." }]);
+            }
+        }
+        this.appearanceOverrides = { ...this.appearanceOverrides, [field]: value };
+        this.applyAppearanceToMesh();
+        this.dispatchEvent(new CustomEvent("appearance-changed", { detail: { field, value } }));
+    }
+
+    private effectiveAppearance(): AppearanceParams {
+        const preset = this.mineral?.appearance?.find((a) => a.id === this.appearanceId);
+        const base: AppearanceParams = preset
+            ? {
+                ...(preset.baseColor !== undefined ? { baseColor: preset.baseColor } : {}),
+                ...(preset.roughness !== undefined ? { roughness: preset.roughness } : {}),
+                ...(preset.metalness !== undefined ? { metalness: preset.metalness } : {}),
+                ...(preset.transmission !== undefined ? { transmission: preset.transmission } : {}),
+                ...(preset.ior !== undefined ? { ior: preset.ior } : {}),
+                ...(preset.absorptionColor !== undefined ? { absorptionColor: preset.absorptionColor } : {}),
+                ...(preset.absorptionDensity !== undefined ? { absorptionDensity: preset.absorptionDensity } : {}),
+            }
+            : {};
+        return { ...base, ...this.appearanceOverrides };
+    }
+
+    private applyAppearanceToMesh(): void {
+        if (this.mesh) {
+            applyAppearance(this.mesh.material, this.effectiveAppearance());
+            this.renderOnce();
+        }
     }
 
     // --- Atomic structure view (M6) ---
@@ -460,6 +551,12 @@ export class CrystalViewer extends EventTarget {
             ...(this.habitId ? { habit: this.habitId } : {}),
             forms,
             ...(this.morphologyScale !== undefined ? { morphologyScale: this.morphologyScale } : {}),
+            ...(this.appearanceId !== undefined || Object.keys(this.appearanceOverrides).length > 0 ? {
+                appearance: {
+                    ...(this.appearanceId !== undefined ? { id: this.appearanceId } : {}),
+                    ...(Object.keys(this.appearanceOverrides).length > 0 ? { overrides: this.appearanceOverrides } : {}),
+                },
+            } : {}),
             display: {
                 axes: this.showAxes,
                 labels: this.showLabels,
@@ -520,6 +617,9 @@ export class CrystalViewer extends EventTarget {
             for (const id of Object.keys(s.forms)) {
                 if (!habit.forms.some((f) => f.id === id)) diagnostics.push({ code: "viewer.state.unknown-form", severity: "error", message: `Unknown form "${id}" for habit "${habit.id}".`, path: `/forms/${id}` });
             }
+            if (s.appearance?.id !== undefined && !mineral.appearance?.some((a) => a.id === s.appearance!.id)) {
+                diagnostics.push({ code: "viewer.state.unknown-appearance", severity: "error", message: `Unknown appearance "${s.appearance!.id}" for mineral "${mineral.id}".`, path: "/appearance/id" });
+            }
         }
 
         // Resolve imported structure: re-expand to verify compatibility (portable).
@@ -559,6 +659,8 @@ export class CrystalViewer extends EventTarget {
                 this.formEnabled[id] = fs.enabled;
             }
             this.morphologyScale = s.morphologyScale;
+            this.appearanceId = s.appearance?.id ?? mineral.appearance?.[0]?.id;
+            this.appearanceOverrides = { ...(s.appearance?.overrides ?? {}) };
             this.needsInitialFrame = false; // restored camera takes precedence over preferred view
             if (!sameMineral) {
                 this.clearMesh();
@@ -574,6 +676,8 @@ export class CrystalViewer extends EventTarget {
             this.formDevelopment = {};
             this.formEnabled = {};
             this.morphologyScale = undefined;
+            this.appearanceId = undefined;
+            this.appearanceOverrides = {};
             this.clearMesh();
             this.clearLabels();
             this.lastValidGeometry = null;
@@ -785,6 +889,10 @@ export class CrystalViewer extends EventTarget {
         this.clearLabels();
         this.clearAtomic();
         if (this.cellOverlay) { this.crystalGroup.remove(this.cellOverlay); this.cellOverlay = null; }
+        (this.scene.environment as { dispose?: () => void } | null)?.dispose?.();
+        this.scene.environment = null;
+        (this.scene.background as { dispose?: () => void } | null)?.dispose?.();
+        this.scene.background = null;
         this.renderer.dispose();
     }
 
@@ -823,20 +931,55 @@ export class CrystalViewer extends EventTarget {
         if (!this.disconnected && this.animationHandle === null) this.renderer.render(this.scene, this.camera);
     }
 
+    /**
+     * Builds a studio-style gradient used as both the scene background and the
+     * reflection environment. A varied backdrop gives transmissive materials
+     * something to refract (so they do not look flat against a dark field) while
+     * keeping opaque minerals readable. The gradient is drawn with the Canvas 2D
+     * API for smooth interpolation (a low-res DataTexture shows blocky artifacts
+     * as a full-screen background). PMREMGenerator needs a real WebGL context, so
+     * this is skipped in non-WebGL (Node test) environments where the renderer is
+     * stubbed.
+     */
+    private setupEnvironment(): void {
+        const anyRenderer = this.renderer as unknown as { getContext?: () => unknown };
+        if (typeof anyRenderer.getContext !== "function") return;
+        const canvas = document.createElement("canvas");
+        canvas.width = 16; // narrow: every column is identical (vertical gradient only)
+        canvas.height = 256; // tall enough for smooth vertical interpolation
+        const ctx = canvas.getContext("2d")!;
+        const grad = ctx.createLinearGradient(0, 0, 0, canvas.height);
+        grad.addColorStop(0.0, "#4a5566"); // cool sky (top)
+        grad.addColorStop(0.45, "#8a9098"); // neutral horizon
+        grad.addColorStop(0.55, "#9a8a78"); // warm band
+        grad.addColorStop(1.0, "#3a3a3e"); // dark floor (bottom)
+        ctx.fillStyle = grad;
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        const tex = new CanvasTexture(canvas);
+        tex.mapping = EquirectangularReflectionMapping;
+        tex.needsUpdate = true;
+        const pmrem = new PMREMGenerator(this.renderer);
+        // The same gradient serves as the visible backdrop (so transmission has
+        // contrast) and as the PMREM-processed reflection environment.
+        this.scene.background = tex;
+        this.scene.environment = pmrem.fromEquirectangular(tex).texture;
+        pmrem.dispose();
+    }
+
     private updateMesh(result: Extract<GeometryResult, { status: "valid" }>): void {
         this.clearMesh();
         this.clearLabels();
         const { buffer, triangleFaces } = createThreeGeometryWithPicking(result.geometry);
         this.triangleFaces = triangleFaces;
         buffer.center();
-        const material = new MeshStandardMaterial({
-            color: 0x6fb7d4,
-            metalness: 0.1,
-            roughness: 0.3,
+        const material = createCrystalMaterial(this.effectiveAppearance(), {
             side: DoubleSide,
             flatShading: true,
             wireframe: this.showWireframe,
         });
+        // Volumetric absorption scales with the displayed crystal depth.
+        const { min, max } = result.geometry.bounds;
+        material.thickness = Math.max(max[0] - min[0], max[1] - min[1], max[2] - min[2]) || 1;
         this.mesh = new Mesh(buffer, material);
         this.crystalGroup.add(this.mesh);
         if (this.showLabels) this.createLabels(result.geometry);
