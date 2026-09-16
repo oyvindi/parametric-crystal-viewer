@@ -6,7 +6,7 @@ for (const [name, dependencies] of Object.entries(allowed)) {
     const manifest = JSON.parse(readFileSync(new URL('package.json', root)));
     for (const dependency of Object.keys(manifest.dependencies ?? {})) {
         if (dependency.startsWith('@crystal/')) assert.ok(dependencies.includes(dependency.slice(9)), `${name} cannot depend on ${dependency}`);
-        if (name === 'core') assert.fail('Core must have no runtime dependencies during M1');
+        if (name === 'core') assert.fail('Core must have no runtime dependencies');
     }
     for (const file of readdirSync(new URL('src/', root), { recursive: true }).filter((f) => f.endsWith('.ts') && !f.endsWith('.test.ts'))) {
         const source = readFileSync(new URL(`src/${file}`, root), 'utf8');

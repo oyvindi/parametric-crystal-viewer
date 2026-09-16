@@ -7,6 +7,10 @@
     ".": "./dist/index.js"
   },
   "dependencies": {
-    "@crystal/core": "file:../crystal-core"
+    "@crystal/core": "file:../crystal-core",
+    "three": "^0.186.0"
+  },
+  "devDependencies": {
+    "@types/three": "^0.186.0"
   }
 }

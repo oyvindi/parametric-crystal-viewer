@@ -9,6 +9,10 @@
   "dependencies": {
     "@crystal/core": "file:../crystal-core",
     "@crystal/data": "file:../crystal-data",
-    "@crystal/three": "file:../crystal-three"
+    "@crystal/three": "file:../crystal-three",
+    "three": "^0.186.0"
+  },
+  "devDependencies": {
+    "@types/three": "^0.186.0"
   }
 }

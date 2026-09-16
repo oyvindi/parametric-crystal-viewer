@@ -29,7 +29,7 @@ export function generateCrystal(crystallography: Crystallography, morphology: Mo
     const lattice = createLattice(crystallography.unitCell);
     diagnostics.push(...lattice.diagnostics.map((d) => ({ ...d, path: `/crystallography/unitCell${d.path ?? ""}` })));
     diagnostics.push(...validateMorphology(morphology.forms, morphology.morphologyScale ?? 1));
-    if (crystallography.spaceGroup) error("core.symmetry.unsupported-registry", "M1 has no space-group registry entries; supply explicit operations without an unsupported identifier.", "/crystallography/spaceGroup");
+    if (crystallography.spaceGroup && !crystallography.pointGroup && !crystallography.pointOperations && !crystallography.spaceOperations && !crystallography.identityOnly) error("core.symmetry.unsupported-registry", "Space-group registry lookup is not available; supply a supported point-group identifier or explicit operations.", "/crystallography/spaceGroup");
     let registryId: string | undefined;
     if (crystallography.pointGroup) {
         if (crystallography.pointGroup === "m-3m" && crystallography.setting === "cubic-standard" && crystallography.crystalSystem === "cubic") registryId = "point-group:m-3m:standard";
