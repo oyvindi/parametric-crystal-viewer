@@ -206,7 +206,11 @@ function updateStatus() {
 mineralSelect.addEventListener("change", () => loadMineral(mineralSelect.value));
 
 // Resync controls after programmatic changes and state restoration.
-viewer.addEventListener("appearance-changed", populateFields);
+// Field-value changes (from sliders) already update their own display;
+// only preset changes need a full rebuild.
+viewer.addEventListener("appearance-changed", (e) => {
+  if ("id" in e.detail) populateFields();
+});
 viewer.addEventListener("state-restored", () => { populateAppearances(); populateFields(); });
 
 // Initialize with the first reference mineral.
