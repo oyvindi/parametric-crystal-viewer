@@ -127,6 +127,8 @@ it("intersects six enclosing planes into a cube", () => {
     expect(result.status).toBe("valid");
     if (result.status !== "valid") return;
     expect(result.geometry.vertices).toHaveLength(24);
+    expect(result.geometry.faces).toHaveLength(6);
+    expect(result.geometry.faces.every((face) => face.vertexIndices.length === 4)).toBe(true);
     expect(result.geometry.bounds).toEqual({ min: [-1, -1, -1], max: [1, 1, 1] });
 });
 

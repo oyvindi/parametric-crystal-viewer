@@ -9,7 +9,14 @@ export interface HalfSpace {
 
 export interface CrystalGeometry {
     readonly vertices: Float64Array;
+    readonly faces: readonly CrystalFace[];
     readonly bounds: { readonly min: Vec3; readonly max: Vec3 };
+}
+
+export interface CrystalFace {
+    readonly vertexIndices: readonly number[];
+    readonly normal: Vec3;
+    readonly planeId: string;
 }
 
 export type GeometryResult =
@@ -28,6 +35,11 @@ function cross(left: Vec3, right: Vec3): Vec3 {
         left[2] * right[0] - left[0] * right[2],
         left[0] * right[1] - left[1] * right[0],
     ];
+}
+
+function normalize(vector: Vec3): Vec3 | undefined {
+    const length = Math.hypot(...vector);
+    return length > EPSILON && Number.isFinite(length) ? [vector[0] / length, vector[1] / length, vector[2] / length] : undefined;
 }
 
 function intersection(a: HalfSpace, b: HalfSpace, c: HalfSpace): Vec3 | undefined {
@@ -50,7 +62,7 @@ function invalid(code: string, message: string): GeometryResult {
 /** Intersects planes of the form `normal · point <= distance` without seed bounds. */
 export function intersectHalfSpaces(halfSpaces: readonly HalfSpace[]): GeometryResult {
     if (halfSpaces.length === 0) return invalid("core.geometry.no-active-forms", "No active half-space constraints were supplied.");
-    if (halfSpaces.some((plane) => !Number.isFinite(plane.distance) || plane.normal.some((value) => !Number.isFinite(value)))) {
+    if (halfSpaces.some((plane) => !Number.isFinite(plane.distance) || !normalize(plane.normal))) {
         return invalid("core.input.invalid-half-space", "Half-space normals and distances must be finite.");
     }
     const vertices: Vec3[] = [];
@@ -61,7 +73,21 @@ export function intersectHalfSpaces(halfSpaces: readonly HalfSpace[]): GeometryR
             && !vertices.some((vertex) => Math.hypot(vertex[0] - point[0], vertex[1] - point[1], vertex[2] - point[2]) <= EPSILON)) vertices.push(point);
     }
     if (vertices.length < 4) return invalid("core.geometry.unbounded", "Half-space constraints do not enclose a usable three-dimensional volume.");
+    vertices.sort((left, right) => left[0] - right[0] || left[1] - right[1] || left[2] - right[2]);
+    const faces: CrystalFace[] = [];
+    for (const plane of halfSpaces) {
+        const normal = normalize(plane.normal)!;
+        const boundary = vertices.map((vertex, index) => ({ vertex, index }))
+            .filter(({ vertex }) => Math.abs(dot(plane.normal, vertex) - plane.distance) <= EPSILON);
+        if (boundary.length < 3) continue;
+        const reference: Vec3 = Math.abs(normal[0]) < 0.9 ? [1, 0, 0] : [0, 1, 0];
+        const u = normalize(cross(reference, normal))!;
+        const v = cross(normal, u);
+        const center: Vec3 = boundary.reduce<Vec3>((sum, item) => [sum[0] + item.vertex[0] / boundary.length, sum[1] + item.vertex[1] / boundary.length, sum[2] + item.vertex[2] / boundary.length], [0, 0, 0]);
+        boundary.sort((left, right) => Math.atan2(dot(v, [left.vertex[0] - center[0], left.vertex[1] - center[1], left.vertex[2] - center[2]]), dot(u, [left.vertex[0] - center[0], left.vertex[1] - center[1], left.vertex[2] - center[2]])) - Math.atan2(dot(v, [right.vertex[0] - center[0], right.vertex[1] - center[1], right.vertex[2] - center[2]]), dot(u, [right.vertex[0] - center[0], right.vertex[1] - center[1], right.vertex[2] - center[2]])));
+        faces.push({ vertexIndices: boundary.map((item) => item.index), normal, planeId: plane.id });
+    }
     const min: Vec3 = [Math.min(...vertices.map((v) => v[0])), Math.min(...vertices.map((v) => v[1])), Math.min(...vertices.map((v) => v[2]))];
     const max: Vec3 = [Math.max(...vertices.map((v) => v[0])), Math.max(...vertices.map((v) => v[1])), Math.max(...vertices.map((v) => v[2]))];
-    return { status: "valid", geometry: { vertices: new Float64Array(vertices.flat()), bounds: { min, max } }, diagnostics: [] };
+    return { status: "valid", geometry: { vertices: new Float64Array(vertices.flat()), faces, bounds: { min, max } }, diagnostics: [] };
 }
