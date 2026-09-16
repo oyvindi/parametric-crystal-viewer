@@ -43,6 +43,17 @@ This establishes whether the architecture can correctly generate recognizable cr
 
 ### M1 — Geometry Prototype
 
+Begin M1 with a repository bootstrap gate. Before scientific feature implementation, establish and document:
+
+* the package manager and workspace configuration;
+* package directories and enforcement of the allowed [dependency graph](architecture.md#package-dependencies-and-ownership);
+* shared and package-specific TypeScript configuration;
+* module format and supported runtime targets;
+* build and test commands; and
+* a non-browser test environment for `crystal-core`.
+
+The gate is complete when a clean workspace installation builds all initially created packages, `crystal-core` tests run without browser globals, and the package graph conforms to the architecture contract. Record the selected tools and commands in architecture or repository documentation.
+
 Deliver:
 
 ```text
@@ -53,7 +64,10 @@ symmetry resolution and input validation
 validated operation registry sufficient for the cubic prototype
 half-space intersection
 generic crystal geometry output
+generic crystallography and morphology input contract
 explicit invalid-geometry diagnostics
+shared structured diagnostic envelope and M1 core diagnostic codes
+direct half-space intersection with polygon-loop output
 ```
 
 No polished UI required.
@@ -61,6 +75,10 @@ No polished UI required.
 Verify that `crystal-core` builds and runs in a non-browser environment without browser or rendering dependencies, following [Package Dependencies and Ownership](architecture.md#package-dependencies-and-ownership).
 
 Implement the symmetry contract in [Symmetry Resolution](scientific-model.md#symmetry-resolution) and [Miller Indices](scientific-model.md#miller-indices) during M1. Expand registry coverage with the later crystal-system and CIF milestones; a complete space-group registry is not required for the first prototype.
+
+Before implementing registry lookup, complete the [data acquisition checkpoint](#data-acquisition-checkpoint) for the M1 cubic operation subset. Prefer a pinned, machine-readable, permissively redistributable source and record its normalization method and integrity information under the [Operation Registry](scientific-model.md#operation-registry) contract.
+
+During M1, define the exact tagged `MillerIndices` representation and implement its integer validation, rejection of all-zero indices, canonical reduction, three-index behavior, and preservation of opposite oriented planes.
 
 Required symmetry tests:
 
@@ -72,6 +90,16 @@ Required symmetry tests:
 * Space-operation translations affect atomic positions but not generated face directions.
 * Operation sets satisfy identity, closure, inverses, and unit-cell metric compatibility under documented tolerances.
 
+Required lattice tests ([Coordinate and Lattice Conventions](scientific-model.md#coordinate-and-lattice-conventions)):
+
+* A cubic cell produces orthogonal axis-aligned direct-lattice vectors.
+* Orthorhombic, monoclinic, and triclinic reference cells reproduce their metric tensors.
+* The determinant of the direct-lattice matrix agrees with the crystallographic cell-volume formula.
+* Cartesian dot products reproduce fractional-coordinate metric products.
+* Direct and reciprocal bases satisfy `transpose(L) * reciprocalLattice = identity` under the documented tolerance.
+* Invalid lengths, impossible angle combinations, and degenerate cells produce input-validation diagnostics.
+* Equivalent cells supplied through supported length-unit conversions produce equivalent direct and reciprocal bases.
+
 Success criterion:
 
 > Given a simple set of crystallographic forms, the engine generates the expected convex crystal.
@@ -82,8 +110,8 @@ Required acceptance tests ([Geometry Output](scientific-model.md#geometry-output
 |---|---|
 | Six enclosing cube planes | Valid closed polyhedron |
 | Equivalent unit cells supplied through supported unit conversions, with identical symmetry and morphology settings | Equivalent normalized cells and geometry under the [internal unit convention](data-model.md#unit-cell) |
-| All forms disabled or zero development | `no-active-forms` |
-| Prism planes without end caps | `unbounded` |
+| All forms disabled or zero development | `core.geometry.no-active-forms` |
+| Prism planes without end caps | `core.geometry.unbounded` |
 | Prism planes with enclosing end caps | Valid closed polyhedron |
 | Redundant plane outside an enclosed crystal | Valid; no face generated for the redundant plane |
 | Invalid settings followed by valid settings | Diagnostic, then successful generation |
@@ -95,9 +123,36 @@ Required acceptance tests ([Geometry Output](scientific-model.md#geometry-output
 | Development changes that change the controlling constraint | Effective boundary and contributors updated, including ties becoming a single contributor without vertex changes |
 | Opposite-facing plane constraints | Separate constraints retained |
 
+Required numeric tests ([Numeric Policy](scientific-model.md#numeric-policy)):
+
+* Non-finite scientific inputs and development values outside `[0, 1]` are rejected before geometry generation.
+* Zero development omits the form; positive development yielding a non-finite normalized support distance is rejected.
+* Core calculations and geometry output remain double precision; conversion to `Float32Array` occurs only in `crystal-three`.
+* Changing only `morphologyScale` across the documented supported range scales output coordinates and bounds without changing topology, contributor attribution, or validity classification.
+* Named matrix, plane, vertex, and degeneracy tolerances are exercised independently, including near-degenerate cases.
+
+Required algorithm and topology checks ([Intersection Algorithm](scientific-model.md#intersection-algorithm)):
+
+* Positive-spanning normals are recognized as potentially bounded; normals admitting a non-zero recession direction return `core.geometry.unbounded`.
+* Triple-plane enumeration reconstructs the expected vertices and ordered polygon loops for reference solids.
+* Polygon winding agrees with outward normals, the first boundary index is not repeated, and redundant collinear boundary vertices are removed.
+* Renderer triangulation maps every triangle back to its originating core face and contributors.
+* Reordered forms and constraints produce deterministic topology and attribution.
+* Representative and deliberately large V1 plane sets have recorded benchmark results; failure to meet interactive needs triggers evaluation of a compatible geometry dependency or dual-hull implementation through a superseding decision record.
+
 Exercise the [overlapping-constraint rules](scientific-model.md#overlapping-plane-constraints) within bounded fixtures and under the documented comparison tolerances. At viewer integration, verify that picking exposes all current contributors and equivalent-face highlighting respects the selected contributing form ([Picking and Face Inspection](viewer-api.md#picking-and-face-inspection)).
 
-Define scale-relative tolerances and test degenerate-result and numerical-failure diagnostics. At viewer integration, also verify that an invalid edit retains the last valid mesh with an exposed stale status, an initially invalid request displays no mesh, and a subsequent valid edit clears the diagnostic and replaces the mesh ([Viewer Lifecycle](viewer-api.md#viewer-lifecycle)).
+Define scale-relative tolerances and test `core.geometry.degenerate` and `core.geometry.numerical-failure` diagnostics. At viewer integration, also verify that an invalid edit retains the last valid mesh with an exposed stale status, an initially invalid request displays no mesh, and a subsequent valid edit clears the diagnostic and replaces the mesh ([Viewer Lifecycle](viewer-api.md#viewer-lifecycle)).
+
+Define the finite M1 `core.*` diagnostic-code set under the shared [diagnostic contract](architecture.md#diagnostics). Verify that validation reports all safely determinable issues in deterministic order, host logic can branch on stable codes, warnings can accompany successful results, and expected invalid inputs do not escape as untyped exceptions.
+
+M2 and M3 may use provisional mineral records, but they must pass through the generic core input contract established in M1. Mineral-specific generator logic is not permitted at any milestone.
+
+### Data Acquisition Checkpoint
+
+At the start of M1, M2, M3, M5, and M6, identify the external records and references required by that milestone and complete the [acquisition and licensing record](data-model.md#acquisition-and-licensing). M1 applies this checkpoint to the symmetry-operation registry and scientific reference fixtures. If access or redistribution requires project-owner action, report the exact action before the affected work becomes blocked. The request must identify the source, artifact, reason, destination, and available integrity check. Continue unrelated milestone work while waiting.
+
+The V1 mineral records remain version-controlled project data under the [catalog storage strategy](data-model.md#catalog-storage-strategy); selecting a runtime database is not a prerequisite for these milestones.
 
 ---
 
@@ -121,6 +176,8 @@ Complete fluorite's habit coverage according to the [content delivery checks](#m
 
 Establish the minimum [provenance representation](data-model.md#scientific-confidence--provenance) with fluorite. Verify coverage of its shipped scientific data, traceable source references, explicit curated values, and methods and input references for any derived values.
 
+Deliver the first runnable [milestone demo](spec.md#reference-viewer) with the rendered fluorite vertical slice. Provide form-development sliders with visible numeric values, reflect the current requested settings, and display invalid-geometry status. The demo may use a provisional viewer API, but it must use generated geometry and the exported viewer boundary.
+
 ---
 
 ### M3 — Quartz
@@ -137,6 +194,8 @@ face picking
 face labels
 ```
 
+Define and implement the setting-aware Miller-Bravais conversion during M3. Validate it against published hexagonal and trigonal reference cases, including invalid `i` values and use with an incompatible setting.
+
 Success criterion:
 
 > Multiple recognizable quartz habits are produced by the same procedural engine.
@@ -147,25 +206,31 @@ Validate the supported [left/right variants](data-model.md#quartz-handedness), i
 
 Resolve the [asymmetry decision](data-model.md#habit-preset) during M3 habit selection. Acceptance requires either implemented and validated behavior for dependent presets, or a documented selection of V1 habits that can use the existing form-level controls with asymmetry explicitly deferred. Reassess this dependency when selecting the remaining habits in M5.
 
+Validate habit [preferred views](data-model.md#habit-preset) during M3: vectors use the crystal-local Cartesian frame, invalid or parallel direction/up combinations are rejected, the lattice-based up fallback is deterministic, habit changes preserve the current camera, and initial framing or explicit camera reset applies the preferred view. Restored camera state must take precedence.
+
+Add a quartz demo with habit selection, synchronized form sliders, handedness selection, and face inspection. Keep the M2 fluorite demo runnable.
+
 ---
 
-### M4 — Generic Mineral Definitions
+### M4 — Mineral Data Infrastructure
 
-Move all mineral-specific information out of generator code.
+Stabilize the reusable mineral and morphology schemas, catalog organization, validation, and loading paths in `crystal-data`. Move the provisional fluorite and quartz records from M2 and M3 into this permanent structure without changing the generic core input contract.
 
-Bad:
+Mineral-specific generator logic is prohibited throughout development:
 
 ```ts
 function generateQuartz() {}
 ```
 
-Correct:
+The engine must continue to receive generic data:
 
 ```ts
 generateCrystal(mineral, morphology);
 ```
 
-The engine must work from generic data.
+Success criterion:
+
+> Shipped and provisional mineral records use the same validated data path, and adding a mineral requires no mineral-specific changes to `crystal-core`.
 
 ---
 
@@ -183,9 +248,15 @@ triclinic
 
 Use representative minerals for validation.
 
+Add one paired trigonal-setting fixture: represent the same sourced crystallographic definition in hexagonal and rhombohedral settings with an explicit basis transformation between them. Calcite is the preferred candidate because its shipped record is delivered in M5; the exact fixture may be selected during M5.
+
+Verify that both settings resolve valid lattice and symmetry operations and that equivalent planes produce the same Cartesian directions after basis conversion. Confirm the expected physical relationships between the converted unit cells and generated geometry. This fixture supplements the M3 quartz coverage; it does not need to define another shipped mineral or habit.
+
 Success criterion:
 
 > Complete both the shipped mineral coverage and the crystal-system fixture coverage in [Mineral and Crystal-System Coverage](#mineral-and-crystal-system-coverage), including the remaining mineral records and habits.
+
+Add a multi-mineral demo with mineral and habit selection and visible crystal-system and setting information. Its controls must update when the selected record or habit changes.
 
 ---
 
@@ -216,6 +287,7 @@ Required acceptance tests ([Atomic Structure](data-model.md#atomic-structure) an
 * Periodic bonds connect the correct images across cell boundaries.
 * Incompatible cell/basis combinations are rejected; explicit basis transformations preserve the structure.
 * Atomic structure, unit-cell overlay, and morphology have consistent orientation.
+* Viewer integration of the paired trigonal-setting fixture displays the axes and unit cell appropriate to each declared setting.
 * Separate morphology and atomic structure views provide the [V1 view capabilities](viewer-api.md#atomic-structure-mode), including optional axes and a unit-cell overlay for morphology and atoms, available bonds, and repeated cells for atomic structure. Combined view is [deferred beyond V1](spec.md#later-scope) and is not an M6 acceptance requirement.
 * Missing bonds permit an atoms-only view, and inferred bonds are identified as derived.
 * Ambiguous site representation produces an import diagnostic.
@@ -227,6 +299,8 @@ Required acceptance tests ([Atomic Structure](data-model.md#atomic-structure) an
 * Supplied CIF bond data omitted by the importer is reported. If bond import is supported, fixtures verify symmetry-reference and cell-translation resolution into periodic endpoints.
 
 Include fixtures for every rejection case in the documented import boundary, including ambiguous site representation.
+
+Add an atomic-structure demo with view-mode, unit-cell, bond, and lattice-repetition controls. Reflect the loaded structural definition and current repetition settings, and show import or loading diagnostics.
 
 ---
 
@@ -253,7 +327,8 @@ Required acceptance checks for the [Web Component](viewer-api.md#web-component) 
 
 * Embed the component in plain HTML without a framework.
 * Demonstrate two independent instances on one page and verify that their configuration, selection, and lifecycle do not interfere.
-* Ship the basic-embedding and programmatic-controls/events demos.
+* Ship the basic-embedding and programmatic-controls/events demos, and update all earlier milestone demos to the stabilized API.
+* Verify that demo controls initialize from current state and remain synchronized after user edits, programmatic changes, and state restoration.
 * Exercise lifecycle behavior and state restoration through the component, including preservation of the selected quartz variant.
 
 Exercise the [loading and connection contracts](viewer-api.md#mineral-loading) during initial viewer integration and complete these acceptance checks by M7:
@@ -274,6 +349,7 @@ Required acceptance tests for the [state serialization contract](viewer-api.md#s
 * Reject malformed state, unsupported versions, and missing or incompatible required references without partial mutation.
 * Accept structurally valid state that produces invalid geometry; verify both fresh-viewer and retained-mesh behavior and subsequent recovery.
 * Verify that `getState → setState → getState` preserves equivalent persistent configuration.
+* Restore each representation of the paired trigonal-setting fixture and verify that its declared setting is preserved.
 
 Resolve the versioning, data-compatibility, and face-selection decisions identified in the owning contract during M7. Define appearance-state coverage in M7 and verify selected appearance and user-override round trips when M8 delivers appearance support.
 
@@ -284,15 +360,21 @@ Resolve the versioning, data-compatibility, and face-selection decisions identif
 Add:
 
 ```text
+base color
+roughness
+metalness
 transmission
 IOR
-roughness
-color
-absorption
-basic transparent minerals
+absorption color
+absorption density
+basic transparent and metallic mineral appearances
 ```
 
-Use documented quartz and fluorite reference scenes under the [appearance validation policy](architecture.md#appearance-validation). Verify the intended effects of transmission, IOR, roughness, color, and absorption without changes to scientific geometry. Check face and edge readability during rotation and zoom, and record visual review results alongside automated parameter-mapping checks.
+Transmission is the only mineral-transparency control in V1. `opacity` remains [deferred](data-model.md#mineral-appearance); renderer-level fading does not expand the appearance contract.
+
+Use documented quartz, fluorite, and pyrite reference scenes under the [appearance validation policy](architecture.md#appearance-validation). Verify the intended effects and data-model constraints for `baseColor`, `roughness`, `metalness`, `transmission`, `ior`, `absorptionColor`, and `absorptionDensity` without changes to scientific geometry. Check face and edge readability during rotation and zoom, and record visual review results alongside automated parameter-mapping checks.
+
+Add an appearance demo whose controls expose the supported appearance fields with their current values. Provide the documented quartz, fluorite, and pyrite reference selections and keep controls synchronized when the selected appearance changes.
 
 Verify that selected appearance and user overrides survive state restoration under the [serialization contract](viewer-api.md#state-serialization), completing the appearance acceptance check scheduled in M7.
 
@@ -341,7 +423,7 @@ plain HTML canvas viewer
 morphology sliders
 ```
 
-This validates the entire architecture end-to-end with the simplest crystal system before expanding to trigonal (quartz) and the remaining systems.
+Deliver this vertical slice as the first plain-HTML milestone demo, including synchronized form-development sliders and geometry status. This validates the entire architecture end-to-end with the simplest crystal system before expanding to trigonal (quartz) and the remaining systems.
 
 ---
 
@@ -374,7 +456,7 @@ Engine coverage is tracked separately:
 | Crystal system | Fixture delivery milestone | Fixture selection |
 |---|---|---|
 | Cubic | M1–M2 | Cubic prototype and fluorite reference cases |
-| Trigonal | M3 | Quartz reference cases |
+| Trigonal | M3 and M5 | Quartz reference cases in the hexagonal setting, plus one paired hexagonal/rhombohedral-setting fixture |
 | Tetragonal | M5 | Reference fixture selected during M5 |
 | Hexagonal | M5 | Reference fixture selected during M5 |
 | Orthorhombic | M5 | Reference fixture selected during M5 |
@@ -382,6 +464,8 @@ Engine coverage is tracked separately:
 | Triclinic | M5 | Reference fixture selected during M5 |
 
 **Open decision — deferred to M5:** Select the remaining reference fixtures. For every row, link the fixture, its sources, and expected results before accepting its delivery milestone.
+
+For the paired trigonal-setting fixture, prefer calcite and document the explicit basis transformation. Acceptance requires matching Cartesian plane directions and the expected unit-cell and geometry relationships after conversion; merely generating a mesh in both settings is insufficient.
 
 Validate lattice relationships, symmetry-equivalent plane directions, and bounded geometry for selected enclosing forms against the reference results, following [symmetry resolution](scientific-model.md#symmetry-resolution) and [geometry validation](scientific-model.md#geometry-validation). Include non-orthogonal cells and the relevant symmetry operations. Successful mesh generation alone is insufficient evidence of crystal-system coverage.
 

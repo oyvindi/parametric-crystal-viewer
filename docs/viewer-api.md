@@ -63,6 +63,8 @@ viewer.showFaceLabels(false);
 
 The viewer must not create application UI controls automatically.
 
+The [reference demos](spec.md#reference-viewer) own their HTML controls. They initialize those controls from current viewer state and keep them synchronized through API results and events, including after programmatic changes and state restoration.
+
 ---
 
 ## Viewer Lifecycle
@@ -88,6 +90,12 @@ viewer.stop();
 ```
 
 The host application must be able to control the lifecycle explicitly.
+
+### Camera and Preferred Views
+
+A habit's optional [preferred view](data-model.md#habit-preset) supplies initial or reset-camera presentation metadata. When no restored or explicitly supplied camera state exists, initial framing uses the current habit's preferred view. `resetCamera()` also uses that preferred view and frames the current geometry bounds.
+
+Changing habit or form settings preserves the user's current camera unless the host explicitly requests a reset. Restored camera state takes precedence over a preferred view. Preferred-view metadata is not serialized separately from its referenced habit; the effective camera state is serialized under [Persistent State Coverage](#persistent-state-coverage).
 
 ### Mineral Loading
 
@@ -136,7 +144,9 @@ camera-changed
 mineral-loaded
 ```
 
-`geometry-invalid` is required for failed geometry generation. Its detail contains the invalid result's `reason`, `message`, and optional `formIds` ([Geometry Output](scientific-model.md#geometry-output)). Recovery follows [Viewer Lifecycle](viewer-api.md#viewer-lifecycle).
+`geometry-invalid` is required for failed geometry generation. Its detail contains the invalid result's complete [diagnostic](architecture.md#diagnostics) ([Geometry Output](scientific-model.md#geometry-output)). Recovery follows [Viewer Lifecycle](#viewer-lifecycle).
+
+Viewer loading, lifecycle, and state operations use stable `viewer.*` diagnostic codes. Expected asynchronous failures reject with a typed public-operation error carrying one or more diagnostics; hosts must not parse exception messages to determine behavior. Exact error class and method signatures remain deferred to M7.
 
 Example:
 
@@ -176,6 +186,8 @@ Face normal
 Symmetry relationship
 Equivalent faces
 ```
+
+Display and event payloads report crystallographic indices in the loaded definition's declared setting. Any convenience representation in another setting must be identified as converted rather than replacing the declared-setting indices.
 
 Provide a function to highlight all symmetry-equivalent faces.
 
@@ -321,7 +333,7 @@ State must include the following configuration where the corresponding capabilit
 
 | Category | Required coverage |
 |---|---|
-| Mineral or structural definition | Identity and data revision or compatibility identifier; imported definition as described below |
+| Mineral or structural definition | Identity, declared setting, and data revision or compatibility identifier; imported definition as described below |
 | Morphology | Effective form definitions or resolvable identities, enabled flags, development values, morphology scale, and supported preset overrides |
 | Habit | Selected preset association alongside effective morphology settings |
 | Appearance | Selected appearance and user overrides |

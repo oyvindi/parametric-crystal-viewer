@@ -16,3 +16,4 @@ Name records `NNNN-short-title.md`. Include:
 Decision records explain why a choice was made. Update the owning contract when an accepted decision changes required behavior; do not create a second competing specification here. Do not invent historical rationale for existing choices.
 
 * [0001 — Scientific Core Dependency Boundary](0001-scientific-core-dependency-boundary.md) — accepted.
+* [0002 — Direct Half-Space Intersection and Polygon Output](0002-direct-half-space-intersection.md) — accepted.

@@ -59,6 +59,8 @@ Other future capabilities are described below; they are not additions to the V1 
 
 [Combined Structure / Morphology View](viewer-api.md#combined-structure--morphology-view) is deferred beyond V1, with no delivery milestone assigned. V1 provides separate morphology and atomic structure views, with consistent crystallographic orientation and optional axes and unit-cell display.
 
+An expanded mineral catalog and any database, indexing, or search infrastructure needed to support it are also later scope. V1 ships the small curated set in the [Initial Minerals](#initial-minerals) section as version-controlled project data.
+
 ---
 
 ## Supported Crystal Systems
@@ -169,9 +171,13 @@ Export functionality should use generated geometry rather than accessing Three.j
 
 ## Reference Viewer
 
-Create a lightweight plain-DOM application for development, using plain HTML, CSS, and JavaScript/TypeScript. The repo should include multiple minimal demos showing how to embed the Web Component in barebone HTML without any framework.
+Create a lightweight plain-DOM application for development, using plain HTML, CSS, and JavaScript/TypeScript. Add minimal demos incrementally as soon as a capability becomes viewable; do not postpone all demos until API stabilization in M7. Each milestone demo remains independently runnable and is linked from a simple demo index.
 
-Provide at least two minimal demos: basic embedding, and programmatic controls and events. Demonstrate two independent viewer instances on one page in at least one demo.
+Each demo should be a small HTML document focused on one capability and use the exported viewer boundary rather than renderer internals. A demo may use a clearly provisional viewer API before M7, then must be updated to the stabilized API during M7. Do not copy scientific calculations, mineral definitions, or manually modeled geometry into a demo.
+
+Controls must reflect the viewer's current requested settings. Initialize controls from viewer state, display current slider values and selections, send edits through the viewer API, and listen for viewer events so programmatic changes and state restoration update the controls. Display current geometry or loading diagnostics where applicable.
+
+The V1 suite must include basic embedding, morphology controls, programmatic controls and events, multiple minerals, atomic structure, and appearance examples as those capabilities are delivered. Demonstrate two independent viewer instances on one page in at least one demo.
 
 Suggested layout:
 

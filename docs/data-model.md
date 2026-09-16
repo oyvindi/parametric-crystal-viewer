@@ -34,6 +34,8 @@ interface Mineral {
 
 `crystallography` is the ambient (default) phase at standard conditions. `phases`, when present, lists alternative structural phases (e.g. high-pressure transformations); it does not duplicate the ambient phase.
 
+`TwinLaw` and its crystallographic transform are defined in [Twinning](scientific-model.md#twinning).
+
 ---
 
 ### Crystallography
@@ -81,7 +83,7 @@ interface UnitCell {
 }
 ```
 
-Unit-cell lengths use Ångström (Å), and unit-cell angles use degrees. Imported lengths expressed in other units must be converted to Ångström before entering the normalized data model. Preserve the original units in source metadata when provided. Inputs with unknown or ambiguous units must produce a validation diagnostic rather than assuming a unit.
+Unit-cell lengths use Ångström (Å), and unit-cell angles use degrees. Imported lengths expressed in other units must be converted to Ångström before entering the normalized data model. Preserve the original units in source metadata when provided. Inputs with unknown or ambiguous units must produce a validation diagnostic rather than assuming a unit. Cartesian construction and cell-validity rules are defined in [Coordinate and Lattice Conventions](scientific-model.md#coordinate-and-lattice-conventions).
 
 ---
 
@@ -130,6 +132,8 @@ Keep imported sites separate from the expanded reference-cell structure used for
 
 Do not automatically merge distinct source records at the same position: they may represent alternative elements or disorder. Omitted occupancy means `1`. Preserve partial occupancy as metadata; do not randomly remove atoms or present partial occupancy as full occupancy without an indication.
 
+Every fractional-position component must be finite. Occupancy, when supplied, must be finite and within `[0, 1]`; reject out-of-range values rather than clamping them.
+
 #### Periodic Bonds
 
 ```ts
@@ -169,7 +173,7 @@ interface HabitPreset {
 
     forms: CrystalFormSetting[];
 
-    orientation?: Vec3;
+    preferredView?: PreferredView;
 
     asymmetry?: AsymmetryConstraint[];
 
@@ -177,7 +181,18 @@ interface HabitPreset {
 }
 ```
 
-`orientation` specifies a preferred viewing direction. `asymmetry` is an illustrative extension for unequal development of symmetry-equivalent faces within a form; its behavior is unresolved. Different development values for separate forms are already supported and do not require this extension.
+```ts
+interface PreferredView {
+    cameraDirection: Vec3;
+    upDirection?: Vec3;
+}
+```
+
+`preferredView` is presentation metadata and never modifies scientific geometry. Both vectors use the deterministic crystal-local Cartesian frame from [Coordinate and Lattice Conventions](scientific-model.md#coordinate-and-lattice-conventions). `cameraDirection` points from the morphology origin toward the camera. Components must be finite and the vector must be non-zero. When supplied, `upDirection` must also be finite and non-zero and must not be parallel to `cameraDirection`; the viewer projects and normalizes it in the view plane.
+
+When `upDirection` is absent, derive a deterministic up direction from the Cartesian `c` lattice vector, falling back to `b` and then `a` if projection is too close to zero. Viewer application and state precedence are defined in [Camera and Preferred Views](viewer-api.md#camera-and-preferred-views).
+
+`asymmetry` is an illustrative extension for unequal development of symmetry-equivalent faces within a form; its behavior is unresolved. Different development values for separate forms are already supported and do not require this extension.
 
 > **Open decision — deferred to M3 habit selection:** Determine whether the selected V1 habits require asymmetry within a form. If they do, define and implement the behavior before accepting any dependent preset. Otherwise, record the supporting habit selection and explicitly defer the capability; the illustrative field does not make asymmetry a V1 requirement. Revisit the decision if later habit selection introduces a dependency.
 
@@ -210,7 +225,7 @@ interface CrystalFormSetting {
 
 When `enabled` is `false`, the form is omitted from the half-space intersection entirely.
 
-`development` is the viewer-facing form control. Its range, absence behavior, and mapping to positive support distance are defined in [Half-Space Intersection](scientific-model.md#half-space-intersection).
+`development` is the viewer-facing form control. It must be finite and within `[0, 1]`; its absence behavior and mapping to positive support distance are defined in [Half-Space Intersection](scientific-model.md#half-space-intersection).
 
 ---
 
@@ -234,7 +249,7 @@ Each preset should define:
 
 * active forms
 * development values
-* optional orientation
+* optional preferred view
 * optional asymmetry constraints
 * source references
 
@@ -262,6 +277,8 @@ Implement a CIF parser or integrate an appropriate lightweight CIF parsing libra
 
 V1 supports a documented subset of CIF 1.1 structural data. CIF 2.0 is deferred; unsupported formats and constructs must produce import diagnostics. Parser selection remains an implementation decision.
 
+Import errors and warnings use the shared [diagnostic envelope](architecture.md#diagnostics). Import diagnostics use stable `data.cif.*` codes and include source block, line, and column information when available. Warnings may accompany a successfully normalized definition; errors prevent it from being committed.
+
 * **Data blocks:** When a file contains multiple structural blocks, require explicit block selection rather than silently choosing one.
 * **Values:** Handle numerical uncertainty notation and missing-value markers explicitly. Missing information required to construct the structural definition produces a diagnostic rather than a fabricated default. Define the supported handling of uncertainty metadata before M6 implementation.
 * **Symmetry:** Accept validated explicit operations or identifiers and settings supported by the registry, following [Symmetry Resolution](scientific-model.md#symmetry-resolution). Publish supported registry settings; reject unsupported or ambiguous identifiers. When multiple descriptions are supplied, their agreement remains required.
@@ -287,7 +304,7 @@ measurement temperature if available
 
 Imported CIF data should be converted into the internal `crystal-data` schema.
 
-The importer must establish whether sites are symmetry-independent or already describe a complete cell according to its supported import convention, and set `siteRepresentation` explicitly ([Atomic Structure](data-model.md#atomic-structure)). If it cannot determine this reliably, report an import diagnostic rather than guessing. Import cell, symmetry, and sites as one structural definition and apply the cell/basis compatibility rules in [Atomic Structure](data-model.md#atomic-structure) when combining it with existing data.
+The importer must establish whether sites are symmetry-independent or already describe a complete cell according to its supported import convention, and set `siteRepresentation` explicitly ([Atomic Structure](#atomic-structure)). If it cannot determine this reliably, report an import diagnostic rather than guessing. Import cell, symmetry, and sites as one structural definition and apply those cell/basis compatibility rules when combining it with existing data.
 
 When importing bonds, resolve symmetry references and cell translations into periodic endpoints in the expanded reference cell. Preserve source information and distinguish imported bonds from inferred bonds.
 
@@ -314,7 +331,7 @@ interface MineralAppearance {
 
     transmission?: number;
 
-    opacity?: number;
+    opacity?: number; // Deferred beyond V1.
 
     ior?: number;
 
@@ -323,6 +340,12 @@ interface MineralAppearance {
     absorptionDensity?: number;
 }
 ```
+
+In V1, `transmission` is the mineral-transparency control and uses a normalized range from `0` (no transmission) to `1` (full transmission). It models light passing through a solid material.
+
+`roughness` and `metalness` also use normalized ranges from `0` to `1`. `ior` must be finite and strictly positive. `absorptionDensity` must be finite and non-negative. Exact defaults are selected during M8 and documented with the implemented material mapping.
+
+`opacity` is deferred beyond V1. Renderer-level fading for interaction or illustrative overlays is not part of the mineral appearance record. Before `opacity` can be used in mineral presets or serialized appearance overrides, define its alpha-compositing behavior and interaction with transmission. The two properties must not be treated as complements.
 
 Examples for quartz may include:
 
@@ -443,6 +466,14 @@ Do not present all parameters as having equal scientific authority.
 
 ## Data Sources
 
+### Catalog Storage Strategy
+
+V1 stores its small curated mineral catalog as version-controlled normalized records in `crystal-data`; it does not require a server or runtime database. Give records stable identities and data revisions so storage can later move behind a generated index, embedded database, or service without changing the scientific contracts.
+
+When catalog size, search requirements, update frequency, or collaborative editing justify a database, record a separate architectural decision covering storage, ingestion, indexing, distribution, and offline behavior. Do not choose database technology solely to store the initial five minerals.
+
+### Acquisition and Licensing
+
 Potential sources include:
 
 ```text
@@ -459,3 +490,7 @@ public-domain crystallographic atlases
 Licensing must be checked individually.
 
 Do not automatically redistribute data or images without verifying applicable rights.
+
+Before a milestone depends on external mineral, structural, symmetry-registry, or scientific fixture data, record the exact source and record identifiers, version or access date, applicable license or terms, intended redistribution, and expected local artifact. Public data with clear compatible terms may be acquired as part of implementation.
+
+Escalate a concrete user-action request when acquisition requires an account, click-through acceptance, paid access, manual download, redistribution judgment, or another action that should be performed by the project owner. State exactly what is needed, why automated acquisition is unsuitable, where the resulting file should be placed, and an expected checksum or other identity check when available. Continue independent work that does not depend on that artifact.
