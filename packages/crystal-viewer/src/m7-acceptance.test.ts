@@ -140,6 +140,26 @@ describe("M7 loading contracts", () => {
         expect(viewer.getStructureInfo()).not.toBeNull();
         expect(viewer.getViewMode()).toBe("atomic");
     });
+
+    it("does not let a rejected structural load supersede a pending mineral load", async () => {
+        const viewer = new CrystalViewer(canvas());
+        viewers.push(viewer);
+        viewer.loadCif(P1_CIF);
+        const definition = structuredClone(viewer.getState().structure!.definition);
+        const invalid = {
+            ...definition,
+            atomicStructure: {
+                ...definition.atomicStructure,
+                bonds: [{ a: { siteId: "missing", cellOffset: [0, 0, 0] as const }, b: { siteId: "also-missing", cellOffset: [0, 0, 0] as const } }],
+            },
+        };
+        const pending = viewer.loadMineral("quartz");
+
+        viewer.loadStructure(invalid);
+        await pending;
+
+        expect(viewer.getMineralId()).toBe("quartz");
+    });
 });
 
 describe("M7 lifecycle (disconnect, reconnect, disposal)", () => {
@@ -288,16 +308,22 @@ describe("M7 state serialization", () => {
 
     it("restores the saved camera orientation in a fresh viewer", async () => {
         const viewer = await loaded("quartz");
-        viewer.resetCamera();
+        const originalCamera = viewer as unknown as { camera: PerspectiveCamera; cameraTarget: { set(x: number, y: number, z: number): void } };
+        originalCamera.camera.position.set(12, 7, 5);
+        originalCamera.camera.zoom = 1.6;
+        originalCamera.cameraTarget.set(1, -2, 3);
+        originalCamera.camera.lookAt(1, -2, 3);
+        originalCamera.camera.updateProjectionMatrix();
         const saved = viewer.getState();
+        expect(saved.camera).toMatchObject({ projection: "perspective", target: [1, -2, 3], zoom: 1.6 });
         const fresh = new CrystalViewer(canvas());
         viewers.push(fresh);
 
         fresh.setState(saved);
 
-        const originalCamera = viewer as unknown as { camera: PerspectiveCamera };
         const restoredCamera = fresh as unknown as { camera: PerspectiveCamera };
         expect(restoredCamera.camera.quaternion.angleTo(originalCamera.camera.quaternion)).toBeCloseTo(0, 12);
+        expect(restoredCamera.camera.zoom).toBeCloseTo(1.6);
     });
 
     it("shows axes without a unit-cell wireframe and includes a3 for hexagonal-setting quartz", async () => {
@@ -329,6 +355,28 @@ describe("M7 state serialization", () => {
         expect(fresh.getState().structure!.definition).toEqual(saved.structure!.definition);
     });
 
+    it("rejects restored structural states whose supplied bonds do not resolve", () => {
+        const viewer = new CrystalViewer(canvas());
+        viewers.push(viewer);
+        viewer.loadCif(P1_CIF);
+        const baseline = viewer.getState();
+        const invalid = {
+            ...baseline,
+            structure: {
+                definition: {
+                    ...baseline.structure!.definition,
+                    atomicStructure: {
+                        ...baseline.structure!.definition.atomicStructure,
+                        bonds: [{ a: { siteId: "missing", cellOffset: [0, 0, 0] as const }, b: { siteId: "also-missing", cellOffset: [0, 0, 0] as const } }],
+                    },
+                },
+            },
+        };
+
+        expect(() => viewer.setState(invalid)).toThrow(ViewerOperationError);
+        expect(viewer.getState()).toEqual(baseline);
+    });
+
     it("rejects malformed state, unsupported versions, and incompatible references without partial mutation", async () => {
         const viewer = await loaded("quartz");
         viewer.setHabit("tessin");
@@ -344,6 +392,9 @@ describe("M7 state serialization", () => {
             { ...before, mineral: { id: "quartz", dataRevision: "wrong" } },
             { ...before, forms: { ...before.forms, noform: { development: 0.5, enabled: true } } },
             { ...before, camera: { ...before.camera, position: [1, 2] } },
+            { ...before, camera: { ...before.camera, projection: "orthographic" } },
+            { ...before, camera: { ...before.camera, target: [1, 2] } },
+            { ...before, camera: { ...before.camera, zoom: 0 } },
             { ...before, structure: { definition: {} } },
         ];
         for (const state of bad) {

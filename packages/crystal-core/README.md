@@ -66,5 +66,6 @@ the following `core.atomic.*` codes:
 | Code | Meaning |
 |---|---|
 | `core.atomic.invalid-site` | A site ID is empty or not unique, the element symbol is missing, a fractional position is non-finite, or occupancy is outside `[0, 1]`. |
+| `core.atomic.invalid-bond` | A supplied bond endpoint does not identify an expanded atom, its cell offset is not an integer lattice translation, or its metadata is invalid. |
 | `core.atomic.empty-structure` | The structure has no sites. |
 | `core.atomic.missing-operations` | An asymmetric-unit structure was supplied without resolved space operations. |

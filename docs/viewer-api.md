@@ -25,6 +25,15 @@ The crystal geometry is then regenerated.
 
 This ensures the resulting crystal remains crystallographically meaningful.
 
+`getForms()` reports each control's current `effect`: `inactive` (disabled or
+zero), `scale-only` (the only active form, so changing it rescales the whole
+shape), `shape` (a visible contributor among multiple active forms),
+`redundant` (active but currently excluded by a tighter boundary), or
+`geometry-invalid`. It also reports `contributesToVisibleFaces`. These values
+are derived from the generic geometry constraints and contributors, so hosts
+can explain or de-emphasize controls without mineral-specific rules. A
+redundant form can become shape-affecting after further edits.
+
 ---
 
 ## Appearance Controls
@@ -105,11 +114,13 @@ The host application must be able to control the lifecycle explicitly.
 
 A habit's optional [preferred view](data-model.md#habit-preset) supplies initial or reset-camera presentation metadata. When no restored or explicitly supplied camera state exists, initial framing uses the current habit's preferred view. `resetCamera()` also uses that preferred view and frames the current geometry bounds.
 
-Changing habit or form settings preserves the user's current camera unless the host explicitly requests a reset. Restored camera state takes precedence over a preferred view. Preferred-view metadata is not serialized separately from its referenced habit; the effective camera state is serialized under [Persistent State Coverage](#persistent-state-coverage).
+Changing habit or form settings preserves the user's current camera unless the host explicitly requests a reset. Restored camera state takes precedence over a preferred view. V1 records its supported `"perspective"` projection, position, up vector, target, zoom, clipping planes, and model rotation. Preferred-view metadata is not serialized separately from its referenced habit; the effective camera state is serialized under [Persistent State Coverage](#persistent-state-coverage).
 
 ### Mineral Loading
 
 Mineral loading is transactional: resolve and validate the requested definition before replacing the current configuration. A failed load leaves the current viewer configuration and displayed geometry unchanged and exposes a diagnostic to the host.
+
+Structural loading follows the same commit boundary. A CIF that parses but fails lattice, symmetry, atom-expansion, or supplied-bond validation emits `structure-load-failed`; it does not emit `structure-loaded`, replace the current definition, or supersede a pending mineral load.
 
 When loads overlap, only the newest request may commit. Superseded results must not mutate viewer state or emit success events, even if they complete after the newest request fails. The host observes load completion, failure, and supersession through the `mineral-loaded`, `mineral-load-failed`, and `load-superseded` events; `loadMineral` is async and commits only the newest request.
 
@@ -360,6 +371,8 @@ State must include the following configuration where the corresponding capabilit
 | Atomic view | View mode and lattice repetition settings |
 
 Saved effective settings take precedence over preset defaults during restoration. A habit ID alone is insufficient to reproduce an edited habit. Do not silently substitute changed defaults or incompatible referenced data.
+
+Camera states created before target and zoom were added use the original target `[0, 0, 0]` and zoom `1`; new states always include both fields.
 
 Transient state such as pointer hover, animation-loop handles, GPU resources, and face selection is excluded. Face selection is mesh-relative and not stable across regeneration, so it is not persistent; hosts re-apply it through the public selection API after geometry is regenerated. Exact state types live in [crystal-viewer](../packages/crystal-viewer/src/state.ts) (`ViewerState`, version 1); see the [state serialization decision](decisions/0004-viewer-state-serialization.md).
 

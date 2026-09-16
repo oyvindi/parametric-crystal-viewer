@@ -167,6 +167,26 @@ describe("M4 viewer loading", () => {
     });
 });
 
+describe("form control metadata", () => {
+    it("reports generic scale, shape, inactive and redundant control effects", async () => {
+        const { viewer } = await setup("fluorite");
+        const cube = viewer.getForms().find((form) => form.id === "a")!;
+        expect(cube).toMatchObject({ effect: "scale-only", contributesToVisibleFaces: true });
+        expect(viewer.getForms().find((form) => form.id === "o")).toMatchObject({ effect: "inactive", contributesToVisibleFaces: false });
+
+        viewer.setHabit("cubo-octahedron");
+        for (const form of viewer.getForms().filter((form) => form.enabled)) {
+            expect(form).toMatchObject({ effect: "shape", contributesToVisibleFaces: true });
+        }
+
+        const source: any = structuredClone(FLUORITE);
+        source.habits[0].forms.push({ ...source.habits[0].forms[0], id: "a-copy", label: "Cube copy" });
+        const { viewer: shared } = await setup(source);
+        shared.setFormDevelopment("a-copy", 0.5);
+        expect(shared.getForms().find((form) => form.id === "a-copy")).toMatchObject({ effect: "redundant", contributesToVisibleFaces: false });
+    });
+});
+
 describe("M7 contributor-specific face equivalence", () => {
     it("selects one contributing form's equivalence set on a shared face", async () => {
         const source: any = structuredClone(FLUORITE);

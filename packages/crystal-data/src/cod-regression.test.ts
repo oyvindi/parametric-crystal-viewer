@@ -4,7 +4,7 @@ import { createLattice, expandAtomicStructure, fractionalToCartesian, inferBonds
 import { importCif } from "./import.js";
 
 const source = (id: string) => readFileSync(new URL(
-    ["9000775", "9009005"].includes(id) ? `../test-fixtures/cod/${id}.cif` : `../../crystal-core/test-fixtures/m5/${id}.cif`, import.meta.url), "utf8");
+    ["9000775", "9009005", "1000037", "1534976"].includes(id) ? `../test-fixtures/cod/${id}.cif` : `../../crystal-core/test-fixtures/m5/${id}.cif`, import.meta.url), "utf8");
 function expand(text: string) {
     const imported = importCif(text);
     if (!imported.ok) throw new Error(JSON.stringify(imported.diagnostics));
@@ -21,6 +21,8 @@ describe("COD reference-cell regression cases", () => {
     const cases = [
         { id: "9000775", counts: { Si: 3, O: 6 } },
         { id: "9009005", counts: { Ca: 4, F: 8 } },
+        { id: "1000037", counts: { Ba: 4, S: 4, O: 16 } },
+        { id: "1534976", counts: { Ba: 4, N: 8, O: 24, S: 8 } },
         { id: "9000095", counts: { Ca: 6, C: 6, O: 18 } },
         { id: "9000594", counts: { Fe: 4, S: 8 } },
         { id: "9000993", counts: { Na: 4, Al: 4, Si: 12, O: 32 } },
@@ -30,6 +32,16 @@ describe("COD reference-cell regression cases", () => {
         const actual: Record<string, number> = {};
         for (const atom of atoms) actual[atom.element] = (actual[atom.element] ?? 0) + 1;
         expect(actual).toEqual(counts);
+    });
+
+    it("normalizes charged atom-type symbols and resolves an orthorhombic IT number", () => {
+        const baryte = expand(source("1000037"));
+        expect(new Set(baryte.atoms.map((atom) => atom.element))).toEqual(new Set(["Ba", "S", "O"]));
+        expect(inferBonds(baryte.atoms, baryte.lattice).length).toBeGreaterThan(0);
+
+        const sulphamate = expand(source("1534976"));
+        expect(sulphamate.definition.crystallography.crystalSystem).toBe("orthorhombic");
+        expect(sulphamate.definition.crystallography.spaceOperations).toHaveLength(4);
     });
 
     it("places quartz silicon at the three screw-related positions", () => {

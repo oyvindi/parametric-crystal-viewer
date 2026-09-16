@@ -1,5 +1,5 @@
 import { Scene, PerspectiveCamera, WebGLRenderer, MeshPhysicalMaterial, Mesh, MeshBasicMaterial, Color, DirectionalLight, AmbientLight, Group, DoubleSide, Raycaster, Vector2, Vector3, Sprite, SpriteMaterial, CanvasTexture, BufferGeometry, Float32BufferAttribute, LineSegments, LineBasicMaterial, PMREMGenerator, EquirectangularReflectionMapping } from "three";
-import { createLattice, expandAtomicStructure, generateCrystal, inferBonds, type Diagnostic, type GeometryResult, type CrystalGeometry, type CrystalFace, type ExpandedAtom, type Lattice, type PeriodicBond } from "@crystal/core";
+import { createLattice, expandAtomicStructure, generateCrystal, inferBonds, validatePeriodicBonds, type Diagnostic, type GeometryResult, type CrystalGeometry, type CrystalFace, type ExpandedAtom, type Lattice, type PeriodicBond } from "@crystal/core";
 import { loadMineral as loadMineralData, createCrystalInput, resolveHabit, resolveCrystallography, importCif, getMineral, validateMineral, MineralDataError, type Mineral, type MineralCrystallography, type StructuralDefinition } from "@crystal/data";
 import { createThreeGeometryWithPicking, createAtomicStructure, atomicBounds, createCrystalMaterial, applyAppearance, resolveAppearance, APPEARANCE_FIELDS, type AppearanceParams, type AppearanceField } from "@crystal/three";
 import { cameraBasis } from "./camera.js";
@@ -19,11 +19,21 @@ export class ViewerOperationError extends Error {
 
 export type GeometryStatus = "valid" | "invalid";
 
+/**
+ * The current geometric role of a form-development control. This is derived
+ * from the active generic constraints and face contributors, independent of
+ * mineral species or crystal system.
+ */
+export type FormControlEffect = "inactive" | "scale-only" | "shape" | "redundant" | "geometry-invalid";
+
 export interface FormInfo {
     readonly id: string;
     readonly label: string;
     readonly development: number;
     readonly enabled: boolean;
+    readonly effect: FormControlEffect;
+    /** Whether this form contributes to at least one current visible face. */
+    readonly contributesToVisibleFaces: boolean;
 }
 
 export interface HabitInfo {
@@ -75,6 +85,7 @@ export class CrystalViewer extends EventTarget {
     private readonly renderer: WebGLRenderer;
     private readonly scene: Scene;
     private readonly camera: PerspectiveCamera;
+    private readonly cameraTarget = new Vector3(0, 0, 0);
     private readonly crystalGroup: Group;
     private readonly labelGroup: Group;
     private mesh: Mesh<BufferGeometry, MeshPhysicalMaterial> | null = null;
@@ -134,7 +145,7 @@ export class CrystalViewer extends EventTarget {
         this.scene.background = new Color(0x2a2e33); // neutral fallback; replaced by a gradient when WebGL is available
         this.camera = new PerspectiveCamera(45, 1, 0.01, 1000);
         this.camera.position.set(8, 6, 8);
-        this.camera.lookAt(0, 0, 0);
+        this.camera.lookAt(this.cameraTarget);
         this.crystalGroup = new Group();
         this.scene.add(this.crystalGroup);
         this.labelGroup = new Group();
@@ -299,10 +310,26 @@ export class CrystalViewer extends EventTarget {
     getForms(): FormInfo[] {
         if (!this.mineral) return [];
         const habit = resolveHabit(this.mineral, this.habitId);
-        return habit.forms.map((form) => {
+        const settings = habit.forms.map((form) => {
             const dev = this.formDevelopment[form.id] ?? form.development;
             const en = this.formEnabled[form.id] ?? form.enabled ?? true;
-            return { id: form.id, label: form.label ?? form.id, development: dev, enabled: en };
+            return { form, development: dev, enabled: en };
+        });
+        const active = settings.filter(({ development, enabled }) => enabled && development > 0);
+        const contributingForms = new Set(this.currentGeometry?.faces.flatMap((face) => face.contributors.map((contributor) => contributor.formId)) ?? []);
+        const geometryValid = this.currentResult?.status === "valid";
+        return settings.map(({ form, development, enabled }) => {
+            const contributesToVisibleFaces = contributingForms.has(form.id);
+            const effect: FormControlEffect = !enabled || development === 0
+                ? "inactive"
+                : !geometryValid
+                    ? "geometry-invalid"
+                    : active.length === 1
+                        ? "scale-only"
+                        : contributesToVisibleFaces
+                            ? "shape"
+                            : "redundant";
+            return { id: form.id, label: form.label ?? form.id, development, enabled, effect, contributesToVisibleFaces };
         });
     }
 
@@ -404,7 +431,14 @@ export class CrystalViewer extends EventTarget {
             this.dispatchEvent(new CustomEvent("structure-load-failed", { detail: { diagnostics: result.diagnostics } }));
             return result.diagnostics;
         }
-        this.loadStructure(result.value);
+        const failure = this.prepareStructure(result.value);
+        if (failure) {
+            const diagnostics = [...result.diagnostics, ...failure];
+            this.importDiagnostics = diagnostics;
+            this.dispatchEvent(new CustomEvent("structure-load-failed", { detail: { diagnostics } }));
+            return diagnostics;
+        }
+        this.importDiagnostics = result.diagnostics;
         this.dispatchEvent(new CustomEvent("structure-loaded", { detail: { id: result.value.id, warnings: result.diagnostics } }));
         return result.diagnostics;
     }
@@ -412,21 +446,36 @@ export class CrystalViewer extends EventTarget {
     /** Loads a structural definition (e.g. from `importCif`) for the atomic structure view. */
     loadStructure(definition: StructuralDefinition): void {
         this.assertNotDisposed();
-        // Committing a structural definition supersedes any pending mineral load.
-        this.loadGeneration++;
+        const failure = this.prepareStructure(definition);
+        if (failure) {
+            this.importDiagnostics = failure;
+            this.dispatchEvent(new CustomEvent("structure-load-failed", { detail: { diagnostics: failure } }));
+            return;
+        }
+        this.importDiagnostics = [];
+        this.dispatchEvent(new CustomEvent("structure-loaded", { detail: { id: definition.id, warnings: [] } }));
+    }
+
+    /** Validates and commits a structure; returns diagnostics without emitting events on failure. */
+    private prepareStructure(definition: StructuralDefinition): readonly Diagnostic[] | null {
         const latticeResult = createLattice(definition.crystallography.unitCell);
         if (!latticeResult.ok) {
-            this.importDiagnostics = latticeResult.diagnostics;
-            this.dispatchEvent(new CustomEvent("structure-load-failed", { detail: { diagnostics: latticeResult.diagnostics } }));
-            return;
+            return latticeResult.diagnostics;
         }
         const operations = definition.crystallography.spaceOperations ?? [];
         const expanded = expandAtomicStructure(definition.atomicStructure, operations, latticeResult.value);
         if (!expanded.ok) {
-            this.importDiagnostics = expanded.diagnostics;
-            this.dispatchEvent(new CustomEvent("structure-load-failed", { detail: { diagnostics: expanded.diagnostics } }));
-            return;
+            return expanded.diagnostics;
         }
+        const suppliedBonds = definition.atomicStructure.bonds;
+        if (suppliedBonds) {
+            const bonds = validatePeriodicBonds(suppliedBonds, expanded.value);
+            if (!bonds.ok) {
+                return bonds.diagnostics;
+            }
+        }
+        // Only a validated structural commit supersedes a pending mineral load.
+        this.loadGeneration++;
         // The imported structural definition is authoritative for its cell,
         // symmetry and atomic positions. Do not retain an unrelated mineral
         // morphology alongside it.
@@ -449,8 +498,7 @@ export class CrystalViewer extends EventTarget {
         this.structure = definition;
         this.structureLattice = latticeResult.value;
         this.expandedAtoms = expanded.value;
-        this.structureBonds = definition.atomicStructure.bonds ?? inferBonds(expanded.value, latticeResult.value);
-        this.importDiagnostics = [];
+        this.structureBonds = suppliedBonds ?? inferBonds(expanded.value, latticeResult.value);
         this.viewMode = "atomic";
         this.updateAtomicRender();
         this.updateCellOverlay();
@@ -458,6 +506,7 @@ export class CrystalViewer extends EventTarget {
         this.frameAtomic();
         this.renderOnce();
         this.dispatchEvent(new CustomEvent("view-mode-changed", { detail: { mode: "atomic" } }));
+        return null;
     }
 
     setViewMode(mode: ViewMode): void {
@@ -606,8 +655,11 @@ export class CrystalViewer extends EventTarget {
                 wireframe: this.showWireframe,
             },
             camera: {
+                projection: "perspective",
                 position: [this.camera.position.x, this.camera.position.y, this.camera.position.z],
                 up: [this.camera.up.x, this.camera.up.y, this.camera.up.z],
+                target: [this.cameraTarget.x, this.cameraTarget.y, this.cameraTarget.z],
+                zoom: this.camera.zoom,
                 near: this.camera.near,
                 far: this.camera.far,
                 groupRotation: [this.crystalGroup.rotation.x, this.crystalGroup.rotation.y, this.crystalGroup.rotation.z],
@@ -684,7 +736,11 @@ export class CrystalViewer extends EventTarget {
                     const ops = def.crystallography.spaceOperations ?? [];
                     const exp = expandAtomicStructure(def.atomicStructure, ops, latticeResult.value);
                     if (!exp.ok) diagnostics.push(...exp.diagnostics.map((d) => ({ ...d, path: "/structure/definition/atomicStructure" })));
-                    else { structureDef = def; structureLattice = latticeResult.value; expandedAtoms = exp.value; structureBonds = def.atomicStructure.bonds ?? inferBonds(exp.value, latticeResult.value); }
+                    else {
+                        const bonds = def.atomicStructure.bonds ? validatePeriodicBonds(def.atomicStructure.bonds, exp.value) : null;
+                        if (bonds && !bonds.ok) diagnostics.push(...bonds.diagnostics.map((d) => ({ ...d, path: `/structure/definition/atomicStructure${d.path ?? ""}` })));
+                        else { structureDef = def; structureLattice = latticeResult.value; expandedAtoms = exp.value; structureBonds = def.atomicStructure.bonds ?? inferBonds(exp.value, latticeResult.value); }
+                    }
                 }
             } catch {
                 diagnostics.push({ code: "viewer.state.malformed", severity: "error", message: "Embedded structural definition is malformed.", path: "/structure/definition" });
@@ -776,9 +832,11 @@ export class CrystalViewer extends EventTarget {
         // Restored camera takes precedence over preferred views.
         this.camera.position.set(s.camera.position[0], s.camera.position[1], s.camera.position[2]);
         this.camera.up.set(s.camera.up[0], s.camera.up[1], s.camera.up[2]);
+        this.cameraTarget.set(...(s.camera.target ?? [0, 0, 0]));
+        this.camera.zoom = s.camera.zoom ?? 1;
         this.camera.near = s.camera.near;
         this.camera.far = s.camera.far;
-        this.camera.lookAt(0, 0, 0);
+        this.camera.lookAt(this.cameraTarget);
         this.camera.updateProjectionMatrix();
         this.crystalGroup.rotation.set(s.camera.groupRotation[0], s.camera.groupRotation[1], s.camera.groupRotation[2]);
         this.labelGroup.rotation.copy(this.crystalGroup.rotation);
@@ -1251,7 +1309,9 @@ export class CrystalViewer extends EventTarget {
         const dir = new Vector3(1, 0.7, 1).normalize();
         this.camera.position.copy(dir.multiplyScalar(distance));
         this.camera.up.set(0, 1, 0);
-        this.camera.lookAt(0, 0, 0);
+        this.cameraTarget.set(0, 0, 0);
+        this.camera.zoom = 1;
+        this.camera.lookAt(this.cameraTarget);
         this.camera.near = distance / 100;
         this.camera.far = distance * 100;
         this.camera.updateProjectionMatrix();
@@ -1268,7 +1328,9 @@ export class CrystalViewer extends EventTarget {
         this.labelGroup.rotation.set(0, 0, 0);
         this.camera.position.set(direction[0] * distance, direction[1] * distance, direction[2] * distance);
         this.camera.up.set(...up);
-        this.camera.lookAt(0, 0, 0);
+        this.cameraTarget.set(0, 0, 0);
+        this.camera.zoom = 1;
+        this.camera.lookAt(this.cameraTarget);
         this.camera.near = distance / 100;
         this.camera.far = distance * 100;
         this.camera.updateProjectionMatrix();

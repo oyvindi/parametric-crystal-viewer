@@ -50,6 +50,49 @@ export interface PeriodicBond {
     readonly derived?: boolean;
 }
 
+/**
+ * Validates periodic bond endpoints against the expanded reference cell.
+ * Imported or caller-supplied bonds must name expanded atom IDs and integer
+ * lattice translations; renderers must never need to silently drop them.
+ */
+export function validatePeriodicBonds(bonds: unknown, atoms: readonly ExpandedAtom[]): Result<true> {
+    const diagnostics: Diagnostic[] = [];
+    if (!Array.isArray(bonds)) {
+        return { ok: false, diagnostics: [{ code: "core.atomic.invalid-bond", severity: "error", message: "Bonds must be an array.", path: "/bonds" }] };
+    }
+    const atomIds = new Set(atoms.map((atom) => atom.id));
+    const validImage = (image: unknown, path: string) => {
+        if (!image || typeof image !== "object" || Array.isArray(image)) {
+            diagnostics.push({ code: "core.atomic.invalid-bond", severity: "error", message: "Bond endpoint must be an atom image.", path });
+            return;
+        }
+        const value = image as Record<string, unknown>;
+        if (typeof value.siteId !== "string" || !atomIds.has(value.siteId)) {
+            diagnostics.push({ code: "core.atomic.invalid-bond", severity: "error", message: "Bond endpoint must reference an expanded atom ID.", path: `${path}/siteId` });
+        }
+        if (!Array.isArray(value.cellOffset) || value.cellOffset.length !== 3 || !value.cellOffset.every((offset) => typeof offset === "number" && Number.isInteger(offset))) {
+            diagnostics.push({ code: "core.atomic.invalid-bond", severity: "error", message: "Bond cell offset must contain three integer lattice translations.", path: `${path}/cellOffset` });
+        }
+    };
+    bonds.forEach((bond, index) => {
+        const path = `/bonds/${index}`;
+        if (!bond || typeof bond !== "object" || Array.isArray(bond)) {
+            diagnostics.push({ code: "core.atomic.invalid-bond", severity: "error", message: "Bond must be an object.", path });
+            return;
+        }
+        const value = bond as Record<string, unknown>;
+        validImage(value.a, `${path}/a`);
+        validImage(value.b, `${path}/b`);
+        if (value.order !== undefined && (typeof value.order !== "number" || !Number.isFinite(value.order) || value.order <= 0)) {
+            diagnostics.push({ code: "core.atomic.invalid-bond", severity: "error", message: "Bond order must be a positive finite number.", path: `${path}/order` });
+        }
+        if (value.derived !== undefined && typeof value.derived !== "boolean") {
+            diagnostics.push({ code: "core.atomic.invalid-bond", severity: "error", message: "Bond derived flag must be a boolean.", path: `${path}/derived` });
+        }
+    });
+    return diagnostics.length ? { ok: false, diagnostics } : { ok: true, value: true as const, diagnostics: [] };
+}
+
 /** Cartesian distance tolerance for merging symmetry-equivalent images (Å). */
 export const ATOMIC_POSITION_TOLERANCE = 1e-4;
 

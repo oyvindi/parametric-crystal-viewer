@@ -94,6 +94,8 @@ describe("M6 viewer atomic structure view", () => {
     it("loads a CIF, switches to atomic view, and exposes structure info and import diagnostics", () => {
         const viewer = new CrystalViewer(canvas());
         viewers.push(viewer);
+        const loaded = vi.fn();
+        viewer.addEventListener("structure-loaded", loaded);
         const diagnostics = viewer.loadCif(P1_CIF);
         expect(viewer.getViewMode()).toBe("atomic");
         const info = viewer.getStructureInfo();
@@ -106,6 +108,7 @@ describe("M6 viewer atomic structure view", () => {
         // Import succeeded with no error diagnostics.
         expect(diagnostics.every((d) => d.severity !== "error")).toBe(true);
         expect(viewer.getImportDiagnostics().every((d) => d.severity !== "error")).toBe(true);
+        expect(loaded).toHaveBeenCalledWith(expect.objectContaining({ detail: expect.objectContaining({ id: expect.any(String) }) }));
     });
 
     it("renders instanced atoms in the atomic view and toggles visibility between modes", () => {
@@ -200,6 +203,51 @@ describe("M6 viewer atomic structure view", () => {
 
         expect(viewer.getStructureInfo()).toMatchObject({ bondCount: 1, bondsDerived: false });
         expect(viewer.getState().structure!.definition.atomicStructure.bonds).toEqual(withBonds.atomicStructure.bonds);
+    });
+
+    it("rejects supplied bonds that do not resolve to expanded atom images", () => {
+        const viewer = new CrystalViewer(canvas());
+        viewers.push(viewer);
+        viewer.loadCif(P1_CIF);
+        const baseline = viewer.getState();
+        const definition = structuredClone(baseline.structure!.definition);
+        const invalid = {
+            ...definition,
+            atomicStructure: {
+                ...definition.atomicStructure,
+                bonds: [{ a: { siteId: "missing", cellOffset: [0, 0, 0] as const }, b: { siteId: "also-missing", cellOffset: [0, 0, 0] as const } }],
+            },
+        };
+        const failed = vi.fn();
+        viewer.addEventListener("structure-load-failed", failed);
+
+        viewer.loadStructure(invalid);
+
+        expect(failed).toHaveBeenCalledWith(expect.objectContaining({ detail: { diagnostics: expect.arrayContaining([expect.objectContaining({ code: "core.atomic.invalid-bond" })]) } }));
+        expect(viewer.getState()).toEqual(baseline);
+    });
+
+    it("does not emit structure-loaded when direct structural validation fails", () => {
+        const viewer = new CrystalViewer(canvas());
+        viewers.push(viewer);
+        viewer.loadCif(P1_CIF);
+        const definition = structuredClone(viewer.getState().structure!.definition);
+        const invalid = {
+            ...definition,
+            atomicStructure: {
+                ...definition.atomicStructure,
+                bonds: [{ a: { siteId: "missing", cellOffset: [0, 0, 0] as const }, b: { siteId: "also-missing", cellOffset: [0, 0, 0] as const } }],
+            },
+        };
+        const loaded = vi.fn();
+        const failed = vi.fn();
+        viewer.addEventListener("structure-loaded", loaded);
+        viewer.addEventListener("structure-load-failed", failed);
+
+        viewer.loadStructure(invalid);
+
+        expect(loaded).not.toHaveBeenCalled();
+        expect(failed).toHaveBeenCalledOnce();
     });
 
     it("emits a failure event and exposes diagnostics for an invalid CIF", () => {

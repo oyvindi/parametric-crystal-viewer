@@ -13,6 +13,7 @@
   #panel select { width: 100%; margin-bottom: 8px; }
   #panel .form-row { margin-bottom: 10px; }
   #panel .form-row .label-line { display: flex; justify-content: space-between; font-size: 0.82em; }
+  #panel .control-note { color: #aaa; font-size: 0.73em; line-height: 1.3; margin-top: 2px; }
   #panel input[type="range"] { width: 100%; }
   #panel .value { color: #8cf; font-variant-numeric: tabular-nums; }
   #panel .status { margin-top: 12px; padding: 8px; border-radius: 4px; font-size: 0.82em; }
@@ -86,6 +87,15 @@ habitSelect.addEventListener("change", () => {
 
 // Form sliders
 const formsContainer = document.getElementById("forms");
+function controlNote(form) {
+  switch (form.effect) {
+    case "scale-only": return "Only active form: this changes overall size. Use Reset camera to reframe.";
+    case "shape": return "Changes the relative development of visible forms.";
+    case "redundant": return "Active but currently hidden by a tighter form; further edits can make it visible.";
+    case "geometry-invalid": return "Current form combination does not produce valid geometry.";
+    case "inactive": return "Disabled or zero development.";
+  }
+}
 function populateForms() {
   formsContainer.innerHTML = "";
   const forms = viewer.getForms();
@@ -96,6 +106,10 @@ function populateForms() {
     labelLine.className = "label-line";
     labelLine.innerHTML = `<span>${form.label}</span><span class="value" id="val-${form.id}">${form.development.toFixed(2)}</span>`;
     row.appendChild(labelLine);
+    const note = document.createElement("div");
+    note.className = "control-note";
+    note.textContent = controlNote(form);
+    row.appendChild(note);
     const slider = document.createElement("input");
     slider.type = "range";
     slider.min = "0";
@@ -107,6 +121,7 @@ function populateForms() {
       const val = parseFloat(slider.value);
       viewer.setFormDevelopment(form.id, val);
       document.getElementById("val-" + form.id).textContent = val.toFixed(2);
+      note.textContent = controlNote(viewer.getForms().find(current => current.id === form.id));
       updateStatus();
     });
     row.appendChild(slider);

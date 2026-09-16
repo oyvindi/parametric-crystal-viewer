@@ -77,6 +77,19 @@ function classifyCrystalSystem(hm: string): CrystalSystem | undefined {
     return undefined;
 }
 
+/** International Tables space-group number ranges map unambiguously to crystal systems. */
+function classifyCrystalSystemByItNumber(value: number | undefined): CrystalSystem | undefined {
+    if (value === undefined || !Number.isInteger(value)) return undefined;
+    if (value >= 1 && value <= 2) return "triclinic";
+    if (value <= 15) return "monoclinic";
+    if (value <= 74) return "orthorhombic";
+    if (value <= 142) return "tetragonal";
+    if (value <= 167) return "trigonal";
+    if (value <= 194) return "hexagonal";
+    if (value <= 230) return "cubic";
+    return undefined;
+}
+
 const SYMMETRY_TAGS = ["_space_group_symop_operation_xyz", "_symmetry_equiv_pos_as_xyz"];
 const BOND_TAGS = ["_geom_bond_atom_site_label_1", "_geom_angle_atom_site_label_1", "_geom_bond_dist"];
 
@@ -135,6 +148,11 @@ export function parseSymmetryOperation(expr: string): { linear: Mat3; translatio
 function elementFromLabel(label: string): string {
     const m = label.match(/^\s*([A-Za-z]{1,2})/);
     return m ? m[1]! : label;
+}
+
+/** CIF atom-type symbols may include oxidation states, e.g. `Ba2+` or `O-2`. */
+function elementFromCifSymbol(symbol: string): string {
+    return elementFromLabel(symbol.trim());
 }
 
 function structuralBlocks(file: CifFile): CifBlock[] {
@@ -255,7 +273,7 @@ export function importCif(text: string, options: CifImportOptions = {}): Result<
             pointGroup = match.pointGroup;
             setting = match.setting;
         } else {
-            crystalSystem = crystalSystemTag ? (crystalSystemTag as CrystalSystem) : classifyCrystalSystem(hmSymbol ?? "");
+            crystalSystem = crystalSystemTag ? (crystalSystemTag as CrystalSystem) : classifyCrystalSystem(hmSymbol ?? "") ?? classifyCrystalSystemByItNumber(itNumber);
             diagnostics.push({ code: "data.cif.unsupported-symmetry", severity: "warning", message: "Explicit operations do not match a supported registry setting; using explicit operations directly.", source: { block: block.name } });
         }
         // Identifier consistency check.
@@ -282,12 +300,12 @@ export function importCif(text: string, options: CifImportOptions = {}): Result<
             return fail("data.cif.unsupported-symmetry", "Symmetry identifier is not in the supported registry; supply an explicit operation loop.", { source: { block: block.name } });
         }
         // No identifier at all: only valid for a complete-cell declaration with a crystal-system tag.
-        crystalSystem = crystalSystemTag ? (crystalSystemTag as CrystalSystem) : undefined;
+        crystalSystem = crystalSystemTag ? (crystalSystemTag as CrystalSystem) : classifyCrystalSystemByItNumber(itNumber);
         if (!crystalSystem) return fail("data.cif.unsupported-symmetry", "Could not determine the crystal system; supply a space-group identifier or crystal-system tag.", { source: { block: block.name } });
     }
 
     if (!crystalSystem) {
-        crystalSystem = crystalSystemTag ? (crystalSystemTag as CrystalSystem) : classifyCrystalSystem(hmSymbol ?? "");
+        crystalSystem = crystalSystemTag ? (crystalSystemTag as CrystalSystem) : classifyCrystalSystem(hmSymbol ?? "") ?? classifyCrystalSystemByItNumber(itNumber);
         if (!crystalSystem) return fail("data.cif.unsupported-symmetry", "Could not determine the crystal system from the supplied symmetry.", { source: { block: block.name } });
     }
 
@@ -298,7 +316,7 @@ export function importCif(text: string, options: CifImportOptions = {}): Result<
         const id = label;
         if (siteIds.has(id)) diagnostics.push({ code: "data.cif.invalid-site", severity: "warning", message: `Duplicate site label "${id}"; appending an index.`, source: { block: block.name } });
         siteIds.add(`${id}.${i}`);
-        const element = typeCol >= 0 && !isMissing(row[typeCol]) ? stripUncertainty(row[typeCol]!).trim() : elementFromLabel(label);
+        const element = typeCol >= 0 && !isMissing(row[typeCol]) ? elementFromCifSymbol(stripUncertainty(row[typeCol]!)) : elementFromLabel(label);
         const x = parseCifNumber(row[xCol]);
         const y = parseCifNumber(row[yCol]);
         const z = parseCifNumber(row[zCol]);

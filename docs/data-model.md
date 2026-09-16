@@ -152,6 +152,8 @@ interface PeriodicBond {
 
 Bond endpoints refer to the expanded reference-cell structure, not indices into the imported `sites` array. For example, a bond can connect site A in `[0, 0, 0]` to site B in `[1, 0, 0]`. Imported bonds referring to symmetry operations must be resolved into these expanded-site endpoints while preserving source information.
 
+Supplied bond endpoints must identify expanded atom IDs and use three integer cell offsets. Reject unresolved endpoints, non-integer offsets, and invalid bond metadata before rendering; do not silently omit an invalid bond.
+
 Bond generation is optional. If bonds are inferred from distances, document the inference method and label those bonds as derived. Missing bonds must still permit an atoms-only view.
 
 ---

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { createLattice, expandAtomicStructure, inferBonds, validateSpaceOperations, type AtomicStructure, type SpaceOperation, type Mat3, type Vec3 } from "./index.js";
+import { createLattice, expandAtomicStructure, inferBonds, validatePeriodicBonds, validateSpaceOperations, type AtomicStructure, type SpaceOperation, type Mat3, type Vec3 } from "./index.js";
 
 const cubicResult = createLattice({ a: 5, b: 5, c: 5, alpha: 90, beta: 90, gamma: 90 });
 if (!cubicResult.ok) throw Error("cubic lattice");
@@ -113,6 +113,15 @@ describe("M6 periodic bonds", () => {
         expect(bonds).toHaveLength(0);
         // Atoms are still present for an atoms-only view.
         expect(expanded.value.length).toBeGreaterThan(0);
+    });
+
+    it("rejects supplied bonds with unresolved atom IDs or non-integer cell offsets", () => {
+        const structure: AtomicStructure = { siteRepresentation: "complete-cell", sites: [{ id: "A", element: "C", position: [0, 0, 0] }] };
+        const expanded = expandAtomicStructure(structure, [], cubic);
+        if (!expanded.ok) throw Error("expand");
+        const invalid = validatePeriodicBonds([{ a: { siteId: "missing", cellOffset: [0, 0, 0] }, b: { siteId: "A", cellOffset: [0.5, 0, 0] } }], expanded.value);
+        expect(invalid.ok).toBe(false);
+        if (!invalid.ok) expect(invalid.diagnostics.map((d) => d.code)).toEqual(["core.atomic.invalid-bond", "core.atomic.invalid-bond"]);
     });
 });
 

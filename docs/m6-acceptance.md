@@ -114,3 +114,12 @@ fixed double conversion of nanometre lengths: normalized cells now carry the
 angstrom unit tag, while source metadata retains the original unit. Existing
 bond checks now require a nonempty result instead of accepting vacuous success.
 This follow-up does not resolve the separate viewer acceptance findings.
+
+## Supplied periodic-bond validation follow-up
+
+`validatePeriodicBonds` in `crystal-core` now rejects supplied endpoints that do
+not identify an expanded atom, non-integer cell offsets, and invalid bond
+metadata. Viewer direct loads and state restoration validate supplied bonds
+before committing, retain the previous structure on failure, and expose
+`core.atomic.invalid-bond` diagnostics. Regression tests cover core validation,
+direct viewer loading, and state restoration.

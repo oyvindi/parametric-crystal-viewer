@@ -35,8 +35,14 @@ export interface DisplayState {
 }
 
 export interface CameraState {
+    /** The only camera projection supported in V1. Omitted by legacy V1 states. */
+    readonly projection?: "perspective";
     readonly position: readonly [number, number, number];
     readonly up: readonly [number, number, number];
+    /** Defaults to the origin for V1 states written before this field existed. */
+    readonly target?: readonly [number, number, number];
+    /** Perspective-camera zoom; defaults to 1 for legacy V1 states. */
+    readonly zoom?: number;
     readonly near: number;
     readonly far: number;
     readonly groupRotation: readonly [number, number, number];
@@ -192,10 +198,20 @@ export function validateStateShape(input: unknown): { ok: true; value: ViewerSta
     if (!isObject(camera)) {
         diagnostics.push(diag("viewer.state.malformed", "camera must be an object.", "/camera"));
     } else {
+        if (camera["projection"] !== undefined && camera["projection"] !== "perspective") {
+            diagnostics.push(diag("viewer.state.malformed", "camera.projection must be 'perspective'.", "/camera/projection"));
+        }
         const pos = expectVec3(camera["position"], "/camera/position", "viewer.state.malformed");
         if (pos) diagnostics.push(...pos);
         const up = expectVec3(camera["up"], "/camera/up", "viewer.state.malformed");
         if (up) diagnostics.push(...up);
+        if (camera["target"] !== undefined) {
+            const target = expectVec3(camera["target"], "/camera/target", "viewer.state.malformed");
+            if (target) diagnostics.push(...target);
+        }
+        if (camera["zoom"] !== undefined && (!isNumber(camera["zoom"]) || camera["zoom"] <= 0)) {
+            diagnostics.push(diag("viewer.state.malformed", "camera.zoom must be a positive finite number.", "/camera/zoom"));
+        }
         if (!isNumber(camera["near"])) diagnostics.push(diag("viewer.state.malformed", "camera.near must be a number.", "/camera/near"));
         if (!isNumber(camera["far"])) diagnostics.push(diag("viewer.state.malformed", "camera.far must be a number.", "/camera/far"));
         const rot = expectVec3(camera["groupRotation"], "/camera/groupRotation", "viewer.state.malformed");
