@@ -1,7 +1,8 @@
 import type { Mineral } from "./types.js";
 import { FLUORITE } from "./minerals/fluorite.js";
+import { QUARTZ } from "./minerals/quartz.js";
 
-const MINERALS: readonly Mineral[] = [FLUORITE];
+const MINERALS: readonly Mineral[] = [FLUORITE, QUARTZ];
 
 const BY_ID = new Map(MINERALS.map((m) => [m.id, m]));
 

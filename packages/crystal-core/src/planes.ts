@@ -1,10 +1,10 @@
 import type { Diagnostic, Result } from "./diagnostics.js";
 import type { Lattice, Vec3 } from "./lattice.js";
-import { transformMillerIndices, type MillerIndices } from "./miller.js";
+import { transformMillerIndices, millerBravaisToMiller, type MillerIndices } from "./miller.js";
 import type { PointOperation } from "./symmetry.js";
 
 export interface EquivalentPlaneDirection {
-    readonly indices: Extract<MillerIndices, { readonly notation: "miller" }>;
+    readonly indices: MillerIndices;
     readonly normal: Vec3;
     readonly operationIds: readonly string[];
 }
@@ -24,24 +24,33 @@ function normalFor(indices: Extract<MillerIndices, { readonly notation: "miller"
     return Number.isFinite(length) && length > 0 ? [vector[0] / length, vector[1] / length, vector[2] / length] : undefined;
 }
 
-/** Expands a three-index form into its unique oriented Cartesian plane directions. */
+/** Expands a form into its unique oriented Cartesian plane directions. */
 export function expandEquivalentPlaneDirections(
     indices: MillerIndices,
     operations: readonly PointOperation[],
     lattice: Lattice,
 ): Result<readonly EquivalentPlaneDirection[]> {
-    if (indices.notation !== "miller") return invalid("Miller–Bravais plane expansion is deferred until M3.");
     const result = new Map<string, EquivalentPlaneDirection>();
     for (const operation of operations) {
         const transformed = transformMillerIndices(indices, operation.linear);
-        if (!transformed.ok || transformed.value.notation !== "miller") return transformed as Result<never>;
-        const normal = normalFor(transformed.value, lattice);
+        if (!transformed.ok) return transformed as Result<never>;
+        const threeIndex = transformed.value.notation === "miller" ? transformed.value : millerBravaisToMiller(transformed.value);
+        const normal = normalFor(threeIndex, lattice);
         if (!normal) return invalid("Miller indices produced an invalid Cartesian plane normal.");
-        const key = `${transformed.value.h},${transformed.value.k},${transformed.value.l}`;
+        const key = `${threeIndex.h},${threeIndex.k},${threeIndex.l}`;
         const existing = result.get(key);
         result.set(key, existing
             ? { ...existing, operationIds: [...existing.operationIds, operation.id].sort() }
             : { indices: transformed.value, normal, operationIds: [operation.id] });
     }
-    return { ok: true, value: [...result.values()].sort((a, b) => a.indices.h - b.indices.h || a.indices.k - b.indices.k || a.indices.l - b.indices.l), diagnostics: [] };
+    const sorted = [...result.values()].sort((a, b) => {
+        const ah = a.indices.notation === "miller" ? a.indices.h : a.indices.h;
+        const bh = b.indices.notation === "miller" ? b.indices.h : b.indices.h;
+        const ak = a.indices.notation === "miller" ? a.indices.k : a.indices.k;
+        const bk = b.indices.notation === "miller" ? b.indices.k : b.indices.k;
+        const al = a.indices.notation === "miller" ? a.indices.l : a.indices.l;
+        const bl = b.indices.notation === "miller" ? b.indices.l : b.indices.l;
+        return ah - bh || ak - bk || al - bl;
+    });
+    return { ok: true, value: sorted, diagnostics: [] };
 }

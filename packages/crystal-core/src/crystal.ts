@@ -28,12 +28,13 @@ export function generateCrystal(crystallography: Crystallography, morphology: Mo
     if (!["triclinic", "monoclinic", "orthorhombic", "tetragonal", "trigonal", "hexagonal", "cubic"].includes(crystallography.crystalSystem)) error("core.input.invalid-crystallography", "Unknown crystal system.", "/crystallography/crystalSystem");
     const lattice = createLattice(crystallography.unitCell);
     diagnostics.push(...lattice.diagnostics.map((d) => ({ ...d, path: `/crystallography/unitCell${d.path ?? ""}` })));
-    diagnostics.push(...validateMorphology(morphology.forms, morphology.morphologyScale ?? 1));
+    diagnostics.push(...validateMorphology(morphology.forms, morphology.morphologyScale ?? 1, crystallography.crystalSystem));
     if (crystallography.spaceGroup && !crystallography.pointGroup && !crystallography.pointOperations && !crystallography.spaceOperations && !crystallography.identityOnly) error("core.symmetry.unsupported-registry", "Space-group registry lookup is not available; supply a supported point-group identifier or explicit operations.", "/crystallography/spaceGroup");
     let registryId: string | undefined;
     if (crystallography.pointGroup) {
         if (crystallography.pointGroup === "m-3m" && crystallography.setting === "cubic-standard" && crystallography.crystalSystem === "cubic") registryId = "point-group:m-3m:standard";
-        else error("core.symmetry.unsupported-registry", "Unsupported or ambiguous point-group setting; m-3m requires cubic-standard and cubic crystal system.", "/crystallography/pointGroup");
+        else if (crystallography.pointGroup === "32" && crystallography.setting === "hexagonal-standard" && crystallography.crystalSystem === "trigonal") registryId = "point-group:32:hexagonal";
+        else error("core.symmetry.unsupported-registry", "Unsupported or ambiguous point-group setting; supported: m-3m with cubic-standard and cubic, 32 with hexagonal-standard and trigonal.", "/crystallography/pointGroup");
     }
     let operations = crystallography.pointOperations;
     if (lattice.ok && crystallography.spaceOperations) {
@@ -48,7 +49,7 @@ export function generateCrystal(crystallography: Crystallography, morphology: Mo
     const symmetry = lattice.ok ? resolvePointOperations({ registryId, operations, identityOnly: crystallography.identityOnly }, lattice.value) : undefined;
     if (symmetry) diagnostics.push(...symmetry.diagnostics);
     if (!lattice.ok || !symmetry?.ok || diagnostics.some((d) => d.severity === "error")) return { status: "invalid", diagnostics };
-    const result = generateCrystalGeometry({ lattice: lattice.value, operations: symmetry.value, ...morphology });
+    const result = generateCrystalGeometry({ lattice: lattice.value, operations: symmetry.value, crystalSystem: crystallography.crystalSystem, ...morphology });
     if (result.status === "invalid") return result;
     return { ...result, diagnostics: [...diagnostics, ...result.diagnostics], geometry: { ...result.geometry, faces: result.geometry.faces.map((face) => ({ ...face, ...(crystallography.pointGroup ? { symmetryGroup: crystallography.pointGroup } : {}) })) } };
 }

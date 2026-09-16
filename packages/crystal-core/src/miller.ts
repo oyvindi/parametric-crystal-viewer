@@ -102,8 +102,11 @@ function inverseTranspose(matrix: Mat3): Mat3 | undefined {
 
 /** Transforms a three-index Miller column by the inverse transpose of W. */
 export function transformMillerIndices(indices: MillerIndices, operation: Mat3): Result<MillerIndices> {
-    if (indices.notation !== "miller") {
-        return invalid("/notation", "Miller–Bravais transformation is setting-dependent and is not available until M3.");
+    if (indices.notation === "miller-bravais") {
+        const threeIndex = millerBravaisToMiller(indices);
+        const transformed = transformMillerIndices(threeIndex, operation);
+        if (!transformed.ok || transformed.value.notation !== "miller") return transformed as Result<never>;
+        return { ok: true, value: millerToMillerBravais(transformed.value), diagnostics: transformed.diagnostics };
     }
     const inverseTransposed = inverseTranspose(operation);
     if (!inverseTransposed) return invalid("/operation", "Point operation must be an invertible matrix.");
@@ -113,4 +116,20 @@ export function transformMillerIndices(indices: MillerIndices, operation: Mat3):
         return invalid("/operation", "Point operation does not preserve integer Miller indices.");
     }
     return validateMillerIndices({ notation: "miller", h: transformed[0]!, k: transformed[1]!, l: transformed[2]! });
+}
+
+/**
+ * Converts Miller-Bravais (h k i l) to three-index (h k l) by dropping the
+ * redundant i index. Valid for hexagonal and trigonal settings where i = -(h+k).
+ */
+export function millerBravaisToMiller(indices: Extract<MillerIndices, { readonly notation: "miller-bravais" }>): Extract<MillerIndices, { readonly notation: "miller" }> {
+    return { notation: "miller", h: indices.h, k: indices.k, l: indices.l };
+}
+
+/**
+ * Converts three-index (h k l) to Miller-Bravais (h k i l) with i = -(h+k).
+ * Valid for hexagonal and trigonal settings.
+ */
+export function millerToMillerBravais(indices: Extract<MillerIndices, { readonly notation: "miller" }>): Extract<MillerIndices, { readonly notation: "miller-bravais" }> {
+    return { notation: "miller-bravais", h: indices.h, k: indices.k, i: -(indices.h + indices.k), l: indices.l };
 }

@@ -1,7 +1,7 @@
-import { Scene, PerspectiveCamera, WebGLRenderer, MeshStandardMaterial, Mesh, Color, DirectionalLight, AmbientLight, Group, DoubleSide, type BufferGeometry } from "three";
-import { generateCrystal, type Diagnostic, type GeometryResult } from "@crystal/core";
-import { getMineral, createCrystalInput, resolveHabit, type Mineral } from "@crystal/data";
-import { createThreeGeometry } from "@crystal/three";
+import { Scene, PerspectiveCamera, WebGLRenderer, MeshStandardMaterial, Mesh, Color, DirectionalLight, AmbientLight, Group, DoubleSide, Raycaster, Vector2, Sprite, SpriteMaterial, CanvasTexture, type BufferGeometry } from "three";
+import { generateCrystal, type Diagnostic, type GeometryResult, type CrystalGeometry, type CrystalFace } from "@crystal/core";
+import { getMineral, createCrystalInput, resolveHabit, type Mineral, type MineralVariant, type HabitPreset } from "@crystal/data";
+import { createThreeGeometryWithPicking } from "@crystal/three";
 
 export type GeometryStatus = "valid" | "invalid";
 
@@ -17,28 +17,55 @@ export interface HabitInfo {
     readonly name: string;
 }
 
-/** Provisional viewer API for M2. Exact signatures remain deferred to M7. */
+export interface VariantInfo {
+    readonly id: string;
+    readonly name: string;
+    readonly description?: string;
+}
+
+export interface FaceContributorInfo {
+    readonly formId: string;
+    readonly indices: { readonly notation: string; readonly h: number; readonly k: number; readonly i?: number; readonly l: number };
+    readonly operationIds: readonly string[];
+}
+
+export interface FaceInfo {
+    readonly faceIndex: number;
+    readonly normal: readonly [number, number, number];
+    readonly contributors: readonly FaceContributorInfo[];
+    readonly symmetryGroup?: string;
+}
+
+/** Provisional viewer API for M3. Exact signatures remain deferred to M7. */
 export class CrystalViewer extends EventTarget {
     private readonly renderer: WebGLRenderer;
     private readonly scene: Scene;
     private readonly camera: PerspectiveCamera;
     private readonly crystalGroup: Group;
+    private readonly labelGroup: Group;
     private mesh: Mesh<BufferGeometry, MeshStandardMaterial> | null = null;
     private mineral: Mineral | null = null;
     private habitId: string | undefined;
+    private variantId: string | undefined;
     private formDevelopment: Record<string, number> = {};
     private formEnabled: Record<string, boolean> = {};
     private lastValidGeometry: GeometryResult | null = null;
     private currentResult: GeometryResult | null = null;
+    private currentGeometry: CrystalGeometry | null = null;
+    private triangleFaces: Uint32Array | null = null;
     private disposed = false;
     private animationHandle: number | null = null;
     private rotationY = 0;
     private readonly rotationSpeed = 0.005;
     private isDragging = false;
     private lastMouseX = 0;
+    private showLabels = false;
+    private selectedFaceIndex: number | null = null;
+    private readonly raycaster = new Raycaster();
     private readonly onPointerDownBound: (e: PointerEvent) => void;
     private readonly onPointerMoveBound: (e: PointerEvent) => void;
-    private readonly onPointerUpBound: () => void;
+    private readonly onPointerUpBound: (e: PointerEvent) => void;
+    private readonly onClickBound: (e: PointerEvent) => void;
 
     constructor(canvas: HTMLCanvasElement) {
         super();
@@ -51,6 +78,9 @@ export class CrystalViewer extends EventTarget {
         this.camera.lookAt(0, 0, 0);
         this.crystalGroup = new Group();
         this.scene.add(this.crystalGroup);
+        this.labelGroup = new Group();
+        this.labelGroup.visible = false;
+        this.scene.add(this.labelGroup);
         this.scene.add(new AmbientLight(0xffffff, 0.5));
         const dir = new DirectionalLight(0xffffff, 0.8);
         dir.position.set(5, 10, 7);
@@ -61,27 +91,29 @@ export class CrystalViewer extends EventTarget {
         this.onPointerDownBound = this.onPointerDown.bind(this);
         this.onPointerMoveBound = this.onPointerMove.bind(this);
         this.onPointerUpBound = this.onPointerUp.bind(this);
+        this.onClickBound = this.onCanvasClick.bind(this);
         canvas.addEventListener("pointerdown", this.onPointerDownBound);
         canvas.addEventListener("pointermove", this.onPointerMoveBound);
         canvas.addEventListener("pointerup", this.onPointerUpBound);
         canvas.addEventListener("pointerleave", this.onPointerUpBound);
+        canvas.addEventListener("click", this.onClickBound);
     }
 
-    /** Loads a mineral from the catalog and generates initial geometry. */
     loadMineral(id: string): void {
         this.assertNotDisposed();
         const mineral = getMineral(id);
         if (!mineral) throw new Error(`Unknown mineral "${id}".`);
         this.mineral = mineral;
         this.habitId = undefined;
+        this.variantId = undefined;
         this.formDevelopment = {};
         this.formEnabled = {};
         this.lastValidGeometry = null;
+        this.selectedFaceIndex = null;
         this.clearMesh();
         this.regenerate();
     }
 
-    /** Selects a habit preset, resetting form overrides. */
     setHabit(habitId: string): void {
         this.assertNotDisposed();
         if (!this.mineral) throw new Error("No mineral loaded.");
@@ -89,10 +121,19 @@ export class CrystalViewer extends EventTarget {
         this.habitId = habitId;
         this.formDevelopment = {};
         this.formEnabled = {};
+        this.selectedFaceIndex = null;
         this.regenerate();
     }
 
-    /** Sets the development value for a form, regenerating geometry. */
+    setVariant(variantId: string): void {
+        this.assertNotDisposed();
+        if (!this.mineral) throw new Error("No mineral loaded.");
+        if (!this.mineral.variants?.some((v) => v.id === variantId)) throw new Error(`Unknown variant "${variantId}".`);
+        this.variantId = variantId;
+        this.selectedFaceIndex = null;
+        this.regenerate();
+    }
+
     setFormDevelopment(formId: string, value: number): void {
         this.assertNotDisposed();
         if (!this.mineral) throw new Error("No mineral loaded.");
@@ -101,7 +142,13 @@ export class CrystalViewer extends EventTarget {
         this.regenerate();
     }
 
-    /** Returns the current forms with their effective development and enabled state. */
+    setFormEnabled(formId: string, enabled: boolean): void {
+        this.assertNotDisposed();
+        if (!this.mineral) throw new Error("No mineral loaded.");
+        this.formEnabled[formId] = enabled;
+        this.regenerate();
+    }
+
     getForms(): FormInfo[] {
         if (!this.mineral) return [];
         const habit = resolveHabit(this.mineral, this.habitId);
@@ -112,13 +159,20 @@ export class CrystalViewer extends EventTarget {
         });
     }
 
-    /** Returns the habits available for the loaded mineral. */
     getHabits(): HabitInfo[] {
         if (!this.mineral) return [];
         return this.mineral.habits.map((h) => ({ id: h.id, name: h.name }));
     }
 
-    /** Returns the current geometry status, diagnostics, and stale-mesh flag. */
+    getVariants(): VariantInfo[] {
+        if (!this.mineral?.variants) return [];
+        return this.mineral.variants.map((v) => ({ id: v.id, name: v.name, ...(v.description ? { description: v.description } : {}) }));
+    }
+
+    getVariantId(): string | null {
+        return this.variantId ?? null;
+    }
+
     getGeometryStatus(): { status: GeometryStatus; diagnostics: readonly Diagnostic[]; stale: boolean } {
         const result = this.currentResult;
         if (!result) return { status: "invalid", diagnostics: [], stale: false };
@@ -129,15 +183,44 @@ export class CrystalViewer extends EventTarget {
         };
     }
 
-    /** Returns the currently loaded mineral ID, or null. */
     getMineralId(): string | null {
         return this.mineral?.id ?? null;
     }
 
-    /** Returns the currently selected habit ID, or null. */
     getHabitId(): string | null {
         if (!this.mineral) return null;
         return this.habitId ?? this.mineral.habits[0]?.id ?? null;
+    }
+
+    /** Returns info about the currently selected face, or null. */
+    getSelectedFace(): FaceInfo | null {
+        if (this.selectedFaceIndex === null || !this.currentGeometry) return null;
+        return this.faceInfo(this.selectedFaceIndex);
+    }
+
+    /** Returns info about all faces on the current geometry. */
+    getAllFaces(): FaceInfo[] {
+        if (!this.currentGeometry) return [];
+        return this.currentGeometry.faces.map((_, i) => this.faceInfo(i)!);
+    }
+
+    /** Returns face indices that share a form with the given face index (equivalent faces). */
+    getEquivalentFaces(faceIndex: number): number[] {
+        if (!this.currentGeometry) return [];
+        const face = this.currentGeometry.faces[faceIndex];
+        if (!face) return [];
+        const formIds = new Set(face.contributors.map((c) => c.formId));
+        return this.currentGeometry.faces
+            .map((f, i) => ({ f, i }))
+            .filter(({ f }) => f.contributors.some((c) => formIds.has(c.formId)))
+            .map(({ i }) => i);
+    }
+
+    showFaceLabels(show: boolean): void {
+        this.assertNotDisposed();
+        this.showLabels = show;
+        this.labelGroup.visible = show;
+        this.renderer.render(this.scene, this.camera);
     }
 
     resize(width: number, height: number): void {
@@ -159,6 +242,7 @@ export class CrystalViewer extends EventTarget {
             if (this.disposed) return;
             this.rotationY += this.rotationSpeed;
             this.crystalGroup.rotation.y = this.rotationY;
+            this.labelGroup.rotation.y = this.rotationY;
             this.renderer.render(this.scene, this.camera);
             this.animationHandle = requestAnimationFrame(loop);
         };
@@ -177,6 +261,7 @@ export class CrystalViewer extends EventTarget {
         this.disposed = true;
         this.stop();
         this.clearMesh();
+        this.clearLabels();
         this.renderer.dispose();
     }
 
@@ -184,6 +269,7 @@ export class CrystalViewer extends EventTarget {
         if (!this.mineral) return;
         const input = createCrystalInput(this.mineral, {
             habitId: this.habitId,
+            variantId: this.variantId,
             formDevelopment: this.formDevelopment,
             formEnabled: this.formEnabled,
         });
@@ -191,25 +277,31 @@ export class CrystalViewer extends EventTarget {
         this.currentResult = result;
         if (result.status === "valid") {
             this.lastValidGeometry = result;
+            this.currentGeometry = result.geometry;
             this.updateMesh(result);
             this.dispatchEvent(new CustomEvent("geometry-changed", { detail: { status: "valid" } }));
         } else {
+            this.currentGeometry = null;
+            this.triangleFaces = null;
             this.dispatchEvent(new CustomEvent("geometry-invalid", { detail: { diagnostics: result.diagnostics } }));
         }
     }
 
     private updateMesh(result: Extract<GeometryResult, { status: "valid" }>): void {
         this.clearMesh();
-        const geometry = createThreeGeometry(result.geometry);
-        geometry.center();
+        this.clearLabels();
+        const { buffer, triangleFaces } = createThreeGeometryWithPicking(result.geometry);
+        this.triangleFaces = triangleFaces;
+        buffer.center();
         const material = new MeshStandardMaterial({
             color: 0x6fb7d4,
             metalness: 0.1,
             roughness: 0.3,
             side: DoubleSide,
         });
-        this.mesh = new Mesh(geometry, material);
+        this.mesh = new Mesh(buffer, material);
         this.crystalGroup.add(this.mesh);
+        if (this.showLabels) this.createLabels(result.geometry);
         this.frameCamera(result.geometry.bounds.min, result.geometry.bounds.max);
     }
 
@@ -222,14 +314,78 @@ export class CrystalViewer extends EventTarget {
         }
     }
 
+    private clearLabels(): void {
+        while (this.labelGroup.children.length > 0) {
+            const child = this.labelGroup.children[0]!;
+            this.labelGroup.remove(child);
+            if (child instanceof Sprite) {
+                child.material.map?.dispose();
+                child.material.dispose();
+            }
+        }
+    }
+
+    private createLabels(geometry: CrystalGeometry): void {
+        const vertices = geometry.vertices;
+        for (const face of geometry.faces) {
+            const centroid = this.faceCentroid(face, vertices);
+            const label = face.contributors[0]?.formId ?? "?";
+            const sprite = this.createTextSprite(label);
+            sprite.position.set(centroid[0], centroid[1], centroid[2]);
+            this.labelGroup.add(sprite);
+        }
+    }
+
+    private faceCentroid(face: CrystalFace, vertices: Float64Array): [number, number, number] {
+        let x = 0, y = 0, z = 0;
+        for (const idx of face.vertexIndices) {
+            x += vertices[idx * 3]!;
+            y += vertices[idx * 3 + 1]!;
+            z += vertices[idx * 3 + 2]!;
+        }
+        const n = face.vertexIndices.length;
+        return [x / n, y / n, z / n];
+    }
+
+    private createTextSprite(text: string): Sprite {
+        const canvas = document.createElement("canvas");
+        canvas.width = 64;
+        canvas.height = 64;
+        const ctx = canvas.getContext("2d")!;
+        ctx.fillStyle = "rgba(0,0,0,0.6)";
+        ctx.fillRect(0, 0, 64, 64);
+        ctx.fillStyle = "#fff";
+        ctx.font = "bold 36px sans-serif";
+        ctx.textAlign = "center";
+        ctx.textBaseline = "middle";
+        ctx.fillText(text, 32, 32);
+        const texture = new CanvasTexture(canvas);
+        const material = new SpriteMaterial({ map: texture, depthTest: false });
+        const sprite = new Sprite(material);
+        sprite.scale.set(1.5, 1.5, 1);
+        return sprite;
+    }
+
     private frameCamera(min: readonly number[], max: readonly number[]): void {
+        const habit = this.mineral ? resolveHabit(this.mineral, this.habitId) : null;
+        const preferredView = habit?.preferredView;
         const size = Math.max(max[0]! - min[0]!, max[1]! - min[1]!, max[2]! - min[2]!);
         const distance = size * 2.5 || 10;
-        this.camera.position.set(distance * 0.7, distance * 0.5, distance * 0.7);
+        if (preferredView) {
+            const dir = this.normalize(preferredView.cameraDirection);
+            this.camera.position.set(dir[0] * distance, dir[1] * distance, dir[2] * distance);
+        } else {
+            this.camera.position.set(distance * 0.7, distance * 0.5, distance * 0.7);
+        }
         this.camera.lookAt(0, 0, 0);
         this.camera.near = distance / 100;
         this.camera.far = distance * 100;
         this.camera.updateProjectionMatrix();
+    }
+
+    private normalize(v: readonly number[]): [number, number, number] {
+        const len = Math.hypot(v[0], v[1], v[2]) || 1;
+        return [v[0] / len, v[1] / len, v[2] / len];
     }
 
     private onPointerDown(e: PointerEvent): void {
@@ -243,11 +399,54 @@ export class CrystalViewer extends EventTarget {
         const dx = e.clientX - this.lastMouseX;
         this.lastMouseX = e.clientX;
         this.crystalGroup.rotation.y += dx * 0.01;
+        this.labelGroup.rotation.y = this.crystalGroup.rotation.y;
         this.renderer.render(this.scene, this.camera);
     }
 
     private onPointerUp(): void {
         this.isDragging = false;
+    }
+
+    private onCanvasClick(e: PointerEvent): void {
+        if (!this.mesh || !this.triangleFaces || !this.currentGeometry) return;
+        const canvas = this.renderer.domElement;
+        const rect = canvas.getBoundingClientRect();
+        const ndc = new Vector2(
+            ((e.clientX - rect.left) / rect.width) * 2 - 1,
+            -((e.clientY - rect.top) / rect.height) * 2 + 1,
+        );
+        this.raycaster.setFromCamera(ndc, this.camera);
+        const intersects = this.raycaster.intersectObject(this.mesh);
+        if (intersects.length === 0) {
+            this.selectedFaceIndex = null;
+            this.dispatchEvent(new CustomEvent("face-selected", { detail: { faceIndex: null } }));
+            return;
+        }
+        const triIndex = intersects[0]!.faceIndex!;
+        const faceIndex = this.triangleFaces[triIndex]!;
+        this.selectedFaceIndex = faceIndex;
+        const info = this.faceInfo(faceIndex);
+        this.dispatchEvent(new CustomEvent("face-selected", { detail: { faceIndex, ...info } }));
+    }
+
+    private faceInfo(faceIndex: number): FaceInfo | null {
+        if (!this.currentGeometry) return null;
+        const face = this.currentGeometry.faces[faceIndex];
+        if (!face) return null;
+        return {
+            faceIndex,
+            normal: [face.normal[0], face.normal[1], face.normal[2]],
+            contributors: face.contributors.map((c) => ({
+                formId: c.formId,
+                indices: c.indices
+                    ? c.indices.notation === "miller-bravais"
+                        ? { notation: "miller-bravais", h: c.indices.h, k: c.indices.k, i: c.indices.i, l: c.indices.l }
+                        : { notation: "miller", h: c.indices.h, k: c.indices.k, l: c.indices.l }
+                    : { notation: "miller", h: 0, k: 0, l: 0 },
+                operationIds: c.operationIds,
+            })),
+            ...(face.symmetryGroup ? { symmetryGroup: face.symmetryGroup } : {}),
+        };
     }
 
     private assertNotDisposed(): void {

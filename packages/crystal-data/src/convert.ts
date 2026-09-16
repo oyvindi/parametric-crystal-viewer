@@ -4,6 +4,8 @@ import type { Mineral, MineralCrystallography, HabitPreset, CrystalFormSetting }
 export interface MorphologyRequest {
     /** Habit preset to start from; defaults to the first habit. */
     readonly habitId?: string;
+    /** Structural variant (e.g. left/right-handed quartz); defaults to the mineral's primary crystallography. */
+    readonly variantId?: string;
     /** Overrides applied on top of the selected habit's development values. */
     readonly formDevelopment?: Readonly<Record<string, number>>;
     /** Overrides applied on top of the selected habit's enabled flags. */
@@ -51,12 +53,23 @@ function applyOverrides(habit: HabitPreset, request: MorphologyRequest): readonl
     });
 }
 
+/** Resolves the crystallography for the selected variant, or the mineral's primary crystallography. */
+export function resolveCrystallography(mineral: Mineral, variantId?: string): MineralCrystallography {
+    if (variantId) {
+        const variant = mineral.variants?.find((v) => v.id === variantId);
+        if (!variant) throw new Error(`Unknown variant "${variantId}" for mineral "${mineral.id}".`);
+        return variant.crystallography;
+    }
+    return mineral.crystallography;
+}
+
 /** Converts a mineral record and morphology request into core generator inputs. */
 export function createCrystalInput(mineral: Mineral, request: MorphologyRequest = {}): CrystalInput {
     const habit = resolveHabit(mineral, request.habitId);
+    const crystallography = resolveCrystallography(mineral, request.variantId);
     const forms = applyOverrides(habit, request);
     return {
-        crystallography: toCoreCrystallography(mineral.crystallography),
+        crystallography: toCoreCrystallography(crystallography),
         morphology: {
             forms,
             ...(request.morphologyScale !== undefined ? { morphologyScale: request.morphologyScale } : {}),

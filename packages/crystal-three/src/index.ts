@@ -31,3 +31,19 @@ export function createThreeGeometry(geometry: CrystalGeometry): BufferGeometry {
     buffer.computeVertexNormals();
     return buffer;
 }
+
+/**
+ * Converts core geometry into a Three.js BufferGeometry and returns the
+ * triangle-to-core-face mapping needed for picking and face inspection.
+ */
+export function createThreeGeometryWithPicking(geometry: CrystalGeometry): {
+    readonly buffer: BufferGeometry;
+    readonly triangleFaces: Uint32Array;
+} {
+    const { indices, triangleFaces } = triangulateCrystal(geometry);
+    const buffer = new BufferGeometry();
+    buffer.setAttribute("position", new Float32BufferAttribute(geometry.vertices, 3));
+    buffer.setIndex(new Uint32BufferAttribute(indices, 1));
+    buffer.computeVertexNormals();
+    return { buffer, triangleFaces };
+}

@@ -77,7 +77,18 @@ export interface Mineral {
     readonly formula: string;
     readonly crystallography: MineralCrystallography;
     readonly habits: readonly HabitPreset[];
+    readonly variants?: readonly MineralVariant[];
     readonly references?: readonly Reference[];
     readonly provenance?: readonly ProvenanceEntry[];
     readonly dataRevision?: string;
+}
+
+/** A structural variant of the mineral (e.g. left/right-handed quartz). */
+export interface MineralVariant {
+    readonly id: string;
+    readonly name: string;
+    readonly description?: string;
+    /** Crystallographic identity distinguishing this variant. */
+    readonly crystallography: MineralCrystallography;
+    readonly references?: readonly Reference[];
 }

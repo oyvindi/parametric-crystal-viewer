@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Quartz — M3 Demo</title>
+<style>
+  body { margin: 0; font-family: system-ui, sans-serif; background: #2a2a2a; color: #ddd; display: flex; height: 100vh; }
+  #panel { width: 340px; padding: 16px; overflow-y: auto; background: #333; border-right: 1px solid #555; }
+  #panel h1 { font-size: 1.2em; margin: 0 0 4px; }
+  #panel .formula { color: #999; font-size: 0.85em; margin-bottom: 12px; }
+  #panel h2 { font-size: 0.95em; margin: 16px 0 6px; color: #ccc; border-bottom: 1px solid #555; padding-bottom: 2px; }
+  #panel label { display: block; margin-bottom: 8px; font-size: 0.85em; }
+  #panel select { width: 100%; margin-bottom: 8px; }
+  #panel .form-row { margin-bottom: 10px; }
+  #panel .form-row .label-line { display: flex; justify-content: space-between; font-size: 0.82em; }
+  #panel input[type="range"] { width: 100%; }
+  #panel .value { color: #8cf; font-variant-numeric: tabular-nums; }
+  #panel .status { margin-top: 12px; padding: 8px; border-radius: 4px; font-size: 0.82em; }
+  #panel .status.valid { background: #2d4a2d; color: #8e8; }
+  #panel .status.invalid { background: #4a2d2d; color: #e88; }
+  #panel .status.stale { background: #4a4a2d; color: #dd8; }
+  #panel .checkbox-row { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
+  #panel .checkbox-row input { width: auto; }
+  #panel #face-info { margin-top: 12px; padding: 8px; background: #2a2a2a; border-radius: 4px; font-size: 0.82em; display: none; }
+  #panel #face-info .contributor { margin-bottom: 6px; padding-left: 8px; border-left: 2px solid #8cf; }
+  #panel #face-info .indices { color: #fc8; font-family: monospace; }
+  #canvas-container { flex: 1; position: relative; }
+  canvas { display: block; width: 100%; height: 100%; }
+  .hint { position: absolute; bottom: 8px; right: 12px; font-size: 0.75em; color: #888; }
+</style>
+<script type="importmap">
+{
+  "imports": {
+    "three": "../../node_modules/three/build/three.module.js",
+    "@crystal/core": "../crystal-core/dist/index.js",
+    "@crystal/data": "../crystal-data/dist/index.js",
+    "@crystal/three": "../crystal-three/dist/index.js",
+    "@crystal/viewer": "../crystal-viewer/dist/index.js"
+  }
+}
+</script>
+</head>
+<body>
+<div id="panel">
+  <h1 id="mineral-name">Quartz</h1>
+  <div class="formula" id="mineral-formula">SiO₂ — Trigonal, Point Group 32</div>
+
+  <h2>Variant</h2>
+  <select id="variant-select"></select>
+
+  <h2>Habit</h2>
+  <select id="habit-select"></select>
+
+  <h2>Forms</h2>
+  <div id="forms"></div>
+
+  <h2>Display</h2>
+  <div class="checkbox-row">
+    <input type="checkbox" id="labels-toggle">
+    <label for="labels-toggle">Show face labels</label>
+  </div>
+
+  <div class="status" id="status">Loading…</div>
+
+  <div id="face-info">
+    <div id="face-info-content"></div>
+  </div>
+</div>
+<div id="canvas-container">
+  <canvas id="canvas"></canvas>
+  <span class="hint">Drag to rotate · Click a face to inspect</span>
+</div>
+
+<script type="module">
+import { CrystalViewer } from "@crystal/viewer";
+
+const canvas = document.getElementById("canvas");
+const viewer = new CrystalViewer(canvas);
+viewer.loadMineral("quartz");
+viewer.start();
+
+// Variant selector
+const variantSelect = document.getElementById("variant-select");
+function populateVariants() {
+  const variants = viewer.getVariants();
+  variantSelect.innerHTML = "";
+  if (variants.length === 0) {
+    variantSelect.style.display = "none";
+    return;
+  }
+  variantSelect.style.display = "";
+  for (const v of variants) {
+    const opt = document.createElement("option");
+    opt.value = v.id;
+    opt.textContent = v.name;
+    variantSelect.appendChild(opt);
+  }
+  const current = viewer.getVariantId();
+  if (current) variantSelect.value = current;
+}
+variantSelect.addEventListener("change", () => {
+  viewer.setVariant(variantSelect.value);
+  populateForms();
+  updateStatus();
+  clearFaceInfo();
+});
+
+// Habit selector
+const habitSelect = document.getElementById("habit-select");
+function populateHabits() {
+  const habits = viewer.getHabits();
+  habitSelect.innerHTML = "";
+  for (const h of habits) {
+    const opt = document.createElement("option");
+    opt.value = h.id;
+    opt.textContent = h.name;
+    habitSelect.appendChild(opt);
+  }
+  const current = viewer.getHabitId();
+  if (current) habitSelect.value = current;
+}
+habitSelect.addEventListener("change", () => {
+  viewer.setHabit(habitSelect.value);
+  populateForms();
+  updateStatus();
+  clearFaceInfo();
+});
+
+// Form sliders
+const formsContainer = document.getElementById("forms");
+function populateForms() {
+  formsContainer.innerHTML = "";
+  const forms = viewer.getForms();
+  for (const form of forms) {
+    const row = document.createElement("div");
+    row.className = "form-row";
+    const labelLine = document.createElement("div");
+    labelLine.className = "label-line";
+    labelLine.innerHTML = `<span>${form.label}</span><span class="value" id="val-${form.id}">${form.development.toFixed(2)}</span>`;
+    row.appendChild(labelLine);
+    const slider = document.createElement("input");
+    slider.type = "range";
+    slider.min = "0";
+    slider.max = "1";
+    slider.step = "0.01";
+    slider.value = String(form.development);
+    slider.disabled = !form.enabled;
+    slider.addEventListener("input", () => {
+      const val = parseFloat(slider.value);
+      viewer.setFormDevelopment(form.id, val);
+      document.getElementById("val-" + form.id).textContent = val.toFixed(2);
+      updateStatus();
+      clearFaceInfo();
+    });
+    row.appendChild(slider);
+    formsContainer.appendChild(row);
+  }
+}
+
+// Geometry status display
+const statusEl = document.getElementById("status");
+function updateStatus() {
+  const s = viewer.getGeometryStatus();
+  statusEl.className = "status " + (s.stale ? "stale" : s.status);
+  if (s.status === "valid" && !s.stale) {
+    statusEl.textContent = "Valid geometry";
+  } else if (s.stale) {
+    statusEl.textContent = "Invalid — showing previous valid shape";
+  } else {
+    const codes = s.diagnostics.map(d => d.code).join(", ");
+    statusEl.textContent = "Invalid: " + (codes || "unknown");
+  }
+}
+
+// Face labels toggle
+const labelsToggle = document.getElementById("labels-toggle");
+labelsToggle.addEventListener("change", () => {
+  viewer.showFaceLabels(labelsToggle.checked);
+});
+
+// Face inspection
+const faceInfoEl = document.getElementById("face-info");
+const faceInfoContent = document.getElementById("face-info-content");
+function clearFaceInfo() {
+  faceInfoEl.style.display = "none";
+}
+function showFaceInfo(detail) {
+  if (!detail || detail.faceIndex === null || detail.faceIndex === undefined) {
+    clearFaceInfo();
+    return;
+  }
+  faceInfoEl.style.display = "block";
+  const formLabels = {};
+  const forms = viewer.getForms();
+  for (const f of forms) formLabels[f.id] = f.label;
+  let html = `<div><strong>Face #${detail.faceIndex}</strong></div>`;
+  if (detail.normal) {
+    html += `<div>Normal: [${detail.normal.map(n => n.toFixed(3)).join(", ")}]</div>`;
+  }
+  if (detail.symmetryGroup) {
+    html += `<div>Symmetry: ${detail.symmetryGroup}</div>`;
+  }
+  if (detail.contributors) {
+    html += "<div style='margin-top:6px'><strong>Contributors:</strong></div>";
+    for (const c of detail.contributors) {
+      const label = formLabels[c.formId] || c.formId;
+      let indicesStr;
+      if (c.indices.notation === "miller-bravais") {
+        indicesStr = `(${c.indices.h} ${c.indices.k} ${c.indices.i} ${c.indices.l})`;
+      } else {
+        indicesStr = `(${c.indices.h} ${c.indices.k} ${c.indices.l})`;
+      }
+      html += `<div class="contributor"><div>${label}</div><div class="indices">${c.indices.notation}: ${indicesStr}</div></div>`;
+    }
+  }
+  faceInfoContent.innerHTML = html;
+}
+
+viewer.addEventListener("face-selected", (e) => showFaceInfo(e.detail));
+viewer.addEventListener("geometry-changed", () => updateStatus());
+viewer.addEventListener("geometry-invalid", () => updateStatus());
+
+// Initialize
+populateVariants();
+populateHabits();
+populateForms();
+updateStatus();
+
+// Resize handling
+function resize() {
+  const container = document.getElementById("canvas-container");
+  viewer.resize(container.clientWidth, container.clientHeight);
+}
+window.addEventListener("resize", resize);
+resize();
+</script>
+</body>
+</html>
