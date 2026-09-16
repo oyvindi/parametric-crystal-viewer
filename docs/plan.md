@@ -186,6 +186,8 @@ Deliver the first runnable [milestone demo](spec.md#reference-viewer) with the r
 
 ### M3 — Quartz
 
+**Status: complete.** See the [M3 acceptance audit](m3-acceptance.md) for delivery, tests, provenance, habit, handedness, and face-inspection evidence.
+
 Implement:
 
 ```text
