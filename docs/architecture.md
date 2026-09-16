@@ -142,7 +142,9 @@ Packages compile as native ECMAScript modules using TypeScript's `NodeNext` modu
 
 The package manifests encode the allowed project dependency graph in [Package Dependencies and Ownership](#package-dependencies-and-ownership), using npm-compatible local `file:` references. No package may add another `@crystal/*` dependency unless that graph permits it.
 
-Run `npm install` after cloning, `npm run build` to compile all packages, and `npm test` to build then run the non-browser `crystal-core` tests with Node's built-in test runner. `npm run check` runs the complete initial verification sequence. Until the development shell's `npm` launcher is repaired, invoke the installed npm CLI through Node directly: `node /home/oyvind/bin/node/lib/node_modules/npm/bin/npm-cli.js <command>`. This development shell requires Bash to launch Node: `/bin/sh` cannot execute the configured Node binary, so the repository scripts use `bash -lc` explicitly.
+Run `npm install` after cloning, `npm run build` to compile all packages, and `npm test` to run the test suite with Vitest. `crystal-core` has an explicit Vitest Node environment and its tests must continue to pass without browser globals. The root Vitest project configuration discovers package test configurations; later packages may add their own Node, browser, or integration projects without changing the core contract. `npm run check` builds all packages then runs all tests.
+
+Until the development shell's `npm` launcher is repaired, invoke the installed npm CLI through Node directly: `node /home/oyvind/bin/node/lib/node_modules/npm/bin/npm-cli.js <command>`. This development shell requires Bash to launch Node: `/bin/sh` cannot execute the configured Node binary, so the repository scripts use `bash -lc` explicitly.
 
 ---
 
