@@ -100,3 +100,17 @@ rendered all controls (view-mode, unit-cell, bonds, axes, lattice-repetition), t
 minerals dropdown was populated by `listMinerals()`, the sample CIF fixtures were
 fetchable, and no JavaScript console errors occurred. This is a rendering smoke
 check, not the M8 appearance review. M7 (viewer API stabilization) is next.
+
+## CIF regression follow-up (2026-09-16)
+
+Added [COD regression fixtures and acquisition records](../packages/crystal-data/test-fixtures/cod/README.md)
+and [11 regression tests](../packages/crystal-data/src/cod-regression.test.ts).
+These check exact element counts for quartz, fluorite, calcite, pyrite and albite;
+quartz screw-related positions; fluorite coordinates, operation attribution and
+periodic nearest-neighbour distances; and multiplicity metadata invariance.
+Equivalent angstrom/nanometre inputs are checked through lattice construction,
+Cartesian atom placement and nonempty periodic bond inference. This exposed and
+fixed double conversion of nanometre lengths: normalized cells now carry the
+angstrom unit tag, while source metadata retains the original unit. Existing
+bond checks now require a nonempty result instead of accepting vacuous success.
+This follow-up does not resolve the separate viewer acceptance findings.

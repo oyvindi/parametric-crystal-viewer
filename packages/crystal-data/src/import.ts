@@ -177,7 +177,7 @@ export function importCif(text: string, options: CifImportOptions = {}): Result<
         else return fail("data.cif.missing-required", `Unsupported cell length unit "${rawUnit}".`);
     }
     const factor = lengthUnit === "nanometre" ? 10 : 1;
-    const unitCell: MineralUnitCell = { a: a! * factor, b: b! * factor, c: c! * factor, alpha: alpha!, beta: beta!, gamma: gamma!, ...(lengthUnit ? { lengthUnit } : {}) };
+    const unitCell: MineralUnitCell = { a: a! * factor, b: b! * factor, c: c! * factor, alpha: alpha!, beta: beta!, gamma: gamma!, ...(lengthUnit ? { lengthUnit: "angstrom" as const } : {}) };
     const latticeResult = createLattice(unitCell);
     if (!latticeResult.ok) return { ok: false, diagnostics: latticeResult.diagnostics.map((d) => ({ ...d, code: "data.cif.missing-required", path: `/cell${d.path ?? ""}` })) };
     const lattice = latticeResult.value;

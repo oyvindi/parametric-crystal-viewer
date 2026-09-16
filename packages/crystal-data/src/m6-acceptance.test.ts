@@ -67,8 +67,9 @@ describe("M6 representative CIF fixtures import successfully", () => {
         const expanded = expandAtomicStructure(definition.atomicStructure, definition.crystallography.spaceOperations ?? [], lattice);
         expect(expanded.ok).toBe(true);
         if (!expanded.ok) return;
-        expect(expanded.value.length).toBeGreaterThan(definition.atomicStructure.sites.length);
+        expect(expanded.value).toHaveLength(12);
         const bonds = inferBonds(expanded.value, lattice);
+        expect(bonds.length).toBeGreaterThan(0);
         expect(bonds.every((b) => b.derived === true)).toBe(true);
     });
 });
@@ -181,6 +182,7 @@ describe("M6 bond data and unsupported formats", () => {
         const expanded = expandAtomicStructure(definition.atomicStructure, definition.crystallography.spaceOperations ?? [], lattice);
         if (!expanded.ok) throw Error("expand");
         const bonds = inferBonds(expanded.value, lattice);
+        expect(bonds.length).toBeGreaterThan(0);
         expect(bonds.every((b) => b.derived === true)).toBe(true);
     });
     it("rejects CIF 2.0", () => {
