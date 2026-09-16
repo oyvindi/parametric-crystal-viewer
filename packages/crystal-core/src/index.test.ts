@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { createLattice, transformMillerIndices, validateMillerIndices, validatePointOperations } from "./index.js";
+import { createLattice, getPointOperationRegistryEntry, resolvePointOperations, transformMillerIndices, validateMillerIndices, validatePointOperations } from "./index.js";
 
 function assertMatrixClose(
     actual: readonly (readonly number[])[],
@@ -86,5 +86,23 @@ it("rejects operations incompatible with the cell metric", () => {
         { id: "swap-a-b", linear: [[0, 1, 0], [1, 0, 0], [0, 0, 1]] },
     ], lattice.value);
     expect(result).toMatchObject({ ok: false, diagnostics: [{ code: "core.symmetry.metric-incompatible" }] });
+});
+
+it("resolves the cubic registry and matching explicit operations equivalently", () => {
+    const lattice = createLattice({ a: 4, b: 4, c: 4, alpha: 90, beta: 90, gamma: 90 });
+    if (!lattice.ok) throw new Error("Expected valid cubic lattice");
+    const entry = getPointOperationRegistryEntry("point-group:m-3m:standard");
+    expect(entry?.operations).toHaveLength(48);
+    const registry = resolvePointOperations({ registryId: "point-group:m-3m:standard" }, lattice.value);
+    const explicit = resolvePointOperations({ operations: entry?.operations }, lattice.value);
+    expect(registry).toEqual(explicit);
+});
+
+it("rejects missing and conflicting symmetry descriptions", () => {
+    const lattice = createLattice({ a: 1, b: 1, c: 1, alpha: 90, beta: 90, gamma: 90 });
+    if (!lattice.ok) throw new Error("Expected valid cubic lattice");
+    expect(resolvePointOperations({}, lattice.value)).toMatchObject({ ok: false, diagnostics: [{ code: "core.symmetry.missing" }] });
+    expect(resolvePointOperations({ identityOnly: true, registryId: "point-group:m-3m:standard" }, lattice.value))
+        .toMatchObject({ ok: false, diagnostics: [{ code: "core.symmetry.conflicting-descriptions" }] });
 });
 });

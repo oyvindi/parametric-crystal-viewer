@@ -1,5 +1,6 @@
 import type { Diagnostic, Result } from "./diagnostics.js";
 import type { Lattice, Mat3, Vec3 } from "./lattice.js";
+import { getPointOperationRegistryEntry } from "./registry.js";
 
 export interface PointOperation {
     readonly id: string;
@@ -8,6 +9,12 @@ export interface PointOperation {
 
 export interface SpaceOperation extends PointOperation {
     readonly translation: Vec3;
+}
+
+export interface PointSymmetryInput {
+    readonly registryId?: string;
+    readonly operations?: readonly PointOperation[];
+    readonly identityOnly?: boolean;
 }
 
 const TOLERANCE = 1e-10;
@@ -71,4 +78,23 @@ export function validatePointOperations(operations: readonly PointOperation[], l
         }
     }
     return { ok: true, value: operations, diagnostics: [] };
+}
+
+function sameOperationSet(left: readonly PointOperation[], right: readonly PointOperation[]): boolean {
+    return left.length === right.length && left.every((operation) => right.some((candidate) => equal(operation.linear, candidate.linear)));
+}
+
+/** Resolves one explicit, registry, or deliberately identity-only point-operation description. */
+export function resolvePointOperations(input: PointSymmetryInput, lattice: Lattice): Result<readonly PointOperation[]> {
+    const supplied = Number(Boolean(input.registryId)) + Number(Boolean(input.operations)) + Number(Boolean(input.identityOnly));
+    if (supplied === 0) return diagnostic("core.symmetry.missing", "A symmetry description is required; identity-only symmetry must be explicit.");
+    if (input.identityOnly && supplied > 1) return diagnostic("core.symmetry.conflicting-descriptions", "Identity-only symmetry cannot be combined with another symmetry description.");
+    if (input.identityOnly) return validatePointOperations([{ id: "identity", linear: IDENTITY }], lattice);
+
+    const registry = input.registryId ? getPointOperationRegistryEntry(input.registryId) : undefined;
+    if (input.registryId && !registry) return diagnostic("core.symmetry.unsupported-registry", "Unsupported symmetry registry identifier.");
+    if (registry && input.operations && !sameOperationSet(registry.operations, input.operations)) {
+        return diagnostic("core.symmetry.conflicting-descriptions", "Explicit operations do not agree with the registry entry.");
+    }
+    return validatePointOperations(input.operations ?? registry!.operations, lattice);
 }
