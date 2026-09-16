@@ -147,6 +147,9 @@ it("generates cubic morphology from a developed {100} form", () => {
     if (!operations.ok) throw new Error("Expected valid cubic symmetry");
     const result = generateCrystalGeometry({ lattice: lattice.value, operations: operations.value, forms: [{ id: "cube", indices: { notation: "miller", h: 1, k: 0, l: 0 }, development: 1 }] });
     expect(result.status).toBe("valid");
-    if (result.status === "valid") expect(result.geometry.faces).toHaveLength(6);
+    if (result.status === "valid") {
+        expect(result.geometry.faces).toHaveLength(6);
+        expect(result.geometry.faces.every((face) => face.contributors[0]?.formId === "cube")).toBe(true);
+    }
 });
 });

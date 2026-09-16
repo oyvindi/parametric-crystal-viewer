@@ -5,7 +5,10 @@ export interface HalfSpace {
     readonly id: string;
     readonly normal: Vec3;
     readonly distance: number;
+    readonly contributors?: readonly FaceContributor[];
 }
+
+export interface FaceContributor { readonly formId: string; readonly operationIds: readonly string[]; }
 
 export interface CrystalGeometry {
     readonly vertices: Float64Array;
@@ -17,6 +20,7 @@ export interface CrystalFace {
     readonly vertexIndices: readonly number[];
     readonly normal: Vec3;
     readonly planeId: string;
+    readonly contributors: readonly FaceContributor[];
 }
 
 export type GeometryResult =
@@ -85,7 +89,7 @@ export function intersectHalfSpaces(halfSpaces: readonly HalfSpace[]): GeometryR
         const v = cross(normal, u);
         const center: Vec3 = boundary.reduce<Vec3>((sum, item) => [sum[0] + item.vertex[0] / boundary.length, sum[1] + item.vertex[1] / boundary.length, sum[2] + item.vertex[2] / boundary.length], [0, 0, 0]);
         boundary.sort((left, right) => Math.atan2(dot(v, [left.vertex[0] - center[0], left.vertex[1] - center[1], left.vertex[2] - center[2]]), dot(u, [left.vertex[0] - center[0], left.vertex[1] - center[1], left.vertex[2] - center[2]])) - Math.atan2(dot(v, [right.vertex[0] - center[0], right.vertex[1] - center[1], right.vertex[2] - center[2]]), dot(u, [right.vertex[0] - center[0], right.vertex[1] - center[1], right.vertex[2] - center[2]])));
-        faces.push({ vertexIndices: boundary.map((item) => item.index), normal, planeId: plane.id });
+        faces.push({ vertexIndices: boundary.map((item) => item.index), normal, planeId: plane.id, contributors: plane.contributors ?? [] });
     }
     const min: Vec3 = [Math.min(...vertices.map((v) => v[0])), Math.min(...vertices.map((v) => v[1])), Math.min(...vertices.map((v) => v[2]))];
     const max: Vec3 = [Math.max(...vertices.map((v) => v[0])), Math.max(...vertices.map((v) => v[1])), Math.max(...vertices.map((v) => v[2]))];
