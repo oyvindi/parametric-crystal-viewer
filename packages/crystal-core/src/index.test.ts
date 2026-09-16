@@ -29,6 +29,16 @@ it("constructs the direct and reciprocal bases of a cubic cell", () => {
     expect(result.value.volume).toBe(64);
 });
 
+it("preserves metric and reciprocal identities for a triclinic cell", () => {
+    const result = createLattice({ a: 4, b: 5, c: 6, alpha: 70, beta: 80, gamma: 75 });
+    if (!result.ok) throw new Error("Expected valid triclinic lattice");
+    expect(result.value.volume).toBeGreaterThan(0);
+    const direct = result.value.direct;
+    const reciprocal = result.value.reciprocal;
+    const product = (column: number, reciprocalColumn: number) => direct[0][column] * reciprocal[0][reciprocalColumn] + direct[1][column] * reciprocal[1][reciprocalColumn] + direct[2][column] * reciprocal[2][reciprocalColumn];
+    for (let column = 0; column < 3; column += 1) for (let row = 0; row < 3; row += 1) expect(product(column, row)).toBeCloseTo(column === row ? 1 : 0, 12);
+});
+
 it("rejects impossible and degenerate cells with a diagnostic", () => {
     const result = createLattice({ a: 1, b: 1, c: 1, alpha: 1, beta: 1, gamma: 179 });
     expect(result.ok).toBe(false);
