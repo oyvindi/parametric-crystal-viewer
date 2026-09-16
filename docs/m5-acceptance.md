@@ -34,7 +34,7 @@ orthorhombic `mmm`, monoclinic `2/m`, and triclinic `-1`. The [M5 acceptance tes
 verify deep immutability and artifact integrity hashes.
 
 Seven pinned COD CIFs under `packages/crystal-core/test-fixtures/m5/` provide the
-engine fixtures (content-verified, SHA-256 pinned in [fixtures](../packages/crystal-core/src/fixtures/m5.ts)):
+engine fixtures (content-verified, SHA-256 pinned in [M5 acceptance tests](../packages/crystal-core/src/m5-acceptance.test.ts)):
 
 | Crystal system | Fixture | COD ID | Point group | Setting | Operation order |
 |---|---|---|---|---|---|
@@ -82,8 +82,7 @@ The earlier fluorite and quartz demos remain runnable.
 ## Verification
 
 ```sh
-npm run build
-npm test
+npm run check
 node scripts/check-docs.mjs
 ```
 

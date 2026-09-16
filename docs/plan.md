@@ -244,6 +244,8 @@ Success criterion:
 
 ### M5 — Multiple Crystal Systems
 
+**Status: complete.** See the [M5 acceptance audit](m5-acceptance.md) for the shipped minerals, crystal-system fixtures, paired trigonal-setting fixture, and multi-mineral demo evidence.
+
 Add:
 
 ```text

@@ -7,6 +7,8 @@ import { STATE_VERSION, validateStateShape, type ViewerState, type ViewMode, typ
 
 export type { ViewerState, ViewMode, AppearanceState, AppearanceOverride } from "./state.js";
 export { STATE_VERSION } from "./state.js";
+export { listMinerals, getMineral } from "@crystal/data";
+export type { Mineral } from "@crystal/data";
 
 export class ViewerOperationError extends Error {
     constructor(readonly diagnostics: readonly Diagnostic[]) {

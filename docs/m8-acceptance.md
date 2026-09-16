@@ -84,8 +84,7 @@ requiring identical pixels across environments.
 ## Verification
 
 ```sh
-npm run build
-npm test
+npm run check
 node scripts/check-docs.mjs
 ```
 

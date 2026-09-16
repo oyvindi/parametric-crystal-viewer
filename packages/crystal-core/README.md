@@ -57,3 +57,14 @@ accompany valid geometry. Hosts should branch on codes rather than messages.
 Face contributors are sorted by form ID and retain sorted unique operation IDs
 and oriented indices. Face/vertex indices are deterministic for the same input
 set, but are not persistent identities across topology changes.
+
+## Atomic diagnostic codes
+
+`expandAtomicStructure` validates sites before symmetry expansion and reports
+the following `core.atomic.*` codes:
+
+| Code | Meaning |
+|---|---|
+| `core.atomic.invalid-site` | A site ID is empty or not unique, the element symbol is missing, a fractional position is non-finite, or occupancy is outside `[0, 1]`. |
+| `core.atomic.empty-structure` | The structure has no sites. |
+| `core.atomic.missing-operations` | An asymmetric-unit structure was supplied without resolved space operations. |
