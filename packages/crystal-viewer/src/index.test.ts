@@ -71,6 +71,29 @@ describe("M3 camera lifecycle through the viewer", () => {
         expect(camera.position.toArray()).not.toEqual(before);
         expect(group.children.some((child) => child instanceof Mesh)).toBe(true);
     });
+
+    it("creates face labels when enabled after geometry has loaded", async () => {
+        const { viewer } = await setup();
+        const labelGroup = (viewer as unknown as { labelGroup: Group }).labelGroup;
+        expect(labelGroup.children).toHaveLength(0);
+        vi.stubGlobal("document", {
+            createElement: () => ({
+                width: 0,
+                height: 0,
+                getContext: () => ({ fillStyle: "", font: "", textAlign: "", textBaseline: "", fillRect() {}, fillText() {} }),
+            }),
+        });
+        try {
+            viewer.showFaceLabels(true);
+
+            expect(labelGroup.visible).toBe(true);
+            expect(labelGroup.children).toHaveLength(viewer.getAllFaces().length);
+            viewer.showFaceLabels(false);
+            expect(labelGroup.children).toHaveLength(0);
+        } finally {
+            vi.unstubAllGlobals();
+        }
+    });
 });
 
 describe("M4 viewer loading", () => {
@@ -80,6 +103,20 @@ describe("M4 viewer loading", () => {
         expect(viewer.getMineralId()).toBe("provisional");
         expect(viewer.getAllFaces()).toHaveLength(6);
         expect(group.children.some((child) => child instanceof Mesh)).toBe(true);
+    });
+
+    it("embeds a caller-supplied mineral in state so a fresh viewer can restore it", async () => {
+        const source = { ...structuredClone(FLUORITE), id: "portable-fluorite", dataRevision: "custom-1" };
+        const { viewer } = await setup(source);
+        const state = viewer.getState();
+        expect(state.mineral?.definition).toMatchObject({ id: "portable-fluorite", dataRevision: "custom-1" });
+
+        const freshCanvas = Object.assign(new EventTarget(), { clientWidth: 400, clientHeight: 300 }) as HTMLCanvasElement;
+        const fresh = new CrystalViewer(freshCanvas);
+        viewers.push(fresh);
+        fresh.setState(state);
+        expect(fresh.getMineralId()).toBe("portable-fluorite");
+        expect(fresh.getState()).toEqual(state);
     });
 
     it("preserves configuration, mesh and camera when a load fails and emits diagnostics", async () => {
@@ -127,5 +164,26 @@ describe("M4 viewer loading", () => {
         source.habits[0].preferredView = { cameraDirection: [0, 0, 0] };
         await expect(viewer.loadMineral(source)).rejects.toThrow(ViewerOperationError);
         expect(viewer.getMineralId()).toBe("quartz");
+    });
+});
+
+describe("M7 contributor-specific face equivalence", () => {
+    it("selects one contributing form's equivalence set on a shared face", async () => {
+        const source: any = structuredClone(FLUORITE);
+        const habit = source.habits[0];
+        habit.forms.push({ ...habit.forms[0], id: "a-copy", label: "Cube copy" });
+        const { viewer } = await setup(source);
+        const sharedFace = viewer.getAllFaces().find((face) => face.contributors.some((c) => c.formId === "a-copy"));
+        expect(sharedFace).toBeDefined();
+
+        const copyEquivalent = viewer.getEquivalentFaces(sharedFace!.faceIndex, "a-copy");
+        expect(copyEquivalent).toContain(sharedFace!.faceIndex);
+        // A non-contributor must not silently select the union of all forms.
+        expect(viewer.getEquivalentFaces(sharedFace!.faceIndex, "not-a-contributor")).toEqual([]);
+
+        const selected = vi.fn();
+        viewer.addEventListener("face-selected", selected);
+        viewer.highlightEquivalentFaces(sharedFace!.faceIndex, "a-copy");
+        expect(selected).toHaveBeenCalledWith(expect.objectContaining({ detail: expect.objectContaining({ equivalentFormId: "a-copy", equivalentFaces: copyEquivalent }) }));
     });
 });

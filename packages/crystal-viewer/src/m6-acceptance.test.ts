@@ -179,6 +179,29 @@ describe("M6 viewer atomic structure view", () => {
         expect(info2.bondsDerived).toBe(true);
     });
 
+    it("preserves supplied periodic bonds instead of replacing them with inferred bonds", () => {
+        const viewer = new CrystalViewer(canvas());
+        viewers.push(viewer);
+        viewer.loadCif(P1_CIF);
+        const definition = structuredClone(viewer.getState().structure!.definition);
+        const atoms = (viewer as unknown as { expandedAtoms: readonly { id: string }[] }).expandedAtoms;
+        const withBonds = {
+            ...definition,
+            atomicStructure: {
+                ...definition.atomicStructure,
+                bonds: [{
+                a: { siteId: atoms[0]!.id, cellOffset: [0, 0, 0] as const },
+                b: { siteId: atoms[1]!.id, cellOffset: [1, 0, 0] as const },
+                }],
+            },
+        };
+
+        viewer.loadStructure(withBonds);
+
+        expect(viewer.getStructureInfo()).toMatchObject({ bondCount: 1, bondsDerived: false });
+        expect(viewer.getState().structure!.definition.atomicStructure.bonds).toEqual(withBonds.atomicStructure.bonds);
+    });
+
     it("emits a failure event and exposes diagnostics for an invalid CIF", () => {
         const viewer = new CrystalViewer(canvas());
         viewers.push(viewer);

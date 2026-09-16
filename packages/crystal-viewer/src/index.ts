@@ -1,6 +1,6 @@
 import { Scene, PerspectiveCamera, WebGLRenderer, MeshPhysicalMaterial, Mesh, MeshBasicMaterial, Color, DirectionalLight, AmbientLight, Group, DoubleSide, Raycaster, Vector2, Vector3, Sprite, SpriteMaterial, CanvasTexture, BufferGeometry, Float32BufferAttribute, LineSegments, LineBasicMaterial, PMREMGenerator, EquirectangularReflectionMapping } from "three";
 import { createLattice, expandAtomicStructure, generateCrystal, inferBonds, type Diagnostic, type GeometryResult, type CrystalGeometry, type CrystalFace, type ExpandedAtom, type Lattice, type PeriodicBond } from "@crystal/core";
-import { loadMineral as loadMineralData, createCrystalInput, resolveHabit, resolveCrystallography, importCif, getMineral, MineralDataError, type Mineral, type StructuralDefinition } from "@crystal/data";
+import { loadMineral as loadMineralData, createCrystalInput, resolveHabit, resolveCrystallography, importCif, getMineral, validateMineral, MineralDataError, type Mineral, type MineralCrystallography, type StructuralDefinition } from "@crystal/data";
 import { createThreeGeometryWithPicking, createAtomicStructure, atomicBounds, createCrystalMaterial, applyAppearance, resolveAppearance, APPEARANCE_FIELDS, type AppearanceParams, type AppearanceField } from "@crystal/three";
 import { cameraBasis } from "./camera.js";
 import { STATE_VERSION, validateStateShape, type ViewerState, type ViewMode, type FormState, type MineralRefState, type AppearanceState, type AppearanceOverride } from "./state.js";
@@ -80,6 +80,8 @@ export class CrystalViewer extends EventTarget {
     private mesh: Mesh<BufferGeometry, MeshPhysicalMaterial> | null = null;
     private highlightMesh: Mesh<BufferGeometry, MeshBasicMaterial> | null = null;
     private mineral: Mineral | null = null;
+    /** A caller-supplied mineral needs embedding in state for portable restoration. */
+    private embeddedMineral = false;
     private habitId: string | undefined;
     private variantId: string | undefined;
     private formDevelopment: Record<string, number> = {};
@@ -200,16 +202,29 @@ export class CrystalViewer extends EventTarget {
         }
         // Yield so overlapping loads interleave: only the newest request commits.
         await Promise.resolve();
+        // Disposal is terminal: pending work may finish, but must not mutate a
+        // released viewer or emit a completion event.
+        if (this.disposed) return;
         if (generation !== this.loadGeneration) {
             this.dispatchEvent(new CustomEvent("load-superseded", { detail: { generation } }));
             return;
         }
-        this.commitMineral(mineral);
+        this.commitMineral(mineral, typeof source !== "string");
         this.dispatchEvent(new CustomEvent("mineral-loaded", { detail: { mineralId: mineral.id, dataRevision: mineral.dataRevision } }));
     }
 
-    private commitMineral(mineral: Mineral): void {
+    private commitMineral(mineral: Mineral, embedded = false): void {
+        // A separate imported structure has its own declared cell and basis. It
+        // cannot remain attached to a newly loaded mineral without an explicit
+        // basis transformation.
+        this.structure = null;
+        this.structureLattice = null;
+        this.expandedAtoms = null;
+        this.structureBonds = null;
+        this.importDiagnostics = [];
+        this.clearAtomic();
         this.mineral = mineral;
+        this.embeddedMineral = embedded;
         this.habitId = undefined;
         this.variantId = undefined;
         this.formDevelopment = {};
@@ -412,10 +427,29 @@ export class CrystalViewer extends EventTarget {
             this.dispatchEvent(new CustomEvent("structure-load-failed", { detail: { diagnostics: expanded.diagnostics } }));
             return;
         }
+        // The imported structural definition is authoritative for its cell,
+        // symmetry and atomic positions. Do not retain an unrelated mineral
+        // morphology alongside it.
+        this.mineral = null;
+        this.embeddedMineral = false;
+        this.habitId = undefined;
+        this.variantId = undefined;
+        this.formDevelopment = {};
+        this.formEnabled = {};
+        this.morphologyScale = undefined;
+        this.appearanceId = undefined;
+        this.appearanceOverrides = {};
+        this.lastValidGeometry = null;
+        this.currentResult = null;
+        this.currentGeometry = null;
+        this.triangleFaces = null;
+        this.selectedFaceIndex = null;
+        this.clearMesh();
+        this.clearLabels();
         this.structure = definition;
         this.structureLattice = latticeResult.value;
         this.expandedAtoms = expanded.value;
-        this.structureBonds = inferBonds(expanded.value, latticeResult.value);
+        this.structureBonds = definition.atomicStructure.bonds ?? inferBonds(expanded.value, latticeResult.value);
         this.importDiagnostics = [];
         this.viewMode = "atomic";
         this.updateAtomicRender();
@@ -545,7 +579,12 @@ export class CrystalViewer extends EventTarget {
             }
         }
         const mineralRef: MineralRefState | undefined = this.mineral
-            ? { id: this.mineral.id, dataRevision: this.mineral.dataRevision, ...(this.variantId ? { variant: this.variantId } : {}) }
+            ? {
+                id: this.mineral.id,
+                dataRevision: this.mineral.dataRevision,
+                ...(this.variantId ? { variant: this.variantId } : {}),
+                ...(this.embeddedMineral ? { definition: this.mineral } : {}),
+            }
             : undefined;
         return {
             version: STATE_VERSION,
@@ -603,10 +642,17 @@ export class CrystalViewer extends EventTarget {
         // Resolve referenced mineral data before any mutation.
         let mineral: Mineral | null = null;
         if (s.mineral) {
-            const record = getMineral(s.mineral.id);
-            if (!record) diagnostics.push({ code: "viewer.state.unknown-mineral", severity: "error", message: `Unknown mineral "${s.mineral.id}"; referenced data is unavailable.`, path: "/mineral/id" });
-            else if (record.dataRevision !== s.mineral.dataRevision) diagnostics.push({ code: "viewer.state.incompatible-data", severity: "error", message: `Mineral "${s.mineral.id}" data revision mismatch: state has "${s.mineral.dataRevision}" but bundled data is "${record.dataRevision}".`, path: "/mineral/dataRevision" });
-            else mineral = record;
+            if (s.mineral.definition) {
+                const validated = validateMineral(s.mineral.definition);
+                if (!validated.ok) diagnostics.push(...validated.diagnostics.map((d) => ({ ...d, code: "viewer.state.malformed", path: `/mineral/definition${d.path ?? ""}` })));
+                else if (validated.value.id !== s.mineral.id || validated.value.dataRevision !== s.mineral.dataRevision) diagnostics.push({ code: "viewer.state.incompatible-data", severity: "error", message: "Embedded mineral identity does not match its state reference.", path: "/mineral" });
+                else mineral = validated.value;
+            } else {
+                const record = getMineral(s.mineral.id);
+                if (!record) diagnostics.push({ code: "viewer.state.unknown-mineral", severity: "error", message: `Unknown mineral "${s.mineral.id}"; referenced data is unavailable.`, path: "/mineral/id" });
+                else if (record.dataRevision !== s.mineral.dataRevision) diagnostics.push({ code: "viewer.state.incompatible-data", severity: "error", message: `Mineral "${s.mineral.id}" data revision mismatch: state has "${s.mineral.dataRevision}" but bundled data is "${record.dataRevision}".`, path: "/mineral/dataRevision" });
+                else mineral = record;
+            }
         }
         if (mineral) {
             if (s.habit !== undefined) {
@@ -630,14 +676,18 @@ export class CrystalViewer extends EventTarget {
         let expandedAtoms: readonly ExpandedAtom[] | null = null;
         let structureBonds: readonly PeriodicBond[] | null = null;
         if (s.structure) {
-            const def = s.structure.definition;
-            const latticeResult = createLattice(def.crystallography.unitCell);
-            if (!latticeResult.ok) diagnostics.push(...latticeResult.diagnostics.map((d) => ({ ...d, path: "/structure/definition/crystallography/unitCell" })));
-            else {
-                const ops = def.crystallography.spaceOperations ?? [];
-                const exp = expandAtomicStructure(def.atomicStructure, ops, latticeResult.value);
-                if (!exp.ok) diagnostics.push(...exp.diagnostics.map((d) => ({ ...d, path: "/structure/definition/atomicStructure" })));
-                else { structureDef = def; structureLattice = latticeResult.value; expandedAtoms = exp.value; structureBonds = inferBonds(exp.value, latticeResult.value); }
+            try {
+                const def = s.structure.definition;
+                const latticeResult = createLattice(def.crystallography.unitCell);
+                if (!latticeResult.ok) diagnostics.push(...latticeResult.diagnostics.map((d) => ({ ...d, path: "/structure/definition/crystallography/unitCell" })));
+                else {
+                    const ops = def.crystallography.spaceOperations ?? [];
+                    const exp = expandAtomicStructure(def.atomicStructure, ops, latticeResult.value);
+                    if (!exp.ok) diagnostics.push(...exp.diagnostics.map((d) => ({ ...d, path: "/structure/definition/atomicStructure" })));
+                    else { structureDef = def; structureLattice = latticeResult.value; expandedAtoms = exp.value; structureBonds = def.atomicStructure.bonds ?? inferBonds(exp.value, latticeResult.value); }
+                }
+            } catch {
+                diagnostics.push({ code: "viewer.state.malformed", severity: "error", message: "Embedded structural definition is malformed.", path: "/structure/definition" });
             }
         }
 
@@ -648,10 +698,11 @@ export class CrystalViewer extends EventTarget {
 
         // ---- Commit as one operation (supersedes pending loads) ----
         this.loadGeneration++;
-        const sameMineral = !!mineral && !!this.mineral && mineral.id === this.mineral.id && mineral.dataRevision === this.mineral.dataRevision && (s.mineral?.variant ?? undefined) === (this.variantId ?? undefined);
+        const sameMineral = !s.mineral?.definition && !!mineral && !this.embeddedMineral && !!this.mineral && mineral.id === this.mineral.id && mineral.dataRevision === this.mineral.dataRevision && (s.mineral?.variant ?? undefined) === (this.variantId ?? undefined);
 
         if (mineral) {
             this.mineral = mineral;
+            this.embeddedMineral = s.mineral!.definition !== undefined;
             this.variantId = s.mineral!.variant;
             this.habitId = s.habit;
             this.formDevelopment = {};
@@ -673,6 +724,7 @@ export class CrystalViewer extends EventTarget {
             this.regenerate();
         } else {
             this.mineral = null;
+            this.embeddedMineral = false;
             this.habitId = undefined;
             this.variantId = undefined;
             this.formDevelopment = {};
@@ -726,6 +778,7 @@ export class CrystalViewer extends EventTarget {
         this.camera.up.set(s.camera.up[0], s.camera.up[1], s.camera.up[2]);
         this.camera.near = s.camera.near;
         this.camera.far = s.camera.far;
+        this.camera.lookAt(0, 0, 0);
         this.camera.updateProjectionMatrix();
         this.crystalGroup.rotation.set(s.camera.groupRotation[0], s.camera.groupRotation[1], s.camera.groupRotation[2]);
         this.labelGroup.rotation.copy(this.crystalGroup.rotation);
@@ -750,15 +803,20 @@ export class CrystalViewer extends EventTarget {
         return this.currentGeometry.faces.map((_, i) => this.faceInfo(i)!);
     }
 
-    /** Returns face indices that share a form with the given face index (equivalent faces). */
-    getEquivalentFaces(faceIndex: number): number[] {
+    /**
+     * Returns faces equivalent under one contributor of the selected face. When
+     * a face has several contributors, pass its form ID to choose the relevant
+     * equivalence set; otherwise the deterministic first contributor is used.
+     */
+    getEquivalentFaces(faceIndex: number, formId?: string): number[] {
         if (!this.currentGeometry) return [];
         const face = this.currentGeometry.faces[faceIndex];
         if (!face) return [];
-        const formIds = new Set(face.contributors.map((c) => c.formId));
+        const selectedFormId = formId ?? face.contributors[0]?.formId;
+        if (!selectedFormId || !face.contributors.some((c) => c.formId === selectedFormId)) return [];
         return this.currentGeometry.faces
             .map((f, i) => ({ f, i }))
-            .filter(({ f }) => f.contributors.some((c) => formIds.has(c.formId)))
+            .filter(({ f }) => f.contributors.some((c) => c.formId === selectedFormId))
             .map(({ i }) => i);
     }
 
@@ -780,20 +838,23 @@ export class CrystalViewer extends EventTarget {
         this.dispatchEvent(new CustomEvent("face-selected", { detail: { faceIndex: null } }));
     }
 
-    /** Highlights all symmetry-equivalent faces sharing a form with the given face. */
-    highlightEquivalentFaces(faceIndex: number): void {
+    /** Highlights all symmetry-equivalent faces for one contributor of the given face. */
+    highlightEquivalentFaces(faceIndex: number, formId?: string): void {
         this.assertNotDisposed();
         if (!this.currentGeometry || !this.currentGeometry.faces[faceIndex]) return;
         this.selectedFaceIndex = faceIndex;
-        const equivalent = this.getEquivalentFaces(faceIndex);
+        const selectedFormId = formId ?? this.currentGeometry.faces[faceIndex]!.contributors[0]?.formId;
+        const equivalent = this.getEquivalentFaces(faceIndex, selectedFormId);
         this.updateHighlight(equivalent);
         const info = this.faceInfo(faceIndex);
-        this.dispatchEvent(new CustomEvent("face-selected", { detail: { faceIndex, equivalentFaces: equivalent, ...info } }));
+        this.dispatchEvent(new CustomEvent("face-selected", { detail: { faceIndex, equivalentFaces: equivalent, equivalentFormId: selectedFormId, ...info } }));
     }
 
     showFaceLabels(show: boolean): void {
         this.assertNotDisposed();
         this.showLabels = show;
+        this.clearLabels();
+        if (show && this.currentGeometry) this.createLabels(this.currentGeometry);
         this.labelGroup.visible = show;
         this.renderOnce();
     }
@@ -884,6 +945,8 @@ export class CrystalViewer extends EventTarget {
     dispose(): void {
         if (this.disposed) return;
         this.disposed = true;
+        // Invalidate work that has resolved data but has not committed yet.
+        this.loadGeneration++;
         this.disconnected = true;
         this.stop();
         this.detachCanvasListeners();
@@ -1123,14 +1186,16 @@ export class CrystalViewer extends EventTarget {
             this.crystalGroup.remove(this.cellOverlay);
             this.cellOverlay = null;
         }
-        const mineralLattice = this.mineral ? createLattice(resolveCrystallography(this.mineral, this.variantId).unitCell) : null;
+        const mineralCrystallography = this.mineral ? resolveCrystallography(this.mineral, this.variantId) : null;
+        const mineralLattice = mineralCrystallography ? createLattice(mineralCrystallography.unitCell) : null;
         const lattice = this.structureLattice ?? (mineralLattice?.ok ? mineralLattice.value : null);
-        if (!lattice || !this.showUnitCell) return;
-        this.cellOverlay = this.buildCellOverlay(lattice);
+        const crystallography = this.structure?.crystallography ?? mineralCrystallography;
+        if (!lattice || !crystallography || (!this.showUnitCell && !this.showAxes)) return;
+        this.cellOverlay = this.buildCellOverlay(lattice, crystallography);
         this.crystalGroup.add(this.cellOverlay);
     }
 
-    private buildCellOverlay(lattice: Lattice): Group {
+    private buildCellOverlay(lattice: Lattice, crystallography: MineralCrystallography): Group {
         const group = new Group();
         const direct = lattice.direct;
         const corner = new Vector3(0, 0, 0);
@@ -1140,20 +1205,27 @@ export class CrystalViewer extends EventTarget {
         // Unit-cell wireframe centred at the origin (matches morphology centring).
         const c = corner.clone().add(ax).add(ay).add(az).multiplyScalar(-0.5);
         const corners = [c.clone(), c.clone().add(ax), c.clone().add(ay), c.clone().add(az), c.clone().add(ax).add(ay), c.clone().add(ax).add(az), c.clone().add(ay).add(az), c.clone().add(ax).add(ay).add(az)];
-        const edges: number[] = [];
-        const edge = (i: number, j: number) => edges.push(corners[i]!.x, corners[i]!.y, corners[i]!.z, corners[j]!.x, corners[j]!.y, corners[j]!.z);
-        edge(0, 1); edge(0, 2); edge(0, 3); edge(1, 4); edge(1, 5); edge(2, 4); edge(2, 6); edge(3, 5); edge(3, 6); edge(4, 7); edge(5, 7); edge(6, 7);
-        const geo = new BufferGeometry();
-        geo.setAttribute("position", new Float32BufferAttribute(edges, 3));
-        group.add(new LineSegments(geo, new LineBasicMaterial({ color: 0x66ccff })));
-        // Crystallographic axes a/b/c (red/green/blue) from the centred origin.
+        if (this.showUnitCell) {
+            const edges: number[] = [];
+            const edge = (i: number, j: number) => edges.push(corners[i]!.x, corners[i]!.y, corners[i]!.z, corners[j]!.x, corners[j]!.y, corners[j]!.z);
+            edge(0, 1); edge(0, 2); edge(0, 3); edge(1, 4); edge(1, 5); edge(2, 4); edge(2, 6); edge(3, 5); edge(3, 6); edge(4, 7); edge(5, 7); edge(6, 7);
+            const geo = new BufferGeometry();
+            geo.setAttribute("position", new Float32BufferAttribute(edges, 3));
+            group.add(new LineSegments(geo, new LineBasicMaterial({ color: 0x66ccff })));
+        }
+        // Derive axes from the declared lattice setting, not decorative XYZ.
         if (this.showAxes) {
             const axis = (v: Vector3, color: number) => {
                 const g = new BufferGeometry();
                 g.setAttribute("position", new Float32BufferAttribute([c.x, c.y, c.z, c.x + v.x, c.y + v.y, c.z + v.z], 3));
                 group.add(new LineSegments(g, new LineBasicMaterial({ color })));
             };
-            axis(ax, 0xff4040); axis(ay, 0x40ff40); axis(az, 0x4080ff);
+            const hexagonalAxes = crystallography.crystalSystem === "hexagonal"
+                || (crystallography.crystalSystem === "trigonal" && crystallography.setting === "hexagonal-standard");
+            axis(ax, 0xff4040);
+            axis(ay, 0x40ff40);
+            if (hexagonalAxes) axis(ax.clone().add(ay).negate(), 0x4080ff); // a3 = -(a1 + a2)
+            axis(az, hexagonalAxes ? 0xffd040 : 0x4080ff);
         }
         return group;
     }
@@ -1163,7 +1235,9 @@ export class CrystalViewer extends EventTarget {
         if (this.mesh) this.mesh.visible = morphVisible;
         this.labelGroup.visible = morphVisible && this.showLabels;
         if (this.atomicGroup) this.atomicGroup.visible = this.viewMode === "atomic";
-        if (this.cellOverlay) this.cellOverlay.visible = this.showUnitCell && this.viewMode === "morphology";
+        if (this.cellOverlay) this.cellOverlay.visible = this.viewMode === "morphology"
+            ? this.showUnitCell || this.showAxes
+            : this.showAxes;
     }
 
     private frameAtomic(): void {

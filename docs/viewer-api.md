@@ -367,6 +367,8 @@ Transient state such as pointer hover, animation-loop handles, GPU resources, an
 
 Reference bundled minerals using their identity and data revision or compatibility identifier. Include the normalized structural definition for imported data, including its cell, symmetry, sites, applicable bonds, and preserved source metadata, so restoration does not depend on the original import session. Apply the [structural compatibility rules](data-model.md#atomic-structure). Any additional custom definitions needed to reproduce the configuration must also be included or resolve through compatible bundled data.
 
+Caller-supplied mineral records are embedded as validated definitions alongside their identity and data revision. Bundled minerals remain compact references and must resolve to the recorded compatible revision. This makes a state created from `loadMineral(customRecord)` portable to a fresh viewer without adding custom records to the bundled catalog.
+
 Every complete state payload must declare a state-format version. V1 ships `version: 1`; unsupported versions and incompatible data references produce explicit diagnostics rather than guessed substitutions. Referenced-data compatibility uses the mineral identity and data revision; imported definitions are embedded in full. See the [state serialization decision](decisions/0004-viewer-state-serialization.md) for version identifiers, the supported-version policy, and the compatibility mechanism.
 
 ### Transactional Restoration

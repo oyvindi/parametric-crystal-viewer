@@ -15,7 +15,7 @@
  *   mesh), so it is excluded like pointer hover and animation handles.
  */
 import type { Diagnostic } from "@crystal/core";
-import type { StructuralDefinition } from "@crystal/data";
+import type { Mineral, StructuralDefinition } from "@crystal/data";
 
 export const STATE_VERSION = 1 as const;
 
@@ -51,6 +51,8 @@ export interface MineralRefState {
     readonly id: string;
     readonly dataRevision: string;
     readonly variant?: string;
+    /** Full validated definition for a caller-supplied mineral outside the bundled catalog. */
+    readonly definition?: Mineral;
 }
 
 export interface StructureState {
@@ -136,6 +138,7 @@ export function validateStateShape(input: unknown): { ok: true; value: ViewerSta
             if (!isString(mineral["id"])) diagnostics.push(diag("viewer.state.malformed", "mineral.id must be a string.", "/mineral/id"));
             if (!isString(mineral["dataRevision"])) diagnostics.push(diag("viewer.state.malformed", "mineral.dataRevision must be a string.", "/mineral/dataRevision"));
             if (mineral["variant"] !== undefined && !isString(mineral["variant"])) diagnostics.push(diag("viewer.state.malformed", "mineral.variant must be a string.", "/mineral/variant"));
+            if (mineral["definition"] !== undefined && !isObject(mineral["definition"])) diagnostics.push(diag("viewer.state.malformed", "mineral.definition must be an object.", "/mineral/definition"));
         }
     }
 

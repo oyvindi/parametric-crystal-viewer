@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { readFileSync } from "node:fs";
-import { Group, Mesh, Scene, PerspectiveCamera } from "three";
+import { Group, LineSegments, Mesh, Scene, PerspectiveCamera } from "three";
 import { FLUORITE, QUARTZ } from "@crystal/data";
 import { CrystalViewer, ViewerOperationError } from "./index.js";
 
@@ -114,6 +114,32 @@ describe("M7 loading contracts", () => {
         expect(viewer.getGeometryStatus()).toMatchObject({ status: "invalid", stale: false });
         expect(crystalGroup.children.some((c) => c instanceof Mesh)).toBe(false);
     });
+
+    it("replaces an imported structure when loading a mineral, preventing mixed lattices", async () => {
+        const viewer = new CrystalViewer(canvas());
+        viewers.push(viewer);
+        viewer.loadCif(P1_CIF);
+        expect(viewer.getStructureInfo()).not.toBeNull();
+
+        await viewer.loadMineral("quartz");
+
+        expect(viewer.getMineralId()).toBe("quartz");
+        expect(viewer.getStructureInfo()).toBeNull();
+        expect(viewer.getViewMode()).toBe("morphology");
+    });
+
+    it("replaces mineral morphology when loading an imported structure", async () => {
+        const viewer = await loaded("quartz");
+        expect(viewer.getGeometryStatus().status).toBe("valid");
+
+        viewer.loadCif(P1_CIF);
+
+        expect(viewer.getMineralId()).toBeNull();
+        expect(viewer.getGeometryStatus().status).toBe("invalid");
+        expect(viewer.getAllFaces()).toEqual([]);
+        expect(viewer.getStructureInfo()).not.toBeNull();
+        expect(viewer.getViewMode()).toBe("atomic");
+    });
 });
 
 describe("M7 lifecycle (disconnect, reconnect, disposal)", () => {
@@ -183,6 +209,23 @@ describe("M7 lifecycle (disconnect, reconnect, disposal)", () => {
         expect(viewer.isDisposed()).toBe(true); // not reactivated
         await expect(viewer.loadMineral("fluorite")).rejects.toThrow(ViewerOperationError);
     });
+
+    it("disposal invalidates a pending mineral load without a commit or completion event", async () => {
+        const viewer = new CrystalViewer(canvas());
+        viewers.push(viewer);
+        const loaded = vi.fn();
+        const superseded = vi.fn();
+        viewer.addEventListener("mineral-loaded", loaded);
+        viewer.addEventListener("load-superseded", superseded);
+
+        const pending = viewer.loadMineral("quartz");
+        viewer.dispose();
+        await pending;
+
+        expect(viewer.getMineralId()).toBeNull();
+        expect(loaded).not.toHaveBeenCalled();
+        expect(superseded).not.toHaveBeenCalled();
+    });
 });
 
 describe("M7 state serialization", () => {
@@ -243,6 +286,31 @@ describe("M7 state serialization", () => {
         expect(restored.camera).toEqual(saved.camera);
     });
 
+    it("restores the saved camera orientation in a fresh viewer", async () => {
+        const viewer = await loaded("quartz");
+        viewer.resetCamera();
+        const saved = viewer.getState();
+        const fresh = new CrystalViewer(canvas());
+        viewers.push(fresh);
+
+        fresh.setState(saved);
+
+        const originalCamera = viewer as unknown as { camera: PerspectiveCamera };
+        const restoredCamera = fresh as unknown as { camera: PerspectiveCamera };
+        expect(restoredCamera.camera.quaternion.angleTo(originalCamera.camera.quaternion)).toBeCloseTo(0, 12);
+    });
+
+    it("shows axes without a unit-cell wireframe and includes a3 for hexagonal-setting quartz", async () => {
+        const viewer = await loaded("quartz");
+        viewer.setShowAxes(true);
+
+        const overlay = (viewer as unknown as { cellOverlay: Group | null }).cellOverlay;
+        expect(overlay).not.toBeNull();
+        // a1, a2, a3 and c; there is no unit-cell wireframe when it is disabled.
+        expect(overlay!.children).toHaveLength(4);
+        expect(overlay!.children.every((child) => child instanceof LineSegments)).toBe(true);
+    });
+
     it("restores an imported structure in a fresh viewer without the original import session and preserves provenance", async () => {
         const viewer = new CrystalViewer(canvas());
         viewers.push(viewer);
@@ -276,6 +344,7 @@ describe("M7 state serialization", () => {
             { ...before, mineral: { id: "quartz", dataRevision: "wrong" } },
             { ...before, forms: { ...before.forms, noform: { development: 0.5, enabled: true } } },
             { ...before, camera: { ...before.camera, position: [1, 2] } },
+            { ...before, structure: { definition: {} } },
         ];
         for (const state of bad) {
             expect(() => viewer.setState(state)).toThrow(ViewerOperationError);
