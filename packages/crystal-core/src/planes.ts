@@ -40,8 +40,8 @@ export function expandEquivalentPlaneDirections(
         const key = `${transformed.value.h},${transformed.value.k},${transformed.value.l}`;
         const existing = result.get(key);
         result.set(key, existing
-            ? { ...existing, operationIds: [...existing.operationIds, operation.id] }
+            ? { ...existing, operationIds: [...existing.operationIds, operation.id].sort() }
             : { indices: transformed.value, normal, operationIds: [operation.id] });
     }
-    return { ok: true, value: [...result.values()], diagnostics: [] };
+    return { ok: true, value: [...result.values()].sort((a, b) => a.indices.h - b.indices.h || a.indices.k - b.indices.k || a.indices.l - b.indices.l), diagnostics: [] };
 }

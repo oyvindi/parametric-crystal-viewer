@@ -4,6 +4,9 @@ export interface Diagnostic {
     readonly severity: "warning" | "error";
     readonly message: string;
     readonly path?: string;
+    readonly mineralId?: string;
+    readonly formIds?: readonly string[];
+    readonly source?: { readonly block?: string; readonly line?: number; readonly column?: number };
     readonly operationIds?: readonly string[];
     readonly details?: Readonly<Record<string, unknown>>;
 }

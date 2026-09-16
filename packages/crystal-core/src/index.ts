@@ -7,3 +7,5 @@ export * from "./morphology.js";
 export * from "./planes.js";
 export * from "./registry.js";
 export * from "./symmetry.js";
+export * from "./tolerances.js";
+export * from "./crystal.js";

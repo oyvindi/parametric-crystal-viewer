@@ -73,9 +73,10 @@ export function createLattice(cell: UnitCell): Result<Lattice> {
         ["b", cell.b],
         ["c", cell.c],
     ];
+    const diagnostics: Diagnostic[] = [];
     for (const [name, value] of lengths) {
         if (!Number.isFinite(value) || value <= 0) {
-            return invalidCell(`/${name}`, `${name} must be a finite positive length.`);
+            diagnostics.push(...invalidCell(`/${name}`, `${name} must be a finite positive length.`).diagnostics);
         }
     }
 
@@ -86,10 +87,11 @@ export function createLattice(cell: UnitCell): Result<Lattice> {
     ];
     for (const [name, value] of angles) {
         if (!Number.isFinite(value) || value <= 0 || value >= 180) {
-            return invalidCell(`/${name}`, `${name} must be a finite angle between 0 and 180 degrees.`);
+            diagnostics.push(...invalidCell(`/${name}`, `${name} must be a finite angle between 0 and 180 degrees.`).diagnostics);
         }
     }
 
+    if (diagnostics.length) return { ok: false, diagnostics };
     const alpha = cell.alpha * DEGREES_TO_RADIANS;
     const beta = cell.beta * DEGREES_TO_RADIANS;
     const gamma = cell.gamma * DEGREES_TO_RADIANS;
@@ -113,7 +115,7 @@ export function createLattice(cell: UnitCell): Result<Lattice> {
     ];
     const volume = determinant(direct);
     const reciprocal = inverse(transpose(direct));
-    if (!reciprocal || !Number.isFinite(volume)) {
+    if (!reciprocal || !reciprocal.flat().every(Number.isFinite) || !Number.isFinite(volume) || volume <= Math.max(cell.a, cell.b, cell.c) ** 3 * MINIMUM_RELATIVE_VOLUME) {
         return invalidCell("/", "Unit-cell basis cannot be inverted reliably.");
     }
 
@@ -122,5 +124,6 @@ export function createLattice(cell: UnitCell): Result<Lattice> {
         [cell.a * cell.b * cosGamma, cell.b ** 2, cell.b * cell.c * cosAlpha],
         [cell.a * cell.c * cosBeta, cell.b * cell.c * cosAlpha, cell.c ** 2],
     ];
+    if (!metric.flat().every(Number.isFinite)) return invalidCell("/", "Unit-cell metric exceeds the numerical range.");
     return { ok: true, value: { direct, reciprocal, metric, volume }, diagnostics: [] };
 }

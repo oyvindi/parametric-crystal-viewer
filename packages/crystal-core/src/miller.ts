@@ -55,13 +55,14 @@ export function validateMillerIndices(
     indices: MillerIndices,
     options: MillerValidationOptions = {},
 ): Result<MillerIndices> {
+    if (indices.notation !== "miller" && indices.notation !== "miller-bravais") return invalid("/notation", "Unknown index notation.");
     const values = indices.notation === "miller"
         ? [indices.h, indices.k, indices.l]
         : [indices.h, indices.k, indices.i, indices.l];
 
     const fieldNames = indices.notation === "miller" ? ["h", "k", "l"] : ["h", "k", "i", "l"];
     for (const [offset, value] of values.entries()) {
-        if (!Number.isInteger(value)) {
+        if (!Number.isSafeInteger(value)) {
             return invalid(`/${fieldNames[offset] ?? offset}`, "Miller indices must be finite integers.");
         }
     }
