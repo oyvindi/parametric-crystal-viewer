@@ -443,7 +443,7 @@ interface SourcedValue<T> {
 }
 ```
 
-Define the minimum provenance representation during M2 with fluorite. Exact schema syntax remains an implementation decision, subject to the coverage, origin, status, and derivation requirements above. Apply the same contract to subsequent shipped records and habits; delivery checks are assigned in the [implementation plan](plan.md#mineral-and-crystal-system-coverage).
+Define the minimum provenance representation during M2 with fluorite. Exact schema syntax remains an implementation decision, subject to the coverage, origin, status, and derivation requirements above. The M2 fluorite record establishes this representation with reported crystallography and curated habit development values; see the [M2 acquisition record](sources/m2-acquisition.md) and [acceptance audit](m2-acceptance.md). Apply the same contract to subsequent shipped records and habits; delivery checks are assigned in the [implementation plan](plan.md#mineral-and-crystal-system-coverage).
 
 ---
 

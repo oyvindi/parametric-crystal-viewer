@@ -160,6 +160,8 @@ The V1 mineral records remain version-controlled project data under the [catalog
 
 ### M2 — Simple Cubic Mineral
 
+**Status: complete.** See the [M2 acceptance audit](m2-acceptance.md) for delivery, tests, provenance, and form-transition evidence.
+
 Implement fluorite as the first cubic mineral in the [content delivery matrix](#mineral-and-crystal-system-coverage).
 
 Support combinations of:

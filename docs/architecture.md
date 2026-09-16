@@ -184,13 +184,11 @@ Expected failures from scientific input, imported data, loading, or state restor
 
 ## Three.js Rendering Layer
 
-`crystal-three` should convert generic crystal geometry into Three.js objects.
+`crystal-three` converts generic crystal geometry into Three.js objects. Three.js (`three`) is a runtime dependency of `crystal-three` and `crystal-viewer`.
 
 Core geometry remains double precision under the [numeric policy](scientific-model.md#numeric-policy). This layer performs the explicit conversion to the `Float32Array` buffers used by Three.js and the GPU.
 
 Core faces are ordered convex polygon loops. `crystal-three` triangulates them deterministically for rendering and records the originating core face index for every triangle so picking recovers the complete crystallographic contributor metadata.
-
-Example:
 
 ```ts
 function createThreeGeometry(

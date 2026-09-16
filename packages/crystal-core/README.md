@@ -19,8 +19,11 @@ Miller–Bravais expansion remains M3 work.
 The supported lookup is point group `m-3m`, setting `cubic-standard`, crystal
 system `cubic`. Explicit point or space operations use the supplied cell basis;
 space translations are validated modulo lattice translations and discarded only
-when deriving point operations for morphology. Unsupported identifiers are
-errors even when explicit operations accompany them.
+when deriving point operations for morphology. A space-group identifier is
+accepted as metadata when a supported point-group identifier or explicit
+operations also resolve symmetry; it is rejected only when it is the sole
+symmetry source, since no space-group registry is available yet. Unsupported
+point-group identifiers are errors even when explicit operations accompany them.
 
 ## M1 diagnostic codes
 
