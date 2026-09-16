@@ -27,9 +27,6 @@ it("creates a Float32 BufferGeometry with correct index and position count", () 
     expect(geo.getAttribute("position").array).toBeInstanceOf(Float32Array);
     expect(geo.getAttribute("position").count).toBe(8);
     expect(geo.getIndex()!.count).toBe(36);
-    const normals = geo.getAttribute("normal");
-    expect(normals).toBeDefined();
-    expect(normals.array).toBeInstanceOf(Float32Array);
 });
 it("converts an octahedron to a valid BufferGeometry", () => {
     const result = generateCrystal({ crystalSystem: "cubic", unitCell: { a: 4, b: 4, c: 4, alpha: 90, beta: 90, gamma: 90 }, pointGroup: "m-3m", setting: "cubic-standard" }, { forms: [{ id: "oct", indices: { notation: "miller" as const, h: 1, k: 1, l: 1 }, development: 1 }] });

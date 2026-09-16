@@ -13,7 +13,7 @@ M2 is complete. This audit covers the [delivery list and acceptance criteria](pl
 | Provenance representation | [M2 acquisition record](sources/m2-acquisition.md): reported crystallography from the Materials Project (CC-BY 4.0), curated habit development values with derivation statements. Provenance entries identify coverage, origin, status, and derivation. |
 | Habits with source references | Each habit has a stable ID, name, description, and source reference. Development values are identified as curated, not measured. |
 | Milestone demo | [fluorite.html](../packages/crystal-demo/fluorite.html): plain-HTML page using the exported [CrystalViewer](../packages/crystal-viewer/src/index.ts) boundary. Form-development sliders with visible numeric values, habit selector, geometry status display (valid/invalid/stale), and pointer-drag rotation. Uses generated geometry through the generic pipeline. |
-| Rendering pipeline | [createThreeGeometry](../packages/crystal-three/src/index.ts) converts core Float64 geometry to a Three.js BufferGeometry with Float32 positions, deterministic triangulated indices, and computed vertex normals. [CrystalViewer](../packages/crystal-viewer/src/index.ts) orchestrates loading, geometry generation, rendering, and lifecycle. |
+| Rendering pipeline | [createThreeGeometry](../packages/crystal-three/src/index.ts) converts core Float64 geometry to a Three.js BufferGeometry with Float32 positions and deterministic triangulated indices. [CrystalViewer](../packages/crystal-viewer/src/index.ts) orchestrates loading, geometry generation, rendering, and lifecycle. |
 
 The automated evidence is in [data tests](../packages/crystal-data/src/index.test.ts),
 [acceptance tests](../packages/crystal-data/src/acceptance.test.ts),

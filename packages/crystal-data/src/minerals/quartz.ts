@@ -13,8 +13,9 @@ import type { Mineral } from "../types.js";
  * 6 point operations for morphology.
  *
  * Common forms: prism m {10-10}, positive rhombohedron r {10-11},
- * negative rhombohedron z {01-11}. The four shipped habits cover the principal
- * quartz morphology transitions using form-level development controls.
+ * negative rhombohedron z {01-11}. The Tessin habit additionally uses steep
+ * rhombohedra M {20-21} and Ψ {02-21}. The four shipped habits cover the
+ * principal quartz morphology transitions using form-level development controls.
  * Within-form asymmetry is not required for these habits and is explicitly
  * deferred per the M3 asymmetry decision.
  */
@@ -100,11 +101,11 @@ export const QUARTZ: Mineral = {
         {
             id: "tessin",
             name: "Tessin",
-            description: "Prism with both rhombohedra co-developed; tapered termination with z slightly dominant.",
+            description: "Prism alternating with steep rhombohedra; tapered spindle-shaped habit with steep negative rhombohedron slightly dominant.",
             forms: [
                 { id: "m", label: "Prism m {10-10}", indices: { notation: "miller-bravais", h: 1, k: 0, i: -1, l: 0 }, development: 1 },
-                { id: "r", label: "Rhombohedron r {10-11}", indices: { notation: "miller-bravais", h: 1, k: 0, i: -1, l: 1 }, development: 0.7 },
-                { id: "z", label: "Rhombohedron z {01-11}", indices: { notation: "miller-bravais", h: 0, k: 1, i: -1, l: 1 }, development: 0.9 },
+                { id: "M", label: "Steep rhombohedron M {20-21}", indices: { notation: "miller-bravais", h: 2, k: 0, i: -2, l: 1 }, development: 0.85 },
+                { id: "psi", label: "Steep rhombohedron Ψ {02-21}", indices: { notation: "miller-bravais", h: 0, k: 2, i: -2, l: 1 }, development: 0.95 },
             ],
             preferredView: { cameraDirection: [1, 0.4, 0.7] },
             references: [{ id: "mp-7000" }],

@@ -91,8 +91,8 @@ describe("M3 success criterion: multiple recognizable quartz habits", () => {
         const geometry = valid(generateCrystal(input.crystallography, input.morphology));
         const formIds = new Set(geometry.faces.flatMap((f) => f.contributors.map((c) => c.formId)));
         expect(formIds.has("m")).toBe(true);
-        expect(formIds.has("r")).toBe(true);
-        expect(formIds.has("z")).toBe(true);
+        expect(formIds.has("M")).toBe(true);
+        expect(formIds.has("psi")).toBe(true);
     });
 
     it("generates valid geometry for the Cumberland habit", () => {

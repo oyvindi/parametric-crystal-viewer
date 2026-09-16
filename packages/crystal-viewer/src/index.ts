@@ -1,4 +1,4 @@
-import { Scene, PerspectiveCamera, WebGLRenderer, MeshStandardMaterial, Mesh, Color, DirectionalLight, AmbientLight, Group, DoubleSide, Raycaster, Vector2, Sprite, SpriteMaterial, CanvasTexture, type BufferGeometry } from "three";
+import { Scene, PerspectiveCamera, WebGLRenderer, MeshStandardMaterial, Mesh, MeshBasicMaterial, Color, DirectionalLight, AmbientLight, Group, DoubleSide, Raycaster, Vector2, Sprite, SpriteMaterial, CanvasTexture, BufferGeometry } from "three";
 import { generateCrystal, type Diagnostic, type GeometryResult, type CrystalGeometry, type CrystalFace } from "@crystal/core";
 import { getMineral, createCrystalInput, resolveHabit, type Mineral, type MineralVariant, type HabitPreset } from "@crystal/data";
 import { createThreeGeometryWithPicking } from "@crystal/three";
@@ -44,6 +44,7 @@ export class CrystalViewer extends EventTarget {
     private readonly crystalGroup: Group;
     private readonly labelGroup: Group;
     private mesh: Mesh<BufferGeometry, MeshStandardMaterial> | null = null;
+    private highlightMesh: Mesh<BufferGeometry, MeshBasicMaterial> | null = null;
     private mineral: Mineral | null = null;
     private habitId: string | undefined;
     private variantId: string | undefined;
@@ -216,6 +217,35 @@ export class CrystalViewer extends EventTarget {
             .map(({ i }) => i);
     }
 
+    /** Selects a single face, highlights it, and emits a face-selected event. */
+    selectFace(faceIndex: number): void {
+        this.assertNotDisposed();
+        if (!this.currentGeometry || !this.currentGeometry.faces[faceIndex]) return;
+        this.selectedFaceIndex = faceIndex;
+        this.updateHighlight([faceIndex]);
+        const info = this.faceInfo(faceIndex);
+        this.dispatchEvent(new CustomEvent("face-selected", { detail: { faceIndex, ...info } }));
+    }
+
+    /** Clears the current face selection and highlight. */
+    clearSelection(): void {
+        this.assertNotDisposed();
+        this.selectedFaceIndex = null;
+        this.clearHighlight();
+        this.dispatchEvent(new CustomEvent("face-selected", { detail: { faceIndex: null } }));
+    }
+
+    /** Highlights all symmetry-equivalent faces sharing a form with the given face. */
+    highlightEquivalentFaces(faceIndex: number): void {
+        this.assertNotDisposed();
+        if (!this.currentGeometry || !this.currentGeometry.faces[faceIndex]) return;
+        this.selectedFaceIndex = faceIndex;
+        const equivalent = this.getEquivalentFaces(faceIndex);
+        this.updateHighlight(equivalent);
+        const info = this.faceInfo(faceIndex);
+        this.dispatchEvent(new CustomEvent("face-selected", { detail: { faceIndex, equivalentFaces: equivalent, ...info } }));
+    }
+
     showFaceLabels(show: boolean): void {
         this.assertNotDisposed();
         this.showLabels = show;
@@ -279,11 +309,20 @@ export class CrystalViewer extends EventTarget {
             this.lastValidGeometry = result;
             this.currentGeometry = result.geometry;
             this.updateMesh(result);
+            if (this.selectedFaceIndex !== null && this.currentGeometry.faces[this.selectedFaceIndex]) {
+                this.updateHighlight([this.selectedFaceIndex]);
+            } else {
+                this.selectedFaceIndex = null;
+            }
             this.dispatchEvent(new CustomEvent("geometry-changed", { detail: { status: "valid" } }));
         } else {
             this.currentGeometry = null;
             this.triangleFaces = null;
+            this.selectedFaceIndex = null;
             this.dispatchEvent(new CustomEvent("geometry-invalid", { detail: { diagnostics: result.diagnostics } }));
+        }
+        if (this.animationHandle === null) {
+            this.renderer.render(this.scene, this.camera);
         }
     }
 
@@ -298,6 +337,7 @@ export class CrystalViewer extends EventTarget {
             metalness: 0.1,
             roughness: 0.3,
             side: DoubleSide,
+            flatShading: true,
         });
         this.mesh = new Mesh(buffer, material);
         this.crystalGroup.add(this.mesh);
@@ -306,12 +346,51 @@ export class CrystalViewer extends EventTarget {
     }
 
     private clearMesh(): void {
+        this.clearHighlight();
         if (this.mesh) {
             this.crystalGroup.remove(this.mesh);
             this.mesh.geometry.dispose();
             this.mesh.material.dispose();
             this.mesh = null;
         }
+    }
+
+    private clearHighlight(): void {
+        if (this.highlightMesh) {
+            this.crystalGroup.remove(this.highlightMesh);
+            this.highlightMesh.geometry.dispose();
+            this.highlightMesh.material.dispose();
+            this.highlightMesh = null;
+        }
+    }
+
+    private updateHighlight(faceIndices: readonly number[]): void {
+        this.clearHighlight();
+        if (!this.mesh || !this.triangleFaces || !this.currentGeometry || faceIndices.length === 0) return;
+        const faceSet = new Set(faceIndices);
+        const positions = this.mesh.geometry.getAttribute("position");
+        const index = this.mesh.geometry.getIndex();
+        if (!index) return;
+        const highlightIndices: number[] = [];
+        const triCount = this.triangleFaces.length;
+        for (let i = 0; i < triCount; i++) {
+            if (faceSet.has(this.triangleFaces[i]!)) {
+                highlightIndices.push(index.getX(i * 3), index.getX(i * 3 + 1), index.getX(i * 3 + 2));
+            }
+        }
+        if (highlightIndices.length === 0) return;
+        const geo = new BufferGeometry();
+        geo.setAttribute("position", positions);
+        geo.setIndex(highlightIndices);
+        const material = new MeshBasicMaterial({
+            color: 0xffff00,
+            side: DoubleSide,
+            polygonOffset: true,
+            polygonOffsetFactor: -1,
+            polygonOffsetUnits: -1,
+        });
+        this.highlightMesh = new Mesh(geo, material);
+        this.crystalGroup.add(this.highlightMesh);
     }
 
     private clearLabels(): void {
@@ -419,14 +498,19 @@ export class CrystalViewer extends EventTarget {
         const intersects = this.raycaster.intersectObject(this.mesh);
         if (intersects.length === 0) {
             this.selectedFaceIndex = null;
+            this.clearHighlight();
             this.dispatchEvent(new CustomEvent("face-selected", { detail: { faceIndex: null } }));
-            return;
+        } else {
+            const triIndex = intersects[0]!.faceIndex!;
+            const faceIndex = this.triangleFaces[triIndex]!;
+            this.selectedFaceIndex = faceIndex;
+            this.updateHighlight([faceIndex]);
+            const info = this.faceInfo(faceIndex);
+            this.dispatchEvent(new CustomEvent("face-selected", { detail: { faceIndex, ...info } }));
         }
-        const triIndex = intersects[0]!.faceIndex!;
-        const faceIndex = this.triangleFaces[triIndex]!;
-        this.selectedFaceIndex = faceIndex;
-        const info = this.faceInfo(faceIndex);
-        this.dispatchEvent(new CustomEvent("face-selected", { detail: { faceIndex, ...info } }));
+        if (this.animationHandle === null) {
+            this.renderer.render(this.scene, this.camera);
+        }
     }
 
     private faceInfo(faceIndex: number): FaceInfo | null {

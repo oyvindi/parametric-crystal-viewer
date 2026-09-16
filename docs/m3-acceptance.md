@@ -34,7 +34,7 @@ same procedural engine. The acceptance tests verify:
 | Habit | Faces | Forms contributing | Evidence |
 |---|---|---|---|
 | Prismatic (Normal) | 12 | m, r | Prism dominant with rhombohedron r termination |
-| Tessin | 18 | m, r, z | All three forms visible; z slightly dominant |
+| Tessin | 18 | m, M, Ψ | Prism alternating with steep rhombohedra; tapered spindle-shaped habit |
 | Cumberland | 18 | m, r, z | Rhombohedra dominant, prism suppressed |
 | Pseudocubic | 12 | r, z | Prism absent, rhombohedra only |
 

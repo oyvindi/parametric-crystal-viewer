@@ -28,7 +28,6 @@ export function createThreeGeometry(geometry: CrystalGeometry): BufferGeometry {
     const buffer = new BufferGeometry();
     buffer.setAttribute("position", new Float32BufferAttribute(geometry.vertices, 3));
     buffer.setIndex(new Uint32BufferAttribute(indices, 1));
-    buffer.computeVertexNormals();
     return buffer;
 }
 
@@ -44,6 +43,5 @@ export function createThreeGeometryWithPicking(geometry: CrystalGeometry): {
     const buffer = new BufferGeometry();
     buffer.setAttribute("position", new Float32BufferAttribute(geometry.vertices, 3));
     buffer.setIndex(new Uint32BufferAttribute(indices, 1));
-    buffer.computeVertexNormals();
     return { buffer, triangleFaces };
 }
