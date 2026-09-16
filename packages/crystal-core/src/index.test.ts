@@ -184,4 +184,17 @@ it("reports typed morphology input diagnostics", () => {
     expect(generateCrystalGeometry({ ...base, forms: [{ ...base.forms[0]!, development: -1 }] })).toMatchObject({ status: "invalid", diagnostics: [{ code: "core.input.invalid-development" }] });
     expect(generateCrystalGeometry({ ...base, morphologyScale: 0 })).toMatchObject({ status: "invalid", diagnostics: [{ code: "core.input.invalid-morphology-scale" }] });
 });
+
+it("scales valid morphology without changing topology", () => {
+    const lattice = createLattice({ a: 4, b: 4, c: 4, alpha: 90, beta: 90, gamma: 90 });
+    if (!lattice.ok) throw new Error("Expected valid cubic lattice");
+    const operations = resolvePointOperations({ registryId: "point-group:m-3m:standard" }, lattice.value);
+    if (!operations.ok) throw new Error("Expected cubic symmetry");
+    const input = { lattice: lattice.value, operations: operations.value, forms: [{ id: "cube", indices: { notation: "miller" as const, h: 1, k: 0, l: 0 }, development: 1 }] };
+    const unit = generateCrystalGeometry(input);
+    const scaled = generateCrystalGeometry({ ...input, morphologyScale: 5 });
+    if (unit.status !== "valid" || scaled.status !== "valid") throw new Error("Expected valid geometry");
+    expect(scaled.geometry.faces.map((face) => face.vertexIndices.length)).toEqual(unit.geometry.faces.map((face) => face.vertexIndices.length));
+    expect(scaled.geometry.bounds.max).toEqual([5, 5, 5]);
+});
 });
