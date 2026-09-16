@@ -102,5 +102,6 @@ export function intersectHalfSpaces(halfSpaces: readonly HalfSpace[]): GeometryR
     }
     const min: Vec3 = [Math.min(...vertices.map((v) => v[0])), Math.min(...vertices.map((v) => v[1])), Math.min(...vertices.map((v) => v[2]))];
     const max: Vec3 = [Math.max(...vertices.map((v) => v[0])), Math.max(...vertices.map((v) => v[1])), Math.max(...vertices.map((v) => v[2]))];
+    if ((max[0] - min[0]) * (max[1] - min[1]) * (max[2] - min[2]) <= EPSILON) return invalid("core.geometry.degenerate", "Half-space intersection has no usable three-dimensional volume.");
     return { status: "valid", geometry: { vertices: new Float64Array(vertices.flat()), faces, bounds: { min, max } }, diagnostics: [] };
 }

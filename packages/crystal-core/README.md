@@ -14,3 +14,4 @@ Renderer-neutral crystallographic calculations and generated geometry.
 | `core.symmetry.*` | Symmetry description, group laws, metric compatibility, or lookup failed. |
 | `core.geometry.no-active-forms` | No form has positive development. |
 | `core.geometry.unbounded` | Constraints do not enclose a usable volume. |
+| `core.geometry.degenerate` | Constraints enclose zero usable three-dimensional volume. |
