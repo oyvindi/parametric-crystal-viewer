@@ -52,6 +52,13 @@ it("rejects impossible and degenerate cells with a diagnostic", () => {
     expect(result.diagnostics[0]?.code).toBe("core.input.invalid-unit-cell");
 });
 
+it("rejects non-finite dimensions and invalid angles", () => {
+    expect(createLattice({ a: Number.NaN, b: 1, c: 1, alpha: 90, beta: 90, gamma: 90 }))
+        .toMatchObject({ ok: false, diagnostics: [{ code: "core.input.invalid-unit-cell", path: "/a" }] });
+    expect(createLattice({ a: 1, b: 1, c: 1, alpha: 90, beta: 180, gamma: 90 }))
+        .toMatchObject({ ok: false, diagnostics: [{ code: "core.input.invalid-unit-cell", path: "/beta" }] });
+});
+
 it("reduces Miller indices without reversing their orientation", () => {
     const positive = validateMillerIndices({ notation: "miller", h: 2, k: 4, l: 6 });
     const negative = validateMillerIndices({ notation: "miller", h: -2, k: -4, l: -6 });
