@@ -337,15 +337,17 @@ The importer infers `siteRepresentation` from the supplied data:
 * **`asymmetric-unit`:** the default when explicit space operations or a
   registry identifier are supplied. The listed sites are symmetry-independent and
   are expanded by the resolved space operations ([Site Expansion](#site-expansion)).
+  A `_atom_site_symmetry_multiplicity` column present alongside symmetry
+  operations is treated as Wyckoff metadata and does not change this inference.
 * **`complete-cell`:** declared only when an explicit, unambiguous marker is
-  present. V1 recognizes `_atom_site_symmetry_multiplicity` equal to the site
-  count only when no symmetry operation loop or identifier is supplied; in that
+  present. V1 recognizes `_atom_site_symmetry_multiplicity` as a complete-cell
+  marker only when no symmetry operation loop or identifier is supplied; in that
   case the sites are treated as already expanded and are not expanded a second
   time.
 
-If the representation cannot be determined reliably — for example, an operation
-loop and a complete-cell marker both present, or neither a symmetry description
-nor a complete-cell marker — the importer emits a `data.cif.ambiguous-site-representation`
+If the representation cannot be determined reliably — for example, neither a
+symmetry description nor a complete-cell marker — the importer emits a
+`data.cif.ambiguous-site-representation`
 diagnostic and does not commit. Distinct source sites at the same fractional
 position are never merged: they may represent alternative elements or disorder and
 are preserved as separate atoms, including coincident partially occupied

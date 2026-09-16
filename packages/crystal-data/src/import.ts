@@ -222,13 +222,15 @@ export function importCif(text: string, options: CifImportOptions = {}): Result<
     if (xCol < 0 || yCol < 0 || zCol < 0) return fail("data.cif.missing-required", "Atom-site fractional coordinates are required.", { source: { block: block.name } });
 
     // Site representation convention (determined before symmetry resolution).
+    // When explicit space operations or a supported identifier are supplied, the
+    // sites are asymmetric-unit; any _atom_site_symmetry_multiplicity column is
+    // Wyckoff metadata, not a complete-cell marker. The multiplicity column is
+    // only recognized as a complete-cell marker in the absence of symmetry info.
     const multiplicityCol = siteLoop.tags.findIndex((t) => t.toLowerCase() === "_atom_site_symmetry_multiplicity");
     const hasMultiplicity = multiplicityCol >= 0;
     const hasIdentifier = Boolean(hmSymbol) || Boolean(hallSymbol) || itNumber !== undefined;
     let siteRepresentation: SiteRepresentation;
-    if (hasMultiplicity && symLoop) {
-        return fail("data.cif.ambiguous-site-representation", "Both a symmetry operation loop and site multiplicity are present; the site representation is ambiguous.", { source: { block: block.name } });
-    } else if (hasMultiplicity && !symLoop && !hasIdentifier) {
+    if (hasMultiplicity && !symLoop && !hasIdentifier) {
         siteRepresentation = "complete-cell";
     } else if (!hasMultiplicity && !symLoop && !hasIdentifier) {
         return fail("data.cif.ambiguous-site-representation", "Cannot determine site representation: no symmetry description and no complete-cell marker.", { source: { block: block.name } });

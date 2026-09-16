@@ -6,12 +6,8 @@ _cell_angle_alpha 90
 _cell_angle_beta 90
 _cell_angle_gamma 90
 loop_
-_space_group_symop_operation_xyz
-x,y,z
-loop_
 _atom_site_label
 _atom_site_fract_x
 _atom_site_fract_y
 _atom_site_fract_z
-_atom_site_symmetry_multiplicity
-A 0.0 0.0 0.0 1
+A 0.0 0.0 0.0

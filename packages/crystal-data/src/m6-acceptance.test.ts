@@ -142,6 +142,17 @@ describe("M6 site representation and occupancy", () => {
         const d = failed(fixture("ambiguous"));
         expect(d.some((x) => x.code === "data.cif.ambiguous-site-representation")).toBe(true);
     });
+    it("treats multiplicity as metadata when symmetry operations are present", () => {
+        const { definition } = ok(fixture("multiplicity-with-ops"));
+        expect(definition.atomicStructure.siteRepresentation).toBe("asymmetric-unit");
+        const lattice = latticeOf(definition.crystallography.unitCell);
+        const expanded = expandAtomicStructure(definition.atomicStructure, definition.crystallography.spaceOperations ?? [], lattice);
+        expect(expanded.ok).toBe(true);
+        if (!expanded.ok) return;
+        // 2 operations (P-1): site A at the inversion center (0,0,0) produces 1
+        // image; site B at (0.25,0.25,0.25) produces 2 images. Total = 3.
+        expect(expanded.value).toHaveLength(3);
+    });
 });
 
 describe("M6 symmetry identifiers", () => {
