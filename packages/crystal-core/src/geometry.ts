@@ -69,17 +69,26 @@ export function intersectHalfSpaces(halfSpaces: readonly HalfSpace[]): GeometryR
     if (halfSpaces.some((plane) => !Number.isFinite(plane.distance) || !normalize(plane.normal))) {
         return invalid("core.input.invalid-half-space", "Half-space normals and distances must be finite.");
     }
+    const constraints: HalfSpace[] = [];
+    for (const plane of halfSpaces) {
+        const magnitude = Math.hypot(...plane.normal);
+        const normalized: HalfSpace = { ...plane, normal: [plane.normal[0] / magnitude, plane.normal[1] / magnitude, plane.normal[2] / magnitude], distance: plane.distance / magnitude };
+        const existing = constraints.find((candidate) => Math.abs(dot(candidate.normal, normalized.normal) - 1) <= EPSILON);
+        if (!existing) { constraints.push(normalized); continue; }
+        if (normalized.distance < existing.distance - EPSILON) constraints[constraints.indexOf(existing)] = normalized;
+        else if (Math.abs(normalized.distance - existing.distance) <= EPSILON) constraints[constraints.indexOf(existing)] = { ...existing, contributors: [...(existing.contributors ?? []), ...(normalized.contributors ?? [])] };
+    }
     const vertices: Vec3[] = [];
-    for (let first = 0; first < halfSpaces.length - 2; first += 1) for (let second = first + 1; second < halfSpaces.length - 1; second += 1) for (let third = second + 1; third < halfSpaces.length; third += 1) {
-        const point = intersection(halfSpaces[first]!, halfSpaces[second]!, halfSpaces[third]!);
+    for (let first = 0; first < constraints.length - 2; first += 1) for (let second = first + 1; second < constraints.length - 1; second += 1) for (let third = second + 1; third < constraints.length; third += 1) {
+        const point = intersection(constraints[first]!, constraints[second]!, constraints[third]!);
         if (!point || !point.every(Number.isFinite)) continue;
-        if (halfSpaces.every((plane) => dot(plane.normal, point) <= plane.distance + EPSILON)
+        if (constraints.every((plane) => dot(plane.normal, point) <= plane.distance + EPSILON)
             && !vertices.some((vertex) => Math.hypot(vertex[0] - point[0], vertex[1] - point[1], vertex[2] - point[2]) <= EPSILON)) vertices.push(point);
     }
     if (vertices.length < 4) return invalid("core.geometry.unbounded", "Half-space constraints do not enclose a usable three-dimensional volume.");
     vertices.sort((left, right) => left[0] - right[0] || left[1] - right[1] || left[2] - right[2]);
     const faces: CrystalFace[] = [];
-    for (const plane of halfSpaces) {
+    for (const plane of constraints) {
         const normal = normalize(plane.normal)!;
         const boundary = vertices.map((vertex, index) => ({ vertex, index }))
             .filter(({ vertex }) => Math.abs(dot(plane.normal, vertex) - plane.distance) <= EPSILON);

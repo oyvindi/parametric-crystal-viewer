@@ -140,6 +140,17 @@ it("reports an unbounded prism", () => {
     expect(result).toMatchObject({ status: "invalid", diagnostics: [{ code: "core.geometry.unbounded" }] });
 });
 
+it("retains contributors for coincident constraints and excludes looser duplicates", () => {
+    const result = intersectHalfSpaces([
+        { id: "+x-tight", normal: [1, 0, 0], distance: 1, contributors: [{ formId: "tight", operationIds: ["a"] }] },
+        { id: "+x-tie", normal: [1, 0, 0], distance: 1, contributors: [{ formId: "tie", operationIds: ["b"] }] },
+        { id: "+x-loose", normal: [1, 0, 0], distance: 2, contributors: [{ formId: "loose", operationIds: ["c"] }] },
+        { id: "-x", normal: [-1, 0, 0], distance: 1 }, { id: "+y", normal: [0, 1, 0], distance: 1 }, { id: "-y", normal: [0, -1, 0], distance: 1 }, { id: "+z", normal: [0, 0, 1], distance: 1 }, { id: "-z", normal: [0, 0, -1], distance: 1 },
+    ]);
+    if (result.status !== "valid") throw new Error("Expected valid geometry");
+    expect(result.geometry.faces.find((face) => face.planeId === "+x-tight")?.contributors.map((item) => item.formId)).toEqual(["tight", "tie"]);
+});
+
 it("generates cubic morphology from a developed {100} form", () => {
     const lattice = createLattice({ a: 4, b: 4, c: 4, alpha: 90, beta: 90, gamma: 90 });
     if (!lattice.ok) throw new Error("Expected valid cubic lattice");
