@@ -1,2 +1,3 @@
 /** Renderer-neutral scientific core for crystallographic calculations. */
-export const corePackage = "@crystal/core";
+export * from "./diagnostics.js";
+export * from "./lattice.js";
