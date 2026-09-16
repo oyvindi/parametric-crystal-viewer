@@ -201,6 +201,7 @@ export class CrystalViewer extends EventTarget {
     private updateMesh(result: Extract<GeometryResult, { status: "valid" }>): void {
         this.clearMesh();
         const geometry = createThreeGeometry(result.geometry);
+        geometry.center();
         const material = new MeshStandardMaterial({
             color: 0x6fb7d4,
             metalness: 0.1,
@@ -222,13 +223,10 @@ export class CrystalViewer extends EventTarget {
     }
 
     private frameCamera(min: readonly number[], max: readonly number[]): void {
-        const cx = (min[0]! + max[0]!) / 2;
-        const cy = (min[1]! + max[1]!) / 2;
-        const cz = (min[2]! + max[2]!) / 2;
         const size = Math.max(max[0]! - min[0]!, max[1]! - min[1]!, max[2]! - min[2]!);
         const distance = size * 2.5 || 10;
-        this.camera.position.set(cx + distance * 0.7, cy + distance * 0.5, cz + distance * 0.7);
-        this.camera.lookAt(cx, cy, cz);
+        this.camera.position.set(distance * 0.7, distance * 0.5, distance * 0.7);
+        this.camera.lookAt(0, 0, 0);
         this.camera.near = distance / 100;
         this.camera.far = distance * 100;
         this.camera.updateProjectionMatrix();
