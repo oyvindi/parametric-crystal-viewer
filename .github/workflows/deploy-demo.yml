@@ -35,12 +35,14 @@ jobs:
           mkdir -p staging/packages/crystal-data/dist
           mkdir -p staging/packages/crystal-three/dist
           mkdir -p staging/packages/crystal-viewer/dist
+          mkdir -p staging/packages/crystal-core/test-fixtures/m5
           mkdir -p staging/node_modules/three/build
           cp packages/crystal-demo/*.html staging/packages/crystal-demo/
           cp -r packages/crystal-core/dist/* staging/packages/crystal-core/dist/
           cp -r packages/crystal-data/dist/* staging/packages/crystal-data/dist/
           cp -r packages/crystal-three/dist/* staging/packages/crystal-three/dist/
           cp -r packages/crystal-viewer/dist/* staging/packages/crystal-viewer/dist/
+          cp packages/crystal-core/test-fixtures/m5/*.cif staging/packages/crystal-core/test-fixtures/m5/
           cp node_modules/three/build/three.module.js staging/node_modules/three/build/
           cp node_modules/three/build/three.core.js staging/node_modules/three/build/
           # Root redirect to the demo index
