@@ -1,0 +1,56 @@
+name: Deploy demos
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+      - run: npm install
+      - run: npm run build
+      - name: Stage static site
+        run: |
+          mkdir -p staging/packages/crystal-demo
+          mkdir -p staging/packages/crystal-core/dist
+          mkdir -p staging/packages/crystal-data/dist
+          mkdir -p staging/packages/crystal-three/dist
+          mkdir -p staging/packages/crystal-viewer/dist
+          mkdir -p staging/node_modules/three/build
+          cp packages/crystal-demo/*.html staging/packages/crystal-demo/
+          cp -r packages/crystal-core/dist/* staging/packages/crystal-core/dist/
+          cp -r packages/crystal-data/dist/* staging/packages/crystal-data/dist/
+          cp -r packages/crystal-three/dist/* staging/packages/crystal-three/dist/
+          cp -r packages/crystal-viewer/dist/* staging/packages/crystal-viewer/dist/
+          cp node_modules/three/build/three.module.js staging/node_modules/three/build/
+          cp node_modules/three/build/three.core.js staging/node_modules/three/build/
+          # Root redirect to the demo index
+          cat > staging/index.html <<'HTML'
+          <!DOCTYPE html>
+          <meta http-equiv="refresh" content="0; url=packages/crystal-demo/index.html">
+          <a href="packages/crystal-demo/index.html">Demos</a>
+          HTML
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: staging
+      - id: deployment
+        uses: actions/deploy-pages@v4
