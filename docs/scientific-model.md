@@ -1,4 +1,4 @@
-# Parametric Mineral Crystal Viewer — Scientific Model
+# Crystal Viewer — Scientific Model
 
 Coordinate conventions, symmetry, procedural geometry, physical models, and scientific validation. Persistent mineral records and imports live in the [data model](data-model.md).
 

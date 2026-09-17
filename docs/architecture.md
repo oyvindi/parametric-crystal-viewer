@@ -1,4 +1,4 @@
-# Parametric Mineral Crystal Viewer — Architecture
+# Crystal Viewer — Architecture
 
 Platform choices, package boundaries, rendering integration, and cross-package testing policy. Product scope is defined in the [specification](spec.md#v1-checklist).
 

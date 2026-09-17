@@ -1,13 +1,5 @@
 import type { Mineral } from "./types.js";
-import { FLUORITE } from "./minerals/fluorite.js";
-import { QUARTZ } from "./minerals/quartz.js";
-import { CALCITE } from "./minerals/calcite.js";
-import { PYRITE } from "./minerals/pyrite.js";
-import { ANATASE } from "./minerals/anatase.js";
-import { ALBITE } from "./minerals/albite.js";
-import { GYPSUM } from "./minerals/gypsum.js";
-import { FORSTERITE } from "./minerals/forsterite.js";
-import { BERYL } from "./minerals/beryl.js";
+import { FLUORITE, QUARTZ, CALCITE, PYRITE, ANATASE, ALBITE, GYPSUM, FORSTERITE, BERYL } from "./records.js";
 
 import type { Diagnostic, Result } from "@crystal/core";
 import { validateMineral } from "./validate.js";

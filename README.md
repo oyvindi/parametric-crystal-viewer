@@ -1,4 +1,4 @@
-# Parametric Mineral Crystal Viewer
+# Crystal Viewer
 
 A framework-agnostic web-based 3D mineral crystal viewer. It generates idealized
 crystal geometry procedurally from crystallographic and morphology parameters —
@@ -12,7 +12,7 @@ all scientific calculations live in a renderer-neutral core.
 * Miller and Miller-Bravais indices
 * Symmetry-equivalent faces
 * Procedural crystal morphology with adjustable forms and morphology sliders
-* Five shipped minerals, each with at least two documented named habits
+* Nine shipped minerals, each with at least two documented named habits
 * Crystallographic axes and unit-cell display
 * Morphology sliders and face inspection (picking, equivalent-face highlighting)
 * Serializable and restorable viewer state
@@ -32,6 +32,10 @@ all scientific calculations live in a renderer-neutral core.
 | Calcite | Trigonal | 2 | — | — |
 | Pyrite | Cubic | 2 | — | 2 |
 | Anatase | Tetragonal | 2 | — | — |
+| Albite | Triclinic | 2 | — | 1 |
+| Gypsum | Monoclinic | 2 | — | 2 |
+| Forsterite | Orthorhombic | 2 | — | 2 |
+| Beryl | Hexagonal | 2 | — | 3 |
 
 Records and provenance are version-controlled project data under `crystal-data`.
 
@@ -165,6 +169,6 @@ unit-cell wireframes.
 
 ## Status
 
-V1 (milestones M1–M8) is complete: geometry engine, five minerals, atomic
+V1 (milestones M1–M8) is complete: geometry engine, nine minerals, atomic
 structure, stabilized viewer API, and appearance. Twinning (M9) and
 pressure/temperature effects (M10) are later scope.

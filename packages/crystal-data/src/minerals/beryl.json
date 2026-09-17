@@ -1,0 +1,188 @@
+{
+  "id": "beryl",
+  "name": "Beryl",
+  "formula": "Be₃Al₂Si₆O₁₈",
+  "dataRevision": "m8-2",
+  "crystallography": {
+    "crystalSystem": "hexagonal",
+    "pointGroup": "6/mmm",
+    "setting": "hexagonal-standard",
+    "spaceGroup": "P6/mcc",
+    "unitCell": {
+      "a": 9.208,
+      "b": 9.208,
+      "c": 9.188,
+      "alpha": 90,
+      "beta": 90,
+      "gamma": 120
+    }
+  },
+  "references": [
+    {
+      "id": "cod-9001018",
+      "title": "Hazen, Au and Finger (1986), High-pressure crystal chemistry of beryl, American Mineralogist 71, 977-984",
+      "url": "https://www.crystallography.net/cod/9001018.html",
+      "notes": "COD CC0; space group P6/mcc (No. 192). Ambient-pressure sample (0.001 kbar). Unit cell a=9.208, c=9.188 Å."
+    }
+  ],
+  "provenance": [
+    {
+      "coverage": [
+        "crystallography"
+      ],
+      "referenceIds": [
+        "cod-9001018"
+      ],
+      "status": "reported"
+    },
+    {
+      "coverage": [
+        "habits"
+      ],
+      "status": "curated",
+      "derivation": "Habit form selections use standard hexagonal form indices in Miller-Bravais notation. Development values, disabled forms, and preferred views are curated visualization choices, not measured growth parameters. The declared hexagonal setting selects the core registry basis."
+    },
+    {
+      "coverage": [
+        "appearance"
+      ],
+      "status": "curated",
+      "derivation": "Appearance presets use curated visualization parameters (base color, roughness, metalness, transmission, IOR, absorption color and density) selected to represent common beryl varieties (emerald, aquamarine, goshenite). IOR values are representative approximations, not measured optical constants."
+    }
+  ],
+  "appearance": [
+    {
+      "id": "emerald",
+      "name": "Emerald",
+      "baseColor": "#2d8a4a",
+      "roughness": 0.08,
+      "metalness": 0,
+      "transmission": 0.7,
+      "ior": 1.577,
+      "absorptionColor": "#1a6b3a",
+      "absorptionDensity": 0.6
+    },
+    {
+      "id": "aquamarine",
+      "name": "Aquamarine",
+      "baseColor": "#5bb8d4",
+      "roughness": 0.06,
+      "metalness": 0,
+      "transmission": 0.8,
+      "ior": 1.577,
+      "absorptionColor": "#3a98b4",
+      "absorptionDensity": 0.4
+    },
+    {
+      "id": "goshenite",
+      "name": "Goshenite",
+      "baseColor": "#eef0f2",
+      "roughness": 0.05,
+      "metalness": 0,
+      "transmission": 0.9,
+      "ior": 1.577,
+      "absorptionColor": "#ffffff",
+      "absorptionDensity": 0
+    }
+  ],
+  "habits": [
+    {
+      "id": "prismatic",
+      "name": "Prismatic",
+      "description": "Hexagonal prism {10-10} dominant with basal pinacoid {0001} termination; the common long-prismatic beryl habit.",
+      "forms": [
+        {
+          "id": "m",
+          "label": "Prism {10-10}",
+          "indices": {
+            "notation": "miller-bravais",
+            "h": 1,
+            "k": 0,
+            "i": -1,
+            "l": 0
+          },
+          "development": 1
+        },
+        {
+          "id": "c",
+          "label": "Basal pinacoid {0001}",
+          "indices": {
+            "notation": "miller-bravais",
+            "h": 0,
+            "k": 0,
+            "i": 0,
+            "l": 1
+          },
+          "development": 0.5
+        },
+        {
+          "id": "p",
+          "label": "Dipyramid {10-11}",
+          "indices": {
+            "notation": "miller-bravais",
+            "h": 1,
+            "k": 0,
+            "i": -1,
+            "l": 1
+          },
+          "development": 0,
+          "enabled": false
+        }
+      ],
+      "references": [
+        {
+          "id": "cod-9001018"
+        }
+      ]
+    },
+    {
+      "id": "short-prismatic",
+      "name": "Short prismatic",
+      "description": "Prism {10-10} with dipyramid {10-11} modifying the terminations; shorter, more equant habit.",
+      "forms": [
+        {
+          "id": "m",
+          "label": "Prism {10-10}",
+          "indices": {
+            "notation": "miller-bravais",
+            "h": 1,
+            "k": 0,
+            "i": -1,
+            "l": 0
+          },
+          "development": 0.7
+        },
+        {
+          "id": "c",
+          "label": "Basal pinacoid {0001}",
+          "indices": {
+            "notation": "miller-bravais",
+            "h": 0,
+            "k": 0,
+            "i": 0,
+            "l": 1
+          },
+          "development": 0,
+          "enabled": false
+        },
+        {
+          "id": "p",
+          "label": "Dipyramid {10-11}",
+          "indices": {
+            "notation": "miller-bravais",
+            "h": 1,
+            "k": 0,
+            "i": -1,
+            "l": 1
+          },
+          "development": 0.6
+        }
+      ],
+      "references": [
+        {
+          "id": "cod-9001018"
+        }
+      ]
+    }
+  ]
+}

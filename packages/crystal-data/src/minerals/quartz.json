@@ -1,0 +1,397 @@
+{
+  "id": "quartz",
+  "name": "Quartz",
+  "formula": "SiO₂",
+  "dataRevision": "m8-1",
+  "crystallography": {
+    "crystalSystem": "trigonal",
+    "pointGroup": "32",
+    "setting": "hexagonal-standard",
+    "spaceGroup": "P3_121",
+    "unitCell": {
+      "a": 4.913,
+      "b": 4.913,
+      "c": 5.405,
+      "alpha": 90,
+      "beta": 90,
+      "gamma": 120
+    }
+  },
+  "variants": [
+    {
+      "id": "right",
+      "name": "Right-handed quartz",
+      "description": "Space group P3_121 (No. 152); the default enantiomorph.",
+      "crystallography": {
+        "crystalSystem": "trigonal",
+        "pointGroup": "32",
+        "setting": "hexagonal-standard",
+        "spaceGroup": "P3_121",
+        "unitCell": {
+          "a": 4.913,
+          "b": 4.913,
+          "c": 5.405,
+          "alpha": 90,
+          "beta": 90,
+          "gamma": 120
+        }
+      },
+      "references": [
+        {
+          "id": "mp-7000"
+        }
+      ]
+    },
+    {
+      "id": "left",
+      "name": "Left-handed quartz",
+      "description": "Space group P3_221 (No. 154); the mirror enantiomorph.",
+      "crystallography": {
+        "crystalSystem": "trigonal",
+        "pointGroup": "32",
+        "setting": "hexagonal-standard",
+        "spaceGroup": "P3_221",
+        "unitCell": {
+          "a": 4.913,
+          "b": 4.913,
+          "c": 5.405,
+          "alpha": 90,
+          "beta": 90,
+          "gamma": 120
+        }
+      },
+      "references": [
+        {
+          "id": "mp-6930"
+        }
+      ]
+    }
+  ],
+  "references": [
+    {
+      "id": "mp-7000",
+      "title": "Materials Project - mp-7000: SiO2 (Trigonal, P3_121, 152)",
+      "url": "https://nextgen.materialsproject.org/materials/mp-7000",
+      "notes": "Publicly accessible crystallographic data under CC-BY 4.0. Unit-cell parameters a = 4.913 Å, c = 5.405 Å for right-handed α-quartz."
+    },
+    {
+      "id": "mp-6930",
+      "title": "Materials Project - mp-6930: SiO2 (Trigonal, P3_221, 154)",
+      "url": "https://nextgen.materialsproject.org/materials/mp-6930",
+      "notes": "Publicly accessible crystallographic data under CC-BY 4.0. Left-handed α-quartz enantiomorph."
+    }
+  ],
+  "provenance": [
+    {
+      "coverage": [
+        "crystallography.unitCell",
+        "crystallography.crystalSystem",
+        "crystallography.pointGroup",
+        "crystallography.spaceGroup",
+        "variants.*.crystallography"
+      ],
+      "referenceIds": [
+        "mp-7000",
+        "mp-6930"
+      ],
+      "status": "reported"
+    },
+    {
+      "coverage": [
+        "habits",
+        "habits.*.forms.*.development",
+        "crystallography.setting"
+      ],
+      "status": "curated",
+      "derivation": "Habit form selections, preferred views, and development values are curated visualization parameters, not measured quantities. The declared hexagonal setting selects the core registry basis."
+    },
+    {
+      "coverage": [
+        "appearance"
+      ],
+      "status": "curated",
+      "derivation": "Appearance presets use curated visualization parameters (base color, roughness, metalness, transmission, IOR, absorption color and density) selected to represent common quartz varieties. IOR values are representative approximations, not measured optical constants."
+    }
+  ],
+  "appearance": [
+    {
+      "id": "rock-crystal",
+      "name": "Rock crystal",
+      "baseColor": "#eef0f2",
+      "roughness": 0.05,
+      "metalness": 0,
+      "transmission": 0.92,
+      "ior": 1.544,
+      "absorptionColor": "#ffffff",
+      "absorptionDensity": 0
+    },
+    {
+      "id": "amethyst",
+      "name": "Amethyst",
+      "baseColor": "#9b6dd4",
+      "roughness": 0.1,
+      "metalness": 0,
+      "transmission": 0.5,
+      "ior": 1.544,
+      "absorptionColor": "#6b4a8f",
+      "absorptionDensity": 0.5
+    },
+    {
+      "id": "smoky",
+      "name": "Smoky quartz",
+      "baseColor": "#5a4a3a",
+      "roughness": 0.15,
+      "metalness": 0,
+      "transmission": 0.35,
+      "ior": 1.544,
+      "absorptionColor": "#2a1a0a",
+      "absorptionDensity": 1
+    },
+    {
+      "id": "citrine",
+      "name": "Citrine",
+      "baseColor": "#d4a017",
+      "roughness": 0.1,
+      "metalness": 0,
+      "transmission": 0.6,
+      "ior": 1.544,
+      "absorptionColor": "#b8860b",
+      "absorptionDensity": 0.6
+    },
+    {
+      "id": "rose",
+      "name": "Rose quartz",
+      "baseColor": "#d4a0a0",
+      "roughness": 0.12,
+      "metalness": 0,
+      "transmission": 0.7,
+      "ior": 1.544,
+      "absorptionColor": "#c47070",
+      "absorptionDensity": 0.4
+    }
+  ],
+  "habits": [
+    {
+      "id": "prismatic",
+      "name": "Prismatic (Normal)",
+      "description": "Prism m dominant with rhombohedron r termination; the most common quartz habit.",
+      "forms": [
+        {
+          "id": "m",
+          "label": "Prism m {10-10}",
+          "indices": {
+            "notation": "miller-bravais",
+            "h": 1,
+            "k": 0,
+            "i": -1,
+            "l": 0
+          },
+          "development": 1
+        },
+        {
+          "id": "r",
+          "label": "Rhombohedron r {10-11}",
+          "indices": {
+            "notation": "miller-bravais",
+            "h": 1,
+            "k": 0,
+            "i": -1,
+            "l": 1
+          },
+          "development": 0.8
+        },
+        {
+          "id": "z",
+          "label": "Rhombohedron z {01-11}",
+          "indices": {
+            "notation": "miller-bravais",
+            "h": 0,
+            "k": 1,
+            "i": -1,
+            "l": 1
+          },
+          "development": 0.3,
+          "enabled": false
+        }
+      ],
+      "preferredView": {
+        "cameraDirection": [
+          1,
+          0.4,
+          0.7
+        ]
+      },
+      "references": [
+        {
+          "id": "mp-7000"
+        }
+      ]
+    },
+    {
+      "id": "tessin",
+      "name": "Tessin",
+      "description": "Prism alternating with steep rhombohedra; tapered spindle-shaped habit with steep negative rhombohedron slightly dominant.",
+      "forms": [
+        {
+          "id": "m",
+          "label": "Prism m {10-10}",
+          "indices": {
+            "notation": "miller-bravais",
+            "h": 1,
+            "k": 0,
+            "i": -1,
+            "l": 0
+          },
+          "development": 1
+        },
+        {
+          "id": "M",
+          "label": "Steep rhombohedron M {20-21}",
+          "indices": {
+            "notation": "miller-bravais",
+            "h": 2,
+            "k": 0,
+            "i": -2,
+            "l": 1
+          },
+          "development": 0.85
+        },
+        {
+          "id": "psi",
+          "label": "Steep rhombohedron Ψ {02-21}",
+          "indices": {
+            "notation": "miller-bravais",
+            "h": 0,
+            "k": 2,
+            "i": -2,
+            "l": 1
+          },
+          "development": 0.95
+        }
+      ],
+      "preferredView": {
+        "cameraDirection": [
+          1,
+          0.4,
+          0.7
+        ]
+      },
+      "references": [
+        {
+          "id": "mp-7000"
+        }
+      ]
+    },
+    {
+      "id": "cumberland",
+      "name": "Cumberland",
+      "description": "Prism suppressed, rhombohedra r and z dominant; approaching bipyramidal habit.",
+      "forms": [
+        {
+          "id": "m",
+          "label": "Prism m {10-10}",
+          "indices": {
+            "notation": "miller-bravais",
+            "h": 1,
+            "k": 0,
+            "i": -1,
+            "l": 0
+          },
+          "development": 0.8
+        },
+        {
+          "id": "r",
+          "label": "Rhombohedron r {10-11}",
+          "indices": {
+            "notation": "miller-bravais",
+            "h": 1,
+            "k": 0,
+            "i": -1,
+            "l": 1
+          },
+          "development": 1
+        },
+        {
+          "id": "z",
+          "label": "Rhombohedron z {01-11}",
+          "indices": {
+            "notation": "miller-bravais",
+            "h": 0,
+            "k": 1,
+            "i": -1,
+            "l": 1
+          },
+          "development": 1
+        }
+      ],
+      "preferredView": {
+        "cameraDirection": [
+          0,
+          1,
+          0.5
+        ]
+      },
+      "references": [
+        {
+          "id": "mp-7000"
+        }
+      ]
+    },
+    {
+      "id": "pseudocubic",
+      "name": "Pseudocubic",
+      "description": "Prism absent, rhombohedra r and z equally co-developed; pseudocubic rhombohedral habit.",
+      "forms": [
+        {
+          "id": "m",
+          "label": "Prism m {10-10}",
+          "indices": {
+            "notation": "miller-bravais",
+            "h": 1,
+            "k": 0,
+            "i": -1,
+            "l": 0
+          },
+          "development": 0.15,
+          "enabled": false
+        },
+        {
+          "id": "r",
+          "label": "Rhombohedron r {10-11}",
+          "indices": {
+            "notation": "miller-bravais",
+            "h": 1,
+            "k": 0,
+            "i": -1,
+            "l": 1
+          },
+          "development": 1
+        },
+        {
+          "id": "z",
+          "label": "Rhombohedron z {01-11}",
+          "indices": {
+            "notation": "miller-bravais",
+            "h": 0,
+            "k": 1,
+            "i": -1,
+            "l": 1
+          },
+          "development": 1
+        }
+      ],
+      "preferredView": {
+        "cameraDirection": [
+          1,
+          1,
+          1
+        ]
+      },
+      "references": [
+        {
+          "id": "mp-7000"
+        }
+      ]
+    }
+  ]
+}

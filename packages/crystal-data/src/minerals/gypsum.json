@@ -1,0 +1,181 @@
+{
+  "id": "gypsum",
+  "name": "Gypsum",
+  "formula": "CaSO₄·2H₂O",
+  "dataRevision": "m8-2",
+  "crystallography": {
+    "crystalSystem": "monoclinic",
+    "pointGroup": "2/m",
+    "setting": "monoclinic-b",
+    "spaceGroup": "I2/a",
+    "unitCell": {
+      "a": 5.67,
+      "b": 15.201,
+      "c": 6.533,
+      "alpha": 90,
+      "beta": 118.6,
+      "gamma": 90
+    }
+  },
+  "references": [
+    {
+      "id": "cod-5000039",
+      "title": "Cole and Lancucki (1974), A refinement of the crystal structure of gypsum CaSO4.2H2O, Acta Crystallographica B30, 921-929",
+      "url": "https://www.crystallography.net/cod/5000039.html",
+      "notes": "COD CC0; space group I2/a (No. 15), unique axis b. Unit cell a=5.67, b=15.201, c=6.533 Å, beta=118.6 deg."
+    }
+  ],
+  "provenance": [
+    {
+      "coverage": [
+        "crystallography"
+      ],
+      "referenceIds": [
+        "cod-5000039"
+      ],
+      "status": "reported"
+    },
+    {
+      "coverage": [
+        "habits"
+      ],
+      "status": "curated",
+      "derivation": "Habit form selections use standard monoclinic form indices in the I2/a cell basis. Development values, disabled forms, and preferred views are curated visualization choices, not measured growth parameters. The declared monoclinic-b setting selects the core registry basis with unique axis b."
+    },
+    {
+      "coverage": [
+        "appearance"
+      ],
+      "status": "curated",
+      "derivation": "Appearance presets use curated visualization parameters selected to represent common gypsum varieties. Values are not measured optical constants."
+    }
+  ],
+  "appearance": [
+    {
+      "id": "colorless",
+      "name": "Colorless",
+      "baseColor": "#eef0f2",
+      "roughness": 0.1,
+      "metalness": 0,
+      "transmission": 0.7,
+      "ior": 1.521,
+      "absorptionColor": "#ffffff",
+      "absorptionDensity": 0
+    },
+    {
+      "id": "selenite",
+      "name": "Selenite",
+      "baseColor": "#f0f0e0",
+      "roughness": 0.08,
+      "metalness": 0,
+      "transmission": 0.75,
+      "ior": 1.521,
+      "absorptionColor": "#fff8e0",
+      "absorptionDensity": 0.1
+    }
+  ],
+  "habits": [
+    {
+      "id": "tabular",
+      "name": "Tabular (Selenite)",
+      "description": "Clinopinacoid {010} dominant; flat tabular crystal bounded by {110} and {111}. The common selenite habit.",
+      "forms": [
+        {
+          "id": "b",
+          "label": "Clinopinacoid {010}",
+          "indices": {
+            "notation": "miller",
+            "h": 0,
+            "k": 1,
+            "l": 0
+          },
+          "development": 1
+        },
+        {
+          "id": "m",
+          "label": "Prism {110}",
+          "indices": {
+            "notation": "miller",
+            "h": 1,
+            "k": 1,
+            "l": 0
+          },
+          "development": 0.3
+        },
+        {
+          "id": "o",
+          "label": "Prism {111}",
+          "indices": {
+            "notation": "miller",
+            "h": 1,
+            "k": 1,
+            "l": 1
+          },
+          "development": 0.3
+        }
+      ],
+      "references": [
+        {
+          "id": "cod-5000039"
+        }
+      ]
+    },
+    {
+      "id": "prismatic",
+      "name": "Prismatic",
+      "description": "Prism {110} dominant with clinodome {011} and prism {111}; elongated prismatic habit without prominent {010}.",
+      "forms": [
+        {
+          "id": "b",
+          "label": "Clinopinacoid {010}",
+          "indices": {
+            "notation": "miller",
+            "h": 0,
+            "k": 1,
+            "l": 0
+          },
+          "development": 0,
+          "enabled": false
+        },
+        {
+          "id": "m",
+          "label": "Prism {110}",
+          "indices": {
+            "notation": "miller",
+            "h": 1,
+            "k": 1,
+            "l": 0
+          },
+          "development": 1
+        },
+        {
+          "id": "o",
+          "label": "Prism {111}",
+          "indices": {
+            "notation": "miller",
+            "h": 1,
+            "k": 1,
+            "l": 1
+          },
+          "development": 0.5
+        },
+        {
+          "id": "d",
+          "label": "Clinodome {011}",
+          "indices": {
+            "notation": "miller",
+            "h": 0,
+            "k": 1,
+            "l": 1
+          },
+          "development": 0.5
+        }
+      ],
+      "references": [
+        {
+          "id": "cod-5000039"
+        }
+      ]
+    }
+  ]
+}

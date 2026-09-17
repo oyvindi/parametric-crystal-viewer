@@ -1,4 +1,4 @@
-# Parametric Mineral Crystal Viewer — Implementation Plan
+# Crystal Viewer — Implementation Plan
 
 This document sequences delivery and acceptance checks. Requirements belong to the documents in the [documentation map](spec.md#document-map); the [V1 checklist](spec.md#v1-checklist) is the authority for release scope.
 

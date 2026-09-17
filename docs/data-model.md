@@ -1,4 +1,4 @@
-# Parametric Mineral Crystal Viewer — Data Model
+# Crystal Viewer — Data Model
 
 Mineral and morphology records, atomic structure, imports, phases, and provenance. Mathematical conventions live in the [scientific model](scientific-model.md).
 

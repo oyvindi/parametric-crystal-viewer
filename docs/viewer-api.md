@@ -1,4 +1,4 @@
-# Parametric Mineral Crystal Viewer — Viewer API
+# Crystal Viewer — Viewer API
 
 Embedding, controls, lifecycle, events, inspection, and state behavior. Platform and package choices live in [architecture](architecture.md).
 

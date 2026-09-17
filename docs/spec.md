@@ -1,4 +1,4 @@
-# Parametric Mineral Crystal Viewer — Product Specification
+# Crystal Viewer — Product Specification
 
 Start here for product scope, capabilities, and non-goals. Detailed contracts have one authoritative home in the documents below.
 

@@ -58,10 +58,15 @@ supports a claim. That remains part of acquisition and milestone review.
 ## Adding a record
 
 1. Acquire and document sources under the [acquisition contract](../../docs/data-model.md#acquisition-and-licensing).
-2. Add a record under `src/minerals/`, using `defineMineral` to validate it. Supply a
+2. Add a `src/minerals/<id>.json` record (pure JSON data, no comments). Supply a
    stable ID and update the data revision when the record changes.
-3. Export and include it in `src/catalog.ts` for bundled loading, or pass a provisional
-   record directly to `loadMineral` or the viewer.
+3. Add the mineral ID to the `order` array in `scripts/generate-mineral-records.mjs`,
+   run `node scripts/generate-mineral-records.mjs` to regenerate `src/records.ts`
+   (which inlines the JSON and validates via `defineMineral`), and commit both the
+   JSON and the generated file. Re-export the constant from `src/index.ts` if it
+   should be part of the public API.
+4. Include it in `src/catalog.ts` for bundled loading, or pass a provisional record directly to
+   `loadMineral` or the viewer.
 4. Test its habits and scientific reference results through `createCrystalInput`
    and core `generateCrystal`. No mineral-specific core generator is needed.
 
