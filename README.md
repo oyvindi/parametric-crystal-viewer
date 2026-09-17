@@ -59,6 +59,9 @@ straight to a demo:
 * [Appearance](packages/crystal-demo/appearance.html) — PBR material controls
 * [Controls & Events](packages/crystal-demo/controls.html) — programmatic API and state save/restore
 
+The demos are also hosted live on GitHub Pages:
+**<https://oyvindi.github.io/parametric-crystal-viewer/>**
+
 ## Packages
 
 ```text
