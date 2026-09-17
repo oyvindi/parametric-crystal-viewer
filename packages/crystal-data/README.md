@@ -67,7 +67,7 @@ supports a claim. That remains part of acquisition and milestone review.
    should be part of the public API.
 4. Include it in `src/catalog.ts` for bundled loading, or pass a provisional record directly to
    `loadMineral` or the viewer.
-4. Test its habits and scientific reference results through `createCrystalInput`
+5. Test its habits and scientific reference results through `createCrystalInput`
    and core `generateCrystal`. No mineral-specific core generator is needed.
 
 `createCrystalInput` validates its record, resolves a habit and optional variant,

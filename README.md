@@ -5,6 +5,8 @@ crystal geometry procedurally from crystallographic and morphology parameters â€
 no prebuilt 3D meshes. [Three.js](https://threejs.org/) is used only for rendering;
 all scientific calculations live in a renderer-neutral core.
 
+> **Note:** This project is a work in progress.
+
 ## Capabilities (V1)
 
 * All seven crystal systems (triclinic, monoclinic, orthorhombic, tetragonal,
