@@ -1,8 +1,8 @@
 # SR7 Public API, Demo, and Acceptance Audit
 
-**Status:** automated gates pass; the surface-rendering track is functionally complete.
-The human visual review package below is ready for owner sign-off; this audit does not
-substitute automated checks for human visual judgment.
+**Status:** automated gates pass. The human visual review package below is ready for
+owner sign-off; this audit does not substitute automated checks for human visual judgment.
+One generic-microvariation appearance item is deferred for later review (see below).
 
 SR7 closes the surface-rendering track. It adds a comprehensive demo, confirms the stable
 public API, records the state-migration decision, adds `prefers-reduced-motion` handling,
@@ -161,9 +161,19 @@ inspection is required unless an automated failure or visual defect needs diagno
 
 ## Owner visual review
 
-Pending owner confirmation. The review package above (exact URLs, fixed settings,
-checklists) is ready for sign-off. The automated gates pass; the remaining gate is the
-human visual judgment the workflow deliberately keeps separate from automated checks.
+Owner inspected the SR7 overview demo. The stable controls, profile panel, and reviewed
+quartz/calcite/pyrite face selection were accepted. One appearance item is deferred:
+
+* **Generic microvariation reads as evenly distributed bumps on all faces.** This is the
+  intended SR4 naturalization layer (low-amplitude normal and roughness variation applied
+  to every face of every mineral when the toggle is on, separate from the reviewed
+  form-specific striations). The owner accepted it for now and will review the bump
+  distribution and character more closely later. No change is required at this time; the
+  item is tracked here so a later pass can reassess whether the pattern character (sum of
+  two directional sinusoids) is appropriate or should read as less directional roughness.
+
+The automated gates pass; the remaining gate is the later human visual judgment on the
+deferred item.
 
 ## Verification
 

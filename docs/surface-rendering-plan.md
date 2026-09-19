@@ -252,7 +252,8 @@ Acceptance:
 ### SR7 — Public API, Demo, and Acceptance Audit
 
 **Status:** complete. See the [SR7 acceptance audit](sr7-acceptance.md) and
-[ADR 0010](decisions/0010-sr7-surface-state-and-reduced-motion.md).
+[ADR 0010](decisions/0010-sr7-surface-state-and-reduced-motion.md). One generic-microvariation
+appearance item is deferred for later review; see the acceptance audit.
 
 Add a surface-detail demo covering all nine current minerals, with focused quartz,
 calcite, and pyrite comparisons. Expose only stable controls: enable/disable, overall
