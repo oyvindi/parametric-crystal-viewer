@@ -127,7 +127,21 @@ export interface StructuralDefinition {
     readonly name: string;
     readonly crystallography: MineralCrystallography;
     readonly atomicStructure: AtomicStructure;
+    /** Observed external crystal faces from the CIF crystal-face loop, when present. */
+    readonly crystalFaces?: readonly CifCrystalFace[];
     readonly references: readonly Reference[];
     readonly provenance: readonly ProvenanceEntry[];
     readonly source: ImportSource;
+    readonly authors?: readonly string[];
+    readonly publicationTitle?: string;
+    readonly mineralName?: string;
+    readonly formula?: string;
+}
+
+/** A measured crystal face reported by the CIF experimental crystal-face category. */
+export interface CifCrystalFace {
+    readonly indices: { readonly h: number; readonly k: number; readonly l: number };
+    readonly perpendicularDistance: number;
+    readonly name?: string;
+    readonly description?: string;
 }

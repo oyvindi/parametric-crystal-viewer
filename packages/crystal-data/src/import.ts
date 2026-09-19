@@ -5,7 +5,7 @@ import {
 } from "@crystal/core";
 import type { CifBlock, CifFile, CifLoop } from "./cif.js";
 import { parseCif } from "./cif.js";
-import type { MineralCrystallography, MineralUnitCell, ProvenanceEntry, Reference, StructuralDefinition, ImportSource } from "./types.js";
+import type { CifCrystalFace, MineralCrystallography, MineralUnitCell, ProvenanceEntry, Reference, StructuralDefinition, ImportSource } from "./types.js";
 
 export interface CifImportOptions {
     /** Required when the file contains multiple structural blocks; selects one by `data_` name. */
@@ -35,8 +35,8 @@ const HM_TABLE: Readonly<Record<string, string>> = {
     "P-3m1": "point-group:-3m:hexagonal-standard", "P-31m": "point-group:-3m:hexagonal-standard",
     "P-3c1": "point-group:-3m:hexagonal-standard", "P-31c": "point-group:-3m:hexagonal-standard",
     // 32 trigonal hexagonal
-    "R32": "point-group:32:hexagonal-standard", "P312": "point-group:32:hexagonal-standard",
-    "P321": "point-group:32:hexagonal-standard", "P3112": "point-group:32:hexagonal-standard", "P3121": "point-group:32:hexagonal-standard",
+    "R32": "point-group:32:hexagonal", "P312": "point-group:32:hexagonal",
+    "P321": "point-group:32:hexagonal", "P3112": "point-group:32:hexagonal", "P3121": "point-group:32:hexagonal",
     // 4/mmm tetragonal
     "P4/mmm": "point-group:4/mmm:tetragonal-standard", "P4/mcc": "point-group:4/mmm:tetragonal-standard",
     "I4/mmm": "point-group:4/mmm:tetragonal-standard", "I4/mcm": "point-group:4/mmm:tetragonal-standard",
@@ -92,6 +92,14 @@ function classifyCrystalSystemByItNumber(value: number | undefined): CrystalSyst
 
 const SYMMETRY_TAGS = ["_space_group_symop_operation_xyz", "_symmetry_equiv_pos_as_xyz"];
 const BOND_TAGS = ["_geom_bond_atom_site_label_1", "_geom_angle_atom_site_label_1", "_geom_bond_dist"];
+const FACE_TAGS = {
+    h: "_exptl_crystal_face_index_h",
+    k: "_exptl_crystal_face_index_k",
+    l: "_exptl_crystal_face_index_l",
+    distance: "_exptl_crystal_face_perp_dist",
+    name: "_exptl_crystal_face_name",
+    description: "_exptl_crystal_face_description",
+} as const;
 
 function scalar(block: CifBlock, tags: readonly string[]): string | undefined {
     for (const tag of tags) {
@@ -125,7 +133,9 @@ function isMissing(value: string | undefined): boolean {
 
 /** Parses a CIF symmetry operation expression `x,y,z` into a linear matrix and translation. */
 export function parseSymmetryOperation(expr: string): { linear: Mat3; translation: Vec3 } | undefined {
-    const parts = expr.split(",");
+    // CIF symmetry expressions are case-insensitive and commonly use explicit
+    // leading plus signs (e.g. "+X-Y,5/6+Z").
+    const parts = expr.toLowerCase().replace(/\s+/g, "").split(",");
     if (parts.length !== 3) return undefined;
     const linear: number[][] = [[0, 0, 0], [0, 0, 0], [0, 0, 0]];
     const translation: number[] = [0, 0, 0];
@@ -348,8 +358,37 @@ export function importCif(text: string, options: CifImportOptions = {}): Result<
 
     const atomicStructure: AtomicStructure = { siteRepresentation, sites };
 
+    // Crystal morphology is optional in CIF. Preserve measured faces without
+    // inventing symmetry-equivalent faces or converting them into a named habit.
+    const faceLoop = loopFor(block, FACE_TAGS.h);
+    let crystalFaces: CifCrystalFace[] | undefined;
+    if (faceLoop) {
+        const column = (tag: string) => faceLoop.tags.findIndex((t) => t.toLowerCase() === tag);
+        const hCol = column(FACE_TAGS.h), kCol = column(FACE_TAGS.k), lCol = column(FACE_TAGS.l), dCol = column(FACE_TAGS.distance);
+        if ([hCol, kCol, lCol, dCol].some((i) => i < 0)) {
+            diagnostics.push({ code: "data.cif.invalid-crystal-face", severity: "error", message: "Crystal-face loop requires Miller indices and perpendicular distances.", source: { block: block.name } });
+        } else {
+            const nameCol = column(FACE_TAGS.name), descriptionCol = column(FACE_TAGS.description);
+            crystalFaces = [];
+            faceLoop.rows.forEach((row, i) => {
+                const h = parseCifNumber(row[hCol]), k = parseCifNumber(row[kCol]), l = parseCifNumber(row[lCol]), distance = parseCifNumber(row[dCol]);
+                if (h === undefined || k === undefined || l === undefined || distance === undefined || distance <= 0 || ![h, k, l].every(Number.isInteger) || (h === 0 && k === 0 && l === 0)) {
+                    diagnostics.push({ code: "data.cif.invalid-crystal-face", severity: "error", message: `Crystal-face row ${i + 1} has invalid indices or perpendicular distance.`, source: { block: block.name } });
+                    return;
+                }
+                crystalFaces!.push({ indices: { h, k, l }, perpendicularDistance: distance, ...(nameCol >= 0 && !isMissing(row[nameCol]) ? { name: row[nameCol] } : {}), ...(descriptionCol >= 0 && !isMissing(row[descriptionCol]) ? { description: row[descriptionCol] } : {}) });
+            });
+        }
+    }
+    if (diagnostics.some((d) => d.severity === "error")) return { ok: false, diagnostics };
+
     const references: Reference[] = [];
-    const pubTitle = scalar(block, ["_publ_section_title", "_chemical_name_systematic", "_chemical_name_mineral"]);
+    const publicationTitle = scalar(block, ["_publ_section_title"]);
+    const pubTitle = publicationTitle ?? scalar(block, ["_chemical_name_systematic", "_chemical_name_mineral"]);
+    const mineralName = scalar(block, ["_chemical_name_mineral"]);
+    const formula = scalar(block, ["_chemical_formula_sum", "_chemical_formula_structural"]);
+    const authorLoop = loopFor(block, "_publ_author_name");
+    const authors = authorLoop ? authorLoop.rows.map((row) => row[authorLoop.tags.findIndex((t) => t.toLowerCase() === "_publ_author_name")]).filter((value): value is string => Boolean(value && !isMissing(value))) : [];
     if (hmSymbol || pubTitle) references.push({ id: `cif-source`, ...(pubTitle ? { title: pubTitle } : {}), notes: `Imported from CIF block "${block.name}"${hmSymbol ? `; space group ${hmSymbol}` : ""}.` });
 
     const provenance: ProvenanceEntry[] = [
@@ -365,9 +404,14 @@ export function importCif(text: string, options: CifImportOptions = {}): Result<
         name: pubTitle || block.name || "Imported structure",
         crystallography: Object.freeze({ ...crystallography, ...(frozenSpaceOperations ? { spaceOperations: frozenSpaceOperations } : {}) }),
         atomicStructure: Object.freeze({ ...atomicStructure, sites: Object.freeze(sites) } as unknown as AtomicStructure),
+        ...(crystalFaces ? { crystalFaces: Object.freeze(crystalFaces.map((face) => Object.freeze({ ...face, indices: Object.freeze({ ...face.indices }) }))) } : {}),
         references: Object.freeze(references),
         provenance: Object.freeze(provenance),
         source: Object.freeze(source),
+        ...(authors.length ? { authors: Object.freeze(authors) } : {}),
+        ...(publicationTitle ? { publicationTitle } : {}),
+        ...(mineralName ? { mineralName } : {}),
+        ...(formula ? { formula } : {}),
     });
     return { ok: true, value: definition, diagnostics };
 }

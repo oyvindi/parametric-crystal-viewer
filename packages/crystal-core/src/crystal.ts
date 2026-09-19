@@ -1,8 +1,8 @@
 import { listPointOperationRegistryEntries } from "./registry.js";
-import { createLattice, type Lattice, type UnitCell } from "./lattice.js";
+import { createLattice, type Lattice, type UnitCell, type Vec3 } from "./lattice.js";
 import type { CrystalSystem } from "./miller.js";
 import { generateCrystalGeometry, validateMorphology, type CrystalFormSetting } from "./morphology.js";
-import type { GeometryResult } from "./geometry.js";
+import { intersectHalfSpaces, type GeometryResult } from "./geometry.js";
 import type { Diagnostic, Result } from "./diagnostics.js";
 import { derivePointOperations, equivalentPointOperationSets, resolvePointOperations, validateSpaceOperations, type PointOperation, type SpaceOperation } from "./symmetry.js";
 
@@ -20,6 +20,37 @@ export interface Crystallography {
 export interface Morphology {
     readonly forms: readonly CrystalFormSetting[];
     readonly morphologyScale?: number;
+}
+
+/** A measured face from CIF's _exptl_crystal_face_* category. */
+export interface CrystalFaceMeasurement {
+    readonly h: number;
+    readonly k: number;
+    readonly l: number;
+    readonly perpendicularDistance: number;
+    readonly id?: string;
+}
+
+/** Generates geometry from explicit measured faces without adding symmetry-equivalent faces. */
+export function generateCrystalFromFaces(crystallography: Crystallography, faces: readonly CrystalFaceMeasurement[]): GeometryResult {
+    const lattice = createLattice(crystallography.unitCell);
+    if (!lattice.ok) return { status: "invalid", diagnostics: lattice.diagnostics };
+    if (!faces.length) return { status: "invalid", diagnostics: [{ code: "core.geometry.no-faces", severity: "error", message: "At least one measured crystal face is required." }] };
+    const planes: import("./geometry.js").HalfSpace[] = [];
+    for (const [index, face] of faces.entries()) {
+        if (![face.h, face.k, face.l, face.perpendicularDistance].every(Number.isFinite) || ![face.h, face.k, face.l].every(Number.isInteger) || (face.h === 0 && face.k === 0 && face.l === 0) || face.perpendicularDistance <= 0) {
+            return { status: "invalid", diagnostics: [{ code: "core.input.invalid-crystal-face", severity: "error", message: `Face ${index + 1} has invalid indices or perpendicular distance.` }] };
+        }
+        const normalVector: Vec3 = [
+            lattice.value.reciprocal[0][0] * face.h + lattice.value.reciprocal[0][1] * face.k + lattice.value.reciprocal[0][2] * face.l,
+            lattice.value.reciprocal[1][0] * face.h + lattice.value.reciprocal[1][1] * face.k + lattice.value.reciprocal[1][2] * face.l,
+            lattice.value.reciprocal[2][0] * face.h + lattice.value.reciprocal[2][1] * face.k + lattice.value.reciprocal[2][2] * face.l,
+        ];
+        const length = Math.hypot(...normalVector);
+        if (!Number.isFinite(length) || length === 0) return { status: "invalid", diagnostics: [{ code: "core.input.invalid-crystal-face", severity: "error", message: `Face ${index + 1} produces an invalid plane normal.` }] };
+        planes.push({ id: face.id ?? `face-${index + 1}`, normal: [normalVector[0] / length, normalVector[1] / length, normalVector[2] / length], distance: face.perpendicularDistance, contributors: [{ formId: face.id ?? `face-${index + 1}`, indices: { notation: "miller", h: face.h, k: face.k, l: face.l }, operationIds: [] }] });
+    }
+    return intersectHalfSpaces(planes);
 }
 
 /** Validates crystallography without requiring enclosing morphology. */

@@ -25,6 +25,43 @@ function failed(text: string, options?: { blockId?: string }) {
 }
 
 describe("M6 value handling", () => {
+    it("preserves standard CIF crystal-face morphology measurements", () => {
+        const text = `data_faces
+_cell_length_a 5
+_cell_length_b 5
+_cell_length_c 5
+_cell_angle_alpha 90
+_cell_angle_beta 90
+_cell_angle_gamma 90
+_space_group_name_H-M_alt 'P-1'
+loop_
+_space_group_symop_operation_xyz
+x,y,z
+-x,-y,-z
+loop_
+_atom_site_label
+_atom_site_type_symbol
+_atom_site_fract_x
+_atom_site_fract_y
+_atom_site_fract_z
+C1 C 0 0 0
+loop_
+_exptl_crystal_face_index_h
+_exptl_crystal_face_index_k
+_exptl_crystal_face_index_l
+_exptl_crystal_face_perp_dist
+_exptl_crystal_face_name
+1 0 0 2.5 A
+-1 0 0 2.5 B
+0 1 0 2.5 C
+0 -1 0 2.5 D
+0 0 1 2.5 E
+0 0 -1 2.5 F
+`;
+        const { definition } = ok(text);
+        expect(definition.crystalFaces).toHaveLength(6);
+        expect(definition.crystalFaces?.[0]).toMatchObject({ indices: { h: 1, k: 0, l: 0 }, perpendicularDistance: 2.5, name: "A" });
+    });
     it("strips parenthesized uncertainty notation", () => {
         expect(stripUncertainty("5.463(2)")).toBe("5.463");
         expect(parseCifNumber("5.463(2)")).toBe(5.463);
@@ -40,6 +77,12 @@ describe("M6 value handling", () => {
         if (!op) return;
         expect(op.linear[0]).toEqual([1, 0, 0]);
         expect(op.translation).toEqual([2 / 3, 1 / 3, 1 / 3]);
+    });
+    it("accepts case-insensitive axes and explicit leading plus signs", () => {
+        const op = parseSymmetryOperation("+X-Y, +X, 5/6+Z");
+        expect(op).toBeDefined();
+        expect(op?.linear).toEqual([[1, -1, 0], [1, 0, 0], [0, 0, 1]]);
+        expect(op?.translation).toEqual([0, 0, 5 / 6]);
     });
 });
 

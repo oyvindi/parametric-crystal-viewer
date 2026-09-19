@@ -1,5 +1,5 @@
 import { Scene, PerspectiveCamera, WebGLRenderer, MeshPhysicalMaterial, Mesh, MeshBasicMaterial, Color, DirectionalLight, AmbientLight, Group, DoubleSide, Raycaster, Vector2, Vector3, Sprite, SpriteMaterial, CanvasTexture, BufferGeometry, Float32BufferAttribute, LineSegments, LineBasicMaterial, PMREMGenerator, EquirectangularReflectionMapping } from "three";
-import { createLattice, expandAtomicStructure, generateCrystal, inferBonds, validatePeriodicBonds, type Diagnostic, type GeometryResult, type CrystalGeometry, type CrystalFace, type ExpandedAtom, type Lattice, type PeriodicBond } from "@crystal/core";
+import { createLattice, expandAtomicStructure, generateCrystal, generateCrystalFromFaces, inferBonds, validatePeriodicBonds, type Diagnostic, type GeometryResult, type CrystalGeometry, type CrystalFace, type ExpandedAtom, type Lattice, type PeriodicBond } from "@crystal/core";
 import { loadMineral as loadMineralData, createCrystalInput, resolveHabit, resolveCrystallography, importCif, getMineral, validateMineral, MineralDataError, type Mineral, type MineralCrystallography, type StructuralDefinition } from "@crystal/data";
 import { createThreeGeometryWithPicking, createAtomicStructure, atomicBounds, createCrystalMaterial, applyAppearance, resolveAppearance, APPEARANCE_FIELDS, type AppearanceParams, type AppearanceField } from "@crystal/three";
 import { cameraBasis } from "./camera.js";
@@ -78,6 +78,35 @@ export interface StructureInfo {
     readonly atomCount: number;
     readonly bondCount: number;
     readonly bondsDerived: boolean;
+    readonly authors?: readonly string[];
+    readonly publicationTitle?: string;
+    readonly mineralName?: string;
+    readonly formula?: string;
+}
+
+function bfdhForms(crystallography: MineralCrystallography): readonly { id: string; indices: { notation: "miller"; h: number; k: number; l: number }; development: number; enabled: true }[] {
+    const lattice = createLattice(crystallography.unitCell);
+    if (!lattice.ok) return [];
+    const candidates: { h: number; k: number; l: number; d: number }[] = [];
+    const seen = new Set<string>();
+    for (let h = -2; h <= 2; h++) for (let k = -2; k <= 2; k++) for (let l = -2; l <= 2; l++) {
+        if (h === 0 && k === 0 && l === 0) continue;
+        const gcd = (a: number, b: number): number => b === 0 ? Math.abs(a) : gcd(b, a % b);
+        const divisor = gcd(gcd(h, k), l) || 1;
+        const reduced = [h / divisor, k / divisor, l / divisor];
+        const key = reduced.join(",");
+        if (seen.has(key)) continue;
+        seen.add(key);
+        const n: [number, number, number] = [
+            lattice.value.reciprocal[0][0] * reduced[0] + lattice.value.reciprocal[0][1] * reduced[1] + lattice.value.reciprocal[0][2] * reduced[2],
+            lattice.value.reciprocal[1][0] * reduced[0] + lattice.value.reciprocal[1][1] * reduced[1] + lattice.value.reciprocal[1][2] * reduced[2],
+            lattice.value.reciprocal[2][0] * reduced[0] + lattice.value.reciprocal[2][1] * reduced[1] + lattice.value.reciprocal[2][2] * reduced[2],
+        ];
+        const length = Math.hypot(...n);
+        if (length > 0 && Number.isFinite(length)) candidates.push({ h: reduced[0], k: reduced[1], l: reduced[2], d: 1 / length });
+    }
+    const maxD = Math.max(...candidates.map((c) => c.d));
+    return candidates.map((c) => ({ id: `bfdh-${c.h}-${c.k}-${c.l}`, indices: { notation: "miller", h: c.h, k: c.k, l: c.l }, development: Math.max(0.05, Math.min(1, c.d / maxD)), enabled: true as const }));
 }
 
 /** Stabilized public viewer API (M7). Owns loading, orchestration, lifecycle, and state serialization. */
@@ -129,6 +158,7 @@ export class CrystalViewer extends EventTarget {
     private appearanceId: string | undefined;
     private appearanceOverrides: Partial<AppearanceParams> = {};
     private importDiagnostics: readonly Diagnostic[] = [];
+    private explicitFaceGeometry = false;
     private readonly raycaster = new Raycaster();
     private readonly canvas: HTMLCanvasElement;
     private readonly onPointerDownBound: (e: PointerEvent) => void;
@@ -233,6 +263,7 @@ export class CrystalViewer extends EventTarget {
         this.expandedAtoms = null;
         this.structureBonds = null;
         this.importDiagnostics = [];
+        this.explicitFaceGeometry = false;
         this.clearAtomic();
         this.mineral = mineral;
         this.embeddedMineral = embedded;
@@ -443,6 +474,34 @@ export class CrystalViewer extends EventTarget {
         return result.diagnostics;
     }
 
+    /** Imports CIF crystal-face measurements and displays their faceted morphology. */
+    loadCifMorphology(text: string, options: { blockId?: string } = {}): readonly Diagnostic[] {
+        this.assertNotDisposed();
+        const result = importCif(text, options);
+        if (!result.ok) { this.dispatchEvent(new CustomEvent("structure-load-failed", { detail: { diagnostics: result.diagnostics } })); return result.diagnostics; }
+        const fallback = !result.value.crystalFaces?.length;
+        const diagnostics: Diagnostic[] = [...result.diagnostics, ...(fallback ? [{ code: "viewer.morphology.bfdh-fallback", severity: "warning" as const, message: "No measured crystal faces were supplied; showing a theoretical BFDH morphology derived from the unit cell and symmetry." }] : [])];
+        const geometry = fallback
+            ? generateCrystal(result.value.crystallography, { forms: bfdhForms(result.value.crystallography) })
+            : generateCrystalFromFaces(result.value.crystallography, result.value.crystalFaces!.map((face, i) => ({ ...face.indices, perpendicularDistance: face.perpendicularDistance, id: face.name ?? `face-${i + 1}` })));
+        if (geometry.status !== "valid") { this.dispatchEvent(new CustomEvent("geometry-invalid", { detail: { diagnostics: geometry.diagnostics } })); return geometry.diagnostics; }
+        this.loadGeneration++;
+        this.mineral = null;
+        this.structure = result.value;
+        this.explicitFaceGeometry = true;
+        this.currentResult = geometry;
+        this.lastValidGeometry = geometry;
+        this.currentGeometry = geometry.geometry;
+        this.viewMode = "morphology";
+        this.clearAtomic();
+        this.updateMesh(geometry);
+        this.frameCamera(geometry.geometry.bounds.min, geometry.geometry.bounds.max);
+        this.updateViewVisibility();
+        this.renderOnce();
+        this.dispatchEvent(new CustomEvent("structure-loaded", { detail: { id: result.value.id, warnings: diagnostics } }));
+        return diagnostics;
+    }
+
     /** Loads a structural definition (e.g. from `importCif`) for the atomic structure view. */
     loadStructure(definition: StructuralDefinition): void {
         this.assertNotDisposed();
@@ -480,6 +539,7 @@ export class CrystalViewer extends EventTarget {
         // symmetry and atomic positions. Do not retain an unrelated mineral
         // morphology alongside it.
         this.mineral = null;
+        this.explicitFaceGeometry = false;
         this.embeddedMineral = false;
         this.habitId = undefined;
         this.variantId = undefined;
@@ -588,6 +648,10 @@ export class CrystalViewer extends EventTarget {
             atomCount: this.expandedAtoms?.length ?? 0,
             bondCount: bonds.length,
             bondsDerived: bonds.length > 0 && bonds.every((b) => b.derived),
+            ...(this.structure.authors ? { authors: this.structure.authors } : {}),
+            ...(this.structure.publicationTitle ? { publicationTitle: this.structure.publicationTitle } : {}),
+            ...(this.structure.mineralName ? { mineralName: this.structure.mineralName } : {}),
+            ...(this.structure.formula ? { formula: this.structure.formula } : {}),
         };
     }
 
@@ -1020,7 +1084,7 @@ export class CrystalViewer extends EventTarget {
     }
 
     private regenerate(): void {
-        if (!this.mineral) return;
+        if (!this.mineral || this.explicitFaceGeometry) return;
         const input = createCrystalInput(this.mineral, {
             habitId: this.habitId,
             variantId: this.variantId,
