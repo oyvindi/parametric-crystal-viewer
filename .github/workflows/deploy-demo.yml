@@ -27,23 +27,9 @@ jobs:
           node-version: "22"
           cache: npm
       - run: npm install
-      - run: npm run build:demo
-      - name: Stage static site
-        run: |
-          mkdir -p staging/packages/crystal-demo
-          mkdir -p staging/packages/crystal-viewer/bundle
-          mkdir -p staging/packages/crystal-core/test-fixtures/m5
-          cp packages/crystal-demo/*.html staging/packages/crystal-demo/
-          cp -r packages/crystal-viewer/bundle/* staging/packages/crystal-viewer/bundle/
-          cp packages/crystal-core/test-fixtures/m5/*.cif staging/packages/crystal-core/test-fixtures/m5/
-          # Root redirect to the demo index
-          cat > staging/index.html <<'HTML'
-          <!DOCTYPE html>
-          <meta http-equiv="refresh" content="0; url=packages/crystal-demo/index.html">
-          <a href="packages/crystal-demo/index.html">Demos</a>
-          HTML
+      - run: npm run build:pages
       - uses: actions/upload-pages-artifact@v3
         with:
-          path: staging
+          path: dist/pages
       - id: deployment
         uses: actions/deploy-pages@v4

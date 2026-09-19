@@ -15,6 +15,7 @@
     "build": "bash -lc 'node ./node_modules/typescript/bin/tsc --build'",
     "build:bundle": "bash -lc 'cd packages/crystal-viewer && node ../../node_modules/tsdown/dist/run.mjs'",
     "build:demo": "bash -lc 'node ./node_modules/typescript/bin/tsc --build && cd packages/crystal-viewer && node ../../node_modules/tsdown/dist/run.mjs'",
+    "build:pages": "bash -lc 'npm run build:demo && node scripts/build-pages.mjs'",
     "clean": "bash -lc 'node ./node_modules/typescript/bin/tsc --build --clean'",
     "test": "bash -lc 'node ./node_modules/vitest/vitest.mjs run'",
     "check": "bash -lc 'node scripts/check-workspace.mjs && node ./node_modules/typescript/bin/tsc --build && node ./node_modules/vitest/vitest.mjs run'",

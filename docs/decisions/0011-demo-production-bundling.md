@@ -21,7 +21,10 @@
   needs no import-map entry). `tsdown` runs after `tsc --build` so the `@crystal/*`
   `dist/` outputs exist for resolution. The library build (`tsc --build`) is
   unchanged; the bundle is a separate `build:bundle` / `build:demo` script that the
-  `serve` script and the Pages workflow run. The `bundle/` output is gitignored.
+  `serve` script and the Pages workflow run. The `bundle/` output is gitignored. The
+  Pages workflow runs `build:pages`, which stages the complete demo static directory,
+  generated bundle, and required CIF fixtures into `dist/pages`, then rejects any
+  unresolved relative HTML or ESM-module reference before upload.
 
 * **Alternatives:**
   * *Vite* — recommended by architecture and capable of the same bundling, plus HTML
@@ -48,7 +51,9 @@
   and the CIF fixtures fetched by `structure.html`. The constraint to record: no demo
   may import `three` or `three/addons/` directly, or it would get a second three copy
   alongside the inlined one (instanceof mismatches, doubled size); such a demo would
-  require moving to Vite's shared-chunk model. Local development still uses
+  require moving to Vite's shared-chunk model. Artifact validation also prevents a
+  deploy omission of a project-owned demo module such as `projection-control.js`.
+  Local development still uses
   `serve-demo.mjs` against the built bundle (the `serve` script builds it first);
   unbundled source-with-HMR is not provided.
 * **References:** [Technology Stack](../architecture.md#technology-stack),
