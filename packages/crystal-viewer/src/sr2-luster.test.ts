@@ -75,7 +75,7 @@ describe("SR2 viewer reports effective resolved appearance", () => {
         const selenite = infos.find((i) => i.id === "selenite")!;
         expect(selenite.luster).toBe("pearly");
         const colorless = infos.find((i) => i.id === "colorless")!;
-        expect(colorless.luster).toBeUndefined();
+        expect(colorless.luster).toBe("vitreous");
     });
 
     it("the rendered material receives sheen from the pearly luster profile", async () => {

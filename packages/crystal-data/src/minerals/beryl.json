@@ -2,7 +2,7 @@
   "id": "beryl",
   "name": "Beryl",
   "formula": "Be₃Al₂Si₆O₁₈",
-  "dataRevision": "sr2-1",
+  "dataRevision": "sr7-1",
   "crystallography": {
     "crystalSystem": "hexagonal",
     "pointGroup": "6/mmm",
@@ -151,7 +151,14 @@
         {
           "id": "cod-9001018"
         }
-      ]
+      ],
+      "preferredView": {
+        "cameraDirection": [
+          1.5,
+          -2,
+          0.8
+        ]
+      }
     },
     {
       "id": "short-prismatic",
@@ -200,7 +207,14 @@
         {
           "id": "cod-9001018"
         }
-      ]
+      ],
+      "preferredView": {
+        "cameraDirection": [
+          1.5,
+          -2,
+          1.1
+        ]
+      }
     }
   ]
 }

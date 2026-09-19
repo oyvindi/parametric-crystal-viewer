@@ -710,7 +710,7 @@ export const CALCITE = defineMineral({
   "id": "calcite",
   "name": "Calcite",
   "formula": "CaCO₃",
-  "dataRevision": "sr5-1",
+  "dataRevision": "sr7-1",
   "crystallography": {
     "crystalSystem": "trigonal",
     "pointGroup": "-3m",
@@ -776,6 +776,22 @@ export const CALCITE = defineMineral({
     },
     {
       "coverage": [
+        "appearance.*.luster"
+      ],
+      "referenceIds": [
+        "handbook-calcite-v1"
+      ],
+      "status": "reported"
+    },
+    {
+      "coverage": [
+        "appearance"
+      ],
+      "status": "curated",
+      "derivation": "Appearance presets use curated visualization parameters (base color, roughness, metalness, transmission, IOR, absorption color and density) for colorless and yellow calcite. They are not measured optical constants or specimen observations."
+    },
+    {
+      "coverage": [
         "surfaceProfiles"
       ],
       "referenceIds": [
@@ -807,6 +823,32 @@ export const CALCITE = defineMineral({
         }
       },
       "description": "Typical pearly luster on calcite basal {0001} growth faces; cleavage-only appearance is intentionally excluded and this is not specimen-measured."
+    }
+  ],
+  "appearance": [
+    {
+      "id": "colorless",
+      "luster": "vitreous",
+      "name": "Colorless",
+      "baseColor": "#f6f3ea",
+      "roughness": 0.12,
+      "metalness": 0,
+      "transmission": 0.65,
+      "ior": 1.658,
+      "absorptionColor": "#fffaf0",
+      "absorptionDensity": 0
+    },
+    {
+      "id": "yellow",
+      "luster": "vitreous",
+      "name": "Yellow",
+      "baseColor": "#d8bd72",
+      "roughness": 0.16,
+      "metalness": 0,
+      "transmission": 0.5,
+      "ior": 1.658,
+      "absorptionColor": "#b89038",
+      "absorptionDensity": 0.18
     }
   ],
   "habits": [
@@ -1152,7 +1194,7 @@ export const ANATASE = defineMineral({
   "id": "anatase",
   "name": "Anatase",
   "formula": "TiO₂",
-  "dataRevision": "m5-1",
+  "dataRevision": "sr7-2",
   "crystallography": {
     "crystalSystem": "tetragonal",
     "pointGroup": "4/mmm",
@@ -1179,6 +1221,12 @@ export const ANATASE = defineMineral({
       "title": "Jeantelot et al. (2018), Morphology control of anatase TiO2 for well-defined surface chemistry",
       "url": "https://doi.org/10.1039/C8CP01983E",
       "notes": "CC-BY 3.0; {101}-dominated crystals and {001}-dominated platelets. Idealized endmembers; no growth prediction."
+    },
+    {
+      "id": "handbook-anatase-v1",
+      "title": "Mineral Data Publishing, Anatase, version 1",
+      "url": "https://www.handbookofmineralogy.org/pdfs/anatase.pdf",
+      "notes": "Publicly readable; accessed 2026-09-19. Used as a factual citation only; luster is reported as adamantine to splendent, metallic, with colors including brown, yellow, blue, and nearly colorless."
     }
   ],
   "provenance": [
@@ -1209,6 +1257,48 @@ export const ANATASE = defineMineral({
       ],
       "status": "curated",
       "derivation": "Named idealized habit presets use documented forms. Development values, disabled forms and preferred views are curated visualization choices, not measured growth or surface-energy parameters."
+    },
+    {
+      "coverage": [
+        "appearance.*.luster"
+      ],
+      "referenceIds": [
+        "handbook-anatase-v1"
+      ],
+      "status": "reported"
+    },
+    {
+      "coverage": [
+        "appearance"
+      ],
+      "status": "curated",
+      "derivation": "Appearance presets use curated visualization parameters for indigo-blue and golden-brown anatase, both colors reported for the mineral. The supported metallic category represents the source's reported luster range, including metallic; it does not assert that every anatase specimen is metallic. Numeric values are not measured optical constants."
+    }
+  ],
+  "appearance": [
+    {
+      "id": "indigo",
+      "luster": "metallic",
+      "name": "Indigo blue",
+      "baseColor": "#244f9e",
+      "roughness": 0.1,
+      "metalness": 0.12,
+      "transmission": 0.3,
+      "ior": 2.52,
+      "absorptionColor": "#12295b",
+      "absorptionDensity": 0.24
+    },
+    {
+      "id": "golden",
+      "luster": "metallic",
+      "name": "Golden brown",
+      "baseColor": "#9b6a31",
+      "roughness": 0.2,
+      "metalness": 0.25,
+      "transmission": 0.2,
+      "ior": 2.52,
+      "absorptionColor": "#6e421c",
+      "absorptionDensity": 0.3
     }
   ],
   "habits": [
@@ -1305,7 +1395,7 @@ export const ALBITE = defineMineral({
   "id": "albite",
   "name": "Albite",
   "formula": "NaAlSi₃O₈",
-  "dataRevision": "sr2-1",
+  "dataRevision": "sr7-1",
   "crystallography": {
     "crystalSystem": "triclinic",
     "pointGroup": "-1",
@@ -1426,7 +1516,14 @@ export const ALBITE = defineMineral({
         {
           "id": "cod-2107372"
         }
-      ]
+      ],
+      "preferredView": {
+        "cameraDirection": [
+          1.4,
+          -1.8,
+          1.2
+        ]
+      }
     },
     {
       "id": "prismatic",
@@ -1482,7 +1579,14 @@ export const ALBITE = defineMineral({
         {
           "id": "cod-2107372"
         }
-      ]
+      ],
+      "preferredView": {
+        "cameraDirection": [
+          1.5,
+          -2,
+          0.9
+        ]
+      }
     }
   ]
 });
@@ -1491,7 +1595,7 @@ export const GYPSUM = defineMineral({
   "id": "gypsum",
   "name": "Gypsum",
   "formula": "CaSO₄·2H₂O",
-  "dataRevision": "m8-2",
+  "dataRevision": "sr7-1",
   "crystallography": {
     "crystalSystem": "monoclinic",
     "pointGroup": "2/m",
@@ -1512,6 +1616,12 @@ export const GYPSUM = defineMineral({
       "title": "Cole and Lancucki (1974), A refinement of the crystal structure of gypsum CaSO4.2H2O, Acta Crystallographica B30, 921-929",
       "url": "https://www.crystallography.net/cod/5000039.html",
       "notes": "COD CC0; space group I2/a (No. 15), unique axis b. Unit cell a=5.67, b=15.201, c=6.533 Å, beta=118.6 deg."
+    },
+    {
+      "id": "handbook-gypsum-v1",
+      "title": "Mineral Data Publishing, Gypsum, version 1",
+      "url": "https://www.handbookofmineralogy.org/pdfs/gypsum.pdf",
+      "notes": "Publicly readable; accessed 2026-09-19. Used as a factual citation only; luster is subvitreous, with pearly luster limited to {010} cleavage and silky luster to fibrous material."
     }
   ],
   "provenance": [
@@ -1533,15 +1643,25 @@ export const GYPSUM = defineMineral({
     },
     {
       "coverage": [
+        "appearance.*.luster"
+      ],
+      "referenceIds": [
+        "handbook-gypsum-v1"
+      ],
+      "status": "reported"
+    },
+    {
+      "coverage": [
         "appearance"
       ],
       "status": "curated",
-      "derivation": "Appearance presets use curated visualization parameters selected to represent common gypsum varieties. Values are not measured optical constants."
+      "derivation": "Appearance presets use curated visualization parameters selected to represent common gypsum varieties. The supported vitreous category normalizes the reported subvitreous whole-crystal luster; pearly {010} cleavage and silky fibrous material are not transferred to whole-crystal presets. Values are not measured optical constants."
     }
   ],
   "appearance": [
     {
       "id": "colorless",
+      "luster": "vitreous",
       "name": "Colorless",
       "baseColor": "#eef0f2",
       "roughness": 0.1,
@@ -1553,6 +1673,7 @@ export const GYPSUM = defineMineral({
     },
     {
       "id": "selenite",
+      "luster": "vitreous",
       "name": "Selenite",
       "baseColor": "#f0f0e0",
       "roughness": 0.08,
@@ -1607,7 +1728,14 @@ export const GYPSUM = defineMineral({
         {
           "id": "cod-5000039"
         }
-      ]
+      ],
+      "preferredView": {
+        "cameraDirection": [
+          1.4,
+          -1.7,
+          1.2
+        ]
+      }
     },
     {
       "id": "prismatic",
@@ -1664,7 +1792,14 @@ export const GYPSUM = defineMineral({
         {
           "id": "cod-5000039"
         }
-      ]
+      ],
+      "preferredView": {
+        "cameraDirection": [
+          1.5,
+          -2,
+          0.75
+        ]
+      }
     }
   ]
 });
@@ -1673,7 +1808,7 @@ export const FORSTERITE = defineMineral({
   "id": "forsterite",
   "name": "Forsterite",
   "formula": "Mg₂SiO₄",
-  "dataRevision": "sr2-1",
+  "dataRevision": "sr7-1",
   "crystallography": {
     "crystalSystem": "orthorhombic",
     "pointGroup": "mmm",
@@ -1806,7 +1941,14 @@ export const FORSTERITE = defineMineral({
         {
           "id": "cod-9000319"
         }
-      ]
+      ],
+      "preferredView": {
+        "cameraDirection": [
+          1.5,
+          -2,
+          1.1
+        ]
+      }
     },
     {
       "id": "prismatic",
@@ -1863,7 +2005,14 @@ export const FORSTERITE = defineMineral({
         {
           "id": "cod-9000319"
         }
-      ]
+      ],
+      "preferredView": {
+        "cameraDirection": [
+          1.4,
+          -2,
+          0.8
+        ]
+      }
     }
   ]
 });
@@ -1872,7 +2021,7 @@ export const BERYL = defineMineral({
   "id": "beryl",
   "name": "Beryl",
   "formula": "Be₃Al₂Si₆O₁₈",
-  "dataRevision": "sr2-1",
+  "dataRevision": "sr7-1",
   "crystallography": {
     "crystalSystem": "hexagonal",
     "pointGroup": "6/mmm",
@@ -2021,7 +2170,14 @@ export const BERYL = defineMineral({
         {
           "id": "cod-9001018"
         }
-      ]
+      ],
+      "preferredView": {
+        "cameraDirection": [
+          1.5,
+          -2,
+          0.8
+        ]
+      }
     },
     {
       "id": "short-prismatic",
@@ -2070,7 +2226,14 @@ export const BERYL = defineMineral({
         {
           "id": "cod-9001018"
         }
-      ]
+      ],
+      "preferredView": {
+        "cameraDirection": [
+          1.5,
+          -2,
+          1.1
+        ]
+      }
     }
   ]
 });

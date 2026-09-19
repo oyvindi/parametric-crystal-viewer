@@ -2,7 +2,7 @@
   "id": "anatase",
   "name": "Anatase",
   "formula": "TiO₂",
-  "dataRevision": "m5-1",
+  "dataRevision": "sr7-2",
   "crystallography": {
     "crystalSystem": "tetragonal",
     "pointGroup": "4/mmm",
@@ -29,6 +29,12 @@
       "title": "Jeantelot et al. (2018), Morphology control of anatase TiO2 for well-defined surface chemistry",
       "url": "https://doi.org/10.1039/C8CP01983E",
       "notes": "CC-BY 3.0; {101}-dominated crystals and {001}-dominated platelets. Idealized endmembers; no growth prediction."
+    },
+    {
+      "id": "handbook-anatase-v1",
+      "title": "Mineral Data Publishing, Anatase, version 1",
+      "url": "https://www.handbookofmineralogy.org/pdfs/anatase.pdf",
+      "notes": "Publicly readable; accessed 2026-09-19. Used as a factual citation only; luster is reported as adamantine to splendent, metallic, with colors including brown, yellow, blue, and nearly colorless."
     }
   ],
   "provenance": [
@@ -59,6 +65,48 @@
       ],
       "status": "curated",
       "derivation": "Named idealized habit presets use documented forms. Development values, disabled forms and preferred views are curated visualization choices, not measured growth or surface-energy parameters."
+    },
+    {
+      "coverage": [
+        "appearance.*.luster"
+      ],
+      "referenceIds": [
+        "handbook-anatase-v1"
+      ],
+      "status": "reported"
+    },
+    {
+      "coverage": [
+        "appearance"
+      ],
+      "status": "curated",
+      "derivation": "Appearance presets use curated visualization parameters for indigo-blue and golden-brown anatase, both colors reported for the mineral. The supported metallic category represents the source's reported luster range, including metallic; it does not assert that every anatase specimen is metallic. Numeric values are not measured optical constants."
+    }
+  ],
+  "appearance": [
+    {
+      "id": "indigo",
+      "luster": "metallic",
+      "name": "Indigo blue",
+      "baseColor": "#244f9e",
+      "roughness": 0.1,
+      "metalness": 0.12,
+      "transmission": 0.3,
+      "ior": 2.52,
+      "absorptionColor": "#12295b",
+      "absorptionDensity": 0.24
+    },
+    {
+      "id": "golden",
+      "luster": "metallic",
+      "name": "Golden brown",
+      "baseColor": "#9b6a31",
+      "roughness": 0.2,
+      "metalness": 0.25,
+      "transmission": 0.2,
+      "ior": 2.52,
+      "absorptionColor": "#6e421c",
+      "absorptionDensity": 0.3
     }
   ],
   "habits": [

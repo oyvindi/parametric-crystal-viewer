@@ -2,7 +2,7 @@
   "id": "forsterite",
   "name": "Forsterite",
   "formula": "Mg₂SiO₄",
-  "dataRevision": "sr2-1",
+  "dataRevision": "sr7-1",
   "crystallography": {
     "crystalSystem": "orthorhombic",
     "pointGroup": "mmm",
@@ -135,7 +135,14 @@
         {
           "id": "cod-9000319"
         }
-      ]
+      ],
+      "preferredView": {
+        "cameraDirection": [
+          1.5,
+          -2,
+          1.1
+        ]
+      }
     },
     {
       "id": "prismatic",
@@ -192,7 +199,14 @@
         {
           "id": "cod-9000319"
         }
-      ]
+      ],
+      "preferredView": {
+        "cameraDirection": [
+          1.4,
+          -2,
+          0.8
+        ]
+      }
     }
   ]
 }

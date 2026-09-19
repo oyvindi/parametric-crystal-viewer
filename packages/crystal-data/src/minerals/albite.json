@@ -2,7 +2,7 @@
   "id": "albite",
   "name": "Albite",
   "formula": "NaAlSi₃O₈",
-  "dataRevision": "sr2-1",
+  "dataRevision": "sr7-1",
   "crystallography": {
     "crystalSystem": "triclinic",
     "pointGroup": "-1",
@@ -123,7 +123,14 @@
         {
           "id": "cod-2107372"
         }
-      ]
+      ],
+      "preferredView": {
+        "cameraDirection": [
+          1.4,
+          -1.8,
+          1.2
+        ]
+      }
     },
     {
       "id": "prismatic",
@@ -179,7 +186,14 @@
         {
           "id": "cod-2107372"
         }
-      ]
+      ],
+      "preferredView": {
+        "cameraDirection": [
+          1.5,
+          -2,
+          0.9
+        ]
+      }
     }
   ]
 }

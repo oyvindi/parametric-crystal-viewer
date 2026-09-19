@@ -2,7 +2,7 @@
   "id": "calcite",
   "name": "Calcite",
   "formula": "CaCO₃",
-  "dataRevision": "sr5-1",
+  "dataRevision": "sr7-1",
   "crystallography": {
     "crystalSystem": "trigonal",
     "pointGroup": "-3m",
@@ -68,6 +68,22 @@
     },
     {
       "coverage": [
+        "appearance.*.luster"
+      ],
+      "referenceIds": [
+        "handbook-calcite-v1"
+      ],
+      "status": "reported"
+    },
+    {
+      "coverage": [
+        "appearance"
+      ],
+      "status": "curated",
+      "derivation": "Appearance presets use curated visualization parameters (base color, roughness, metalness, transmission, IOR, absorption color and density) for colorless and yellow calcite. They are not measured optical constants or specimen observations."
+    },
+    {
+      "coverage": [
         "surfaceProfiles"
       ],
       "referenceIds": [
@@ -99,6 +115,32 @@
         }
       },
       "description": "Typical pearly luster on calcite basal {0001} growth faces; cleavage-only appearance is intentionally excluded and this is not specimen-measured."
+    }
+  ],
+  "appearance": [
+    {
+      "id": "colorless",
+      "luster": "vitreous",
+      "name": "Colorless",
+      "baseColor": "#f6f3ea",
+      "roughness": 0.12,
+      "metalness": 0,
+      "transmission": 0.65,
+      "ior": 1.658,
+      "absorptionColor": "#fffaf0",
+      "absorptionDensity": 0
+    },
+    {
+      "id": "yellow",
+      "luster": "vitreous",
+      "name": "Yellow",
+      "baseColor": "#d8bd72",
+      "roughness": 0.16,
+      "metalness": 0,
+      "transmission": 0.5,
+      "ior": 1.658,
+      "absorptionColor": "#b89038",
+      "absorptionDensity": 0.18
     }
   ],
   "habits": [

@@ -26,6 +26,9 @@ const MINERALS_WITH_APPEARANCE: readonly { mineral: typeof FLUORITE; expected: R
     { mineral: ALBITE,    expected: { white: "vitreous" } },
     { mineral: FORSTERITE, expected: { olive: "vitreous", colorless: "vitreous" } },
     { mineral: BERYL,     expected: { emerald: "vitreous", aquamarine: "vitreous", goshenite: "vitreous" } },
+    { mineral: GYPSUM,    expected: { colorless: "vitreous", selenite: "vitreous" } },
+    { mineral: CALCITE,   expected: { colorless: "vitreous", yellow: "vitreous" } },
+    { mineral: ANATASE,   expected: { indigo: "metallic", golden: "metallic" } },
 ];
 
 describe("SR2 luster vocabulary and records", () => {
@@ -43,9 +46,9 @@ describe("SR2 luster vocabulary and records", () => {
         }
     });
 
-    it("does not transfer gypsum cleavage luster to whole-crystal presets", () => {
+    it("does not transfer gypsum's pearly cleavage luster to whole-crystal presets", () => {
         const loaded = loadMineral("gypsum");
-        expect(loaded.appearance!.every((preset) => preset.luster === undefined)).toBe(true);
+        expect(loaded.appearance!.every((preset) => preset.luster === "vitreous")).toBe(true);
     });
 
     it("pyrite presets are metallic", () => {
@@ -65,10 +68,9 @@ describe("SR2 luster vocabulary and records", () => {
         }
     });
 
-    it("minerals without appearance remain valid (calcite, anatase)", () => {
+    it("calcite and anatase appearance presets validate and load", () => {
         for (const source of [CALCITE, ANATASE] as const) {
-            const loaded = loadMineral(source.id);
-            expect(loaded.appearance).toBeUndefined();
+            expect(loadMineral(source.id).appearance).toBeDefined();
             expect(validateMineral(source).ok).toBe(true);
         }
     });

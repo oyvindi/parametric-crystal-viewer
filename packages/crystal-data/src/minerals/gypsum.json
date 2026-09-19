@@ -2,7 +2,7 @@
   "id": "gypsum",
   "name": "Gypsum",
   "formula": "CaSO₄·2H₂O",
-  "dataRevision": "m8-2",
+  "dataRevision": "sr7-1",
   "crystallography": {
     "crystalSystem": "monoclinic",
     "pointGroup": "2/m",
@@ -23,6 +23,12 @@
       "title": "Cole and Lancucki (1974), A refinement of the crystal structure of gypsum CaSO4.2H2O, Acta Crystallographica B30, 921-929",
       "url": "https://www.crystallography.net/cod/5000039.html",
       "notes": "COD CC0; space group I2/a (No. 15), unique axis b. Unit cell a=5.67, b=15.201, c=6.533 Å, beta=118.6 deg."
+    },
+    {
+      "id": "handbook-gypsum-v1",
+      "title": "Mineral Data Publishing, Gypsum, version 1",
+      "url": "https://www.handbookofmineralogy.org/pdfs/gypsum.pdf",
+      "notes": "Publicly readable; accessed 2026-09-19. Used as a factual citation only; luster is subvitreous, with pearly luster limited to {010} cleavage and silky luster to fibrous material."
     }
   ],
   "provenance": [
@@ -44,15 +50,25 @@
     },
     {
       "coverage": [
+        "appearance.*.luster"
+      ],
+      "referenceIds": [
+        "handbook-gypsum-v1"
+      ],
+      "status": "reported"
+    },
+    {
+      "coverage": [
         "appearance"
       ],
       "status": "curated",
-      "derivation": "Appearance presets use curated visualization parameters selected to represent common gypsum varieties. Values are not measured optical constants."
+      "derivation": "Appearance presets use curated visualization parameters selected to represent common gypsum varieties. The supported vitreous category normalizes the reported subvitreous whole-crystal luster; pearly {010} cleavage and silky fibrous material are not transferred to whole-crystal presets. Values are not measured optical constants."
     }
   ],
   "appearance": [
     {
       "id": "colorless",
+      "luster": "vitreous",
       "name": "Colorless",
       "baseColor": "#eef0f2",
       "roughness": 0.1,
@@ -64,6 +80,7 @@
     },
     {
       "id": "selenite",
+      "luster": "vitreous",
       "name": "Selenite",
       "baseColor": "#f0f0e0",
       "roughness": 0.08,
@@ -118,7 +135,14 @@
         {
           "id": "cod-5000039"
         }
-      ]
+      ],
+      "preferredView": {
+        "cameraDirection": [
+          1.4,
+          -1.7,
+          1.2
+        ]
+      }
     },
     {
       "id": "prismatic",
@@ -175,7 +199,14 @@
         {
           "id": "cod-5000039"
         }
-      ]
+      ],
+      "preferredView": {
+        "cameraDirection": [
+          1.5,
+          -2,
+          0.75
+        ]
+      }
     }
   ]
 }

@@ -46,10 +46,10 @@ describe("M8 mineral appearance records", () => {
         }
     });
 
-    it("minerals without appearance remain valid (calcite, anatase)", () => {
+    it("calcite and anatase appearance presets validate and load", () => {
         for (const source of [CALCITE, ANATASE] as const) {
             const mineral = loadMineral(source.id);
-            expect(mineral.appearance).toBeUndefined();
+            expect(mineral.appearance).toBeDefined();
             expect(validateMineral(source).ok).toBe(true);
         }
     });
