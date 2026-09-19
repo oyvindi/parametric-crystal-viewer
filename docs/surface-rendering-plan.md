@@ -396,6 +396,13 @@ core mesh and provide explicit provenance, terminology, and a mode/label that ma
 the display approximation clear. Do not use `surfaceProfiles`, normal mapping, or
 the current convex half-space intersection to imitate skeleton quartz.
 
+A user-supplied close-up reviewed on 2026-09-19 illustrates the boundary: its many
+smaller cubic overgrowths have visible edges, occlusion, and silhouette changes. Treat
+such "child crystal" growth as a visual-design reference for this display-only layer,
+not as a source-backed mineral-data claim and not as an SR9 growth-step shader target.
+Do not commit or redistribute the reference image without its owner's explicit
+licensing decision.
+
 This phase requires a separate architecture and data-model decision covering
 non-convex display geometry, inspection/picking behavior, exports, state, and the
 ambiguous collector terminology around skeleton, hopper, window, and fenster quartz.
