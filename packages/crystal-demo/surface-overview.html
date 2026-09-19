@@ -27,6 +27,17 @@
   .profile strong { display: block; font-size: .9rem; }
   .profile code { color: #9dd5ff; font-size: .75rem; }
   .profile p { margin: 8px 0 0; color: #c4c9cf; font-size: .8rem; line-height: 1.4; }
+  .claim { margin: 12px 0; padding: 12px; border-radius: 5px; background: #282c31; border: 1px solid #4b5159; }
+  .claim strong { display: block; font-size: .88rem; }
+  .claim code { color: #9dd5ff; font-size: .75rem; }
+  .claim p { margin: 8px 0 0; color: #c4c9cf; font-size: .8rem; line-height: 1.4; }
+  .claim-meta { margin-top: 8px; color: #aeb6c0; font-size: .74rem; line-height: 1.45; }
+  .claim-meta a { color: #9dd5ff; }
+  .claim-status { display: inline-block; margin-top: 8px; padding: 2px 6px; border-radius: 3px; font-size: .72rem; font-weight: 600; text-transform: uppercase; letter-spacing: .03em; }
+  .claim-status.renderer-eligible { color: #b7edc3; background: #294735; }
+  .claim-status.candidate { color: #f3d18a; background: #514328; }
+  .claim-status.blocked, .claim-status.rejected { color: #ffbbb8; background: #512f31; }
+  .claim-status.descriptive-only { color: #b9d8ef; background: #2d4252; }
   .match { color: #9fe0aa; font-size: .8rem; margin-top: 8px; }
   .inactive { color: #f0c978; }
   .none { color: #aeb6c0; font-size: .82rem; line-height: 1.45; }
@@ -67,6 +78,9 @@
   <h2>Effective surface profiles</h2>
   <div id="profiles"></div>
   <p class="note">Only stable controls are exposed: enable/disable, overall strength, and effective profile information (id, kind, claim, description, matched faces). No seeds, frequencies, amplitudes, or shader uniforms are presented as measurements. Profiles describe documented-typical growth-face features, not measurements of this displayed specimen.</p>
+  <h2>Documented appearance observations</h2>
+  <div id="appearance-claims"></div>
+  <p class="note">These source-backed observations describe typical mineral appearance. Their status is not a rendering control: only an active reviewed surface profile changes the image above.</p>
 </aside>
 <div class="hint">Drag either crystal — rotation is mirrored on both sides</div>
 
@@ -85,6 +99,7 @@ const strengthInput = document.getElementById("strength");
 const strengthValue = document.getElementById("strength-value");
 const onDescription = document.getElementById("on-description");
 const profilesEl = document.getElementById("profiles");
+const appearanceClaimsEl = document.getElementById("appearance-claims");
 
 const REVIEWED = new Map([
   ["quartz", { id: "quartz.m-prism-striations", label: "Quartz — prism striations", focus: "Striations appear on prism m faces only, perpendicular to c, and stay crystal-local under rotation. Compare off vs enabled." }],
@@ -136,6 +151,73 @@ function renderProfiles(id) {
   }
 }
 
+function formatClaimLabel(value) {
+  return value.replaceAll("-", " ").replace(/\b\w/g, (letter) => letter.toUpperCase());
+}
+
+function claimReferenceIds(mineral, index) {
+  const path = `appearanceClaims.${index}`;
+  return [...new Set(mineral.provenance
+    .filter((entry) => entry.coverage.some((coverage) => coverage === "appearanceClaims" || coverage === path || coverage === "appearanceClaims.*"))
+    .flatMap((entry) => entry.referenceIds ?? []))];
+}
+
+function appendClaimSources(meta, mineral, index) {
+  const sourceIds = claimReferenceIds(mineral, index);
+  const references = sourceIds
+    .map((sourceId) => mineral.references.find((reference) => reference.id === sourceId))
+    .filter(Boolean);
+  if (!references.length) return;
+  meta.append(" · Sources: ");
+  references.forEach((reference, referenceIndex) => {
+    if (referenceIndex) meta.append(", ");
+    if (!reference.url) {
+      meta.append(reference.id);
+      return;
+    }
+    const link = document.createElement("a");
+    link.href = reference.url;
+    link.target = "_blank";
+    link.rel = "noreferrer";
+    link.title = reference.title ?? reference.id;
+    link.textContent = reference.id;
+    meta.append(link);
+  });
+}
+
+function renderAppearanceClaims(id) {
+  appearanceClaimsEl.replaceChildren();
+  const mineral = getMineral(id);
+  const claims = mineral.appearanceClaims ?? [];
+  if (!claims.length) {
+    const note = document.createElement("p");
+    note.className = "none";
+    note.textContent = "No documented appearance observations are recorded for this mineral.";
+    appearanceClaimsEl.append(note);
+    return;
+  }
+  claims.forEach((claim, index) => {
+    const card = document.createElement("section");
+    card.className = "claim";
+    const title = document.createElement("strong");
+    title.textContent = formatClaimLabel(claim.property);
+    const claimId = document.createElement("code");
+    claimId.textContent = claim.id;
+    const description = document.createElement("p");
+    description.textContent = claim.description;
+    const status = document.createElement("span");
+    status.className = `claim-status ${claim.disposition}`;
+    status.textContent = formatClaimLabel(claim.disposition);
+    const meta = document.createElement("div");
+    meta.className = "claim-meta";
+    meta.append(`Origin: ${formatClaimLabel(claim.surfaceOrigin)}${claim.typicality ? ` · Typicality: ${claim.typicality}` : ""}`);
+    appendClaimSources(meta, mineral, index);
+    if (claim.dispositionReason) meta.append(` · ${claim.dispositionReason}`);
+    card.append(title, claimId, description, status, meta);
+    appearanceClaimsEl.append(card);
+  });
+}
+
 async function load(id) {
   await Promise.all([offViewer.loadMineral(id), onViewer.loadMineral(id)]);
   offViewer.setSurfaceDetail(false, strength());
@@ -143,6 +225,7 @@ async function load(id) {
   offViewer.resetCamera();
   onViewer.resetCamera();
   renderProfiles(id);
+  renderAppearanceClaims(id);
 }
 
 function applyDetail() {
