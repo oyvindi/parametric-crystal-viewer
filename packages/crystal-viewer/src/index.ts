@@ -1,13 +1,13 @@
-import { Scene, PerspectiveCamera, WebGLRenderer, MeshPhysicalMaterial, Mesh, MeshBasicMaterial, Color, DirectionalLight, AmbientLight, Group, DoubleSide, Raycaster, Vector2, Vector3, Sprite, SpriteMaterial, CanvasTexture, BufferGeometry, Float32BufferAttribute, LineSegments, LineBasicMaterial, PMREMGenerator, EquirectangularReflectionMapping, AgXToneMapping, ACESFilmicToneMapping, NoToneMapping, type Texture, type WebGLRenderTarget } from "three";
+import { Scene, PerspectiveCamera, WebGLRenderer, MeshPhysicalMaterial, Mesh, MeshBasicMaterial, Color, DirectionalLight, AmbientLight, Group, DoubleSide, FrontSide, Raycaster, Vector2, Vector3, Sprite, SpriteMaterial, CanvasTexture, BufferGeometry, Float32BufferAttribute, LineSegments, LineBasicMaterial, PMREMGenerator, EquirectangularReflectionMapping, AgXToneMapping, ACESFilmicToneMapping, NoToneMapping, type Texture, type WebGLRenderTarget } from "three";
 import { HDRLoader } from "three/addons/loaders/HDRLoader.js";
 import { EXRLoader } from "three/addons/loaders/EXRLoader.js";
 import { createLattice, expandAtomicStructure, generateCrystal, generateCrystalFromFaces, inferBonds, validatePeriodicBonds, type Diagnostic, type GeometryResult, type CrystalGeometry, type CrystalFace, type ExpandedAtom, type Lattice, type PeriodicBond } from "@crystal/core";
 import { loadMineral as loadMineralData, createCrystalInput, resolveHabit, resolveCrystallography, importCif, getMineral, validateMineral, MineralDataError, type Mineral, type MineralCrystallography, type StructuralDefinition } from "@crystal/data";
-import { createFaceLocalGeometry, createAtomicStructure, atomicBounds, createCrystalMaterial, applyAppearance, resolveAppearance, APPEARANCE_FIELDS, type AppearanceParams, type AppearanceField, type ResolvedAppearance, type LusterCategory } from "@crystal/three";
+import { createFaceLocalGeometry, updateFaceLocalAttributes, createAtomicStructure, atomicBounds, createCrystalMaterial, applyAppearance, applySurfaceDetail, updateSurfaceDetailStrength, resolveAppearance, APPEARANCE_FIELDS, type AppearanceParams, type AppearanceField, type ResolvedAppearance, type LusterCategory } from "@crystal/three";
 import { cameraBasis } from "./camera.js";
-import { STATE_VERSION, validateStateShape, type ViewerState, type ViewMode, type FormState, type MineralRefState, type AppearanceState, type AppearanceOverride } from "./state.js";
+import { STATE_VERSION, validateStateShape, type ViewerState, type ViewMode, type FormState, type MineralRefState, type AppearanceState, type AppearanceOverride, type SurfaceDetailState } from "./state.js";
 
-export type { ViewerState, ViewMode, AppearanceState, AppearanceOverride } from "./state.js";
+export type { ViewerState, ViewMode, AppearanceState, AppearanceOverride, SurfaceDetailState } from "./state.js";
 export { STATE_VERSION } from "./state.js";
 export { listMinerals, getMineral } from "@crystal/data";
 export type { Mineral } from "@crystal/data";
@@ -168,6 +168,7 @@ export class CrystalViewer extends EventTarget {
     private showWireframe = false;
     private appearanceId: string | undefined;
     private appearanceOverrides: Partial<AppearanceParams> = {};
+    private surfaceDetail: SurfaceDetailState = { enabled: false, strength: 0.35 };
     private importDiagnostics: readonly Diagnostic[] = [];
     private explicitFaceGeometry = false;
     private environmentSource: Texture | null = null;
@@ -599,8 +600,29 @@ export class CrystalViewer extends EventTarget {
     private applyAppearanceToMesh(): void {
         if (this.mesh) {
             applyAppearance(this.mesh.material, this.effectiveAppearance());
+            if (this.currentGeometry) updateFaceLocalAttributes(this.mesh.geometry, this.currentGeometry, [], [1, 0, 0], this.surfaceSeedKey());
             this.renderOnce();
         }
+    }
+
+    private surfaceSeedKey(): string {
+        return `${this.mineral?.id ?? this.structure?.id ?? "imported"}|${this.habitId ?? "default"}|${this.appearanceId ?? "default"}`;
+    }
+
+    /** Controls generic artistic microvariation; strength is bounded to [0, 1]. */
+    setSurfaceDetail(enabled: boolean, strength = this.surfaceDetail.strength): void {
+        this.assertNotDisposed();
+        if (typeof enabled !== "boolean" || !Number.isFinite(strength) || strength < 0 || strength > 1) {
+            throw new ViewerOperationError([{ code: "viewer.request.invalid-surface-detail", severity: "error", message: "Surface detail requires a boolean enabled value and strength in [0, 1]." }]);
+        }
+        this.surfaceDetail = { enabled, strength };
+        if (this.mesh) updateSurfaceDetailStrength(this.mesh.material, enabled ? strength : 0);
+        this.renderOnce();
+        this.dispatchEvent(new CustomEvent("surface-detail-changed", { detail: this.getSurfaceDetail() }));
+    }
+
+    getSurfaceDetail(): SurfaceDetailState {
+        return { ...this.surfaceDetail };
     }
 
     // --- Atomic structure view (M6) ---
@@ -863,6 +885,7 @@ export class CrystalViewer extends EventTarget {
                     ...(Object.keys(this.appearanceOverrides).length > 0 ? { overrides: this.appearanceOverrides } : {}),
                 },
             } : {}),
+            surfaceDetail: { ...this.surfaceDetail },
             display: {
                 axes: this.showAxes,
                 labels: this.showLabels,
@@ -986,6 +1009,7 @@ export class CrystalViewer extends EventTarget {
             this.morphologyScale = s.morphologyScale;
             this.appearanceId = s.appearance?.id ?? mineral.appearance?.[0]?.id;
             this.appearanceOverrides = { ...(s.appearance?.overrides ?? {}) };
+            this.surfaceDetail = s.surfaceDetail ? { ...s.surfaceDetail } : { enabled: false, strength: 0.35 };
             this.needsInitialFrame = false; // restored camera takes precedence over preferred view
             if (!sameMineral) {
                 this.clearMesh();
@@ -1004,6 +1028,7 @@ export class CrystalViewer extends EventTarget {
             this.morphologyScale = undefined;
             this.appearanceId = undefined;
             this.appearanceOverrides = {};
+            this.surfaceDetail = s.surfaceDetail ? { ...s.surfaceDetail } : { enabled: false, strength: 0.35 };
             this.clearMesh();
             this.clearLabels();
             this.lastValidGeometry = null;
@@ -1371,7 +1396,8 @@ export class CrystalViewer extends EventTarget {
     private updateMesh(result: Extract<GeometryResult, { status: "valid" }>): void {
         this.clearMesh();
         this.clearLabels();
-        const { buffer, triangleFaces } = createFaceLocalGeometry(result.geometry);
+        const seedKey = this.surfaceSeedKey();
+        const { buffer, triangleFaces } = createFaceLocalGeometry(result.geometry, [], [1, 0, 0], seedKey);
         this.triangleFaces = triangleFaces;
         buffer.center();
         const material = createCrystalMaterial(this.effectiveAppearance(), {
@@ -1379,6 +1405,7 @@ export class CrystalViewer extends EventTarget {
             flatShading: true,
             wireframe: this.showWireframe,
         });
+        applySurfaceDetail(material, { strength: this.surfaceDetail.enabled ? this.surfaceDetail.strength : 0 });
         // Volumetric absorption scales with the displayed crystal depth.
         const { min, max } = result.geometry.bounds;
         material.thickness = Math.max(max[0] - min[0], max[1] - min[1], max[2] - min[2]) || 1;
@@ -1430,7 +1457,10 @@ export class CrystalViewer extends EventTarget {
         geo.setIndex(highlightIndices);
         const material = new MeshBasicMaterial({
             color: 0xffff00,
-            side: DoubleSide,
+            side: FrontSide,
+            transparent: true,
+            opacity: 0.24,
+            depthWrite: false,
             polygonOffset: true,
             polygonOffsetFactor: -1,
             polygonOffsetUnits: -1,

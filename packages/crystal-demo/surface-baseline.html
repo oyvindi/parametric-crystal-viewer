@@ -47,6 +47,7 @@ viewer.setEnvironmentBackgroundZoom(1);
 viewer.setToneMapping("agx");
 viewer.setExposure(1);
 await viewer.loadMineral(mineralId);
+if (params.has("surfaceDetail")) viewer.setSurfaceDetail(true, Number(params.get("surfaceDetail")));
 viewer.resetCamera();
 
 const mineral = getMineral(mineralId);
@@ -54,7 +55,7 @@ document.getElementById("name").textContent = mineral.name;
 document.getElementById("details").textContent =
   `${viewer.getHabitId()} · ${viewer.getAppearanceId() ?? "default material"}`;
 
-const result = { mineralId, habitId: viewer.getHabitId(), appearanceId: viewer.getAppearanceId() };
+const result = { mineralId, habitId: viewer.getHabitId(), appearanceId: viewer.getAppearanceId(), surfaceDetail: viewer.getSurfaceDetail() };
 if (params.get("timing") === "1") {
   const samples = [];
   let sampling = true;

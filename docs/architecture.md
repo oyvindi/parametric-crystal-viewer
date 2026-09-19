@@ -192,11 +192,18 @@ Core faces are ordered convex polygon loops. `crystal-three` triangulates them d
 
 For face-local surface rendering, `crystal-three` expands those triangles into render-only
 vertices and carries a profile ID, crystal-local tangent, and centered face-local
-coordinates as GPU attributes. This does not alter core vertices, normals, bounds, or
+coordinates as GPU attributes. SR4 adds one exact `Float32` stable-seed attribute per
+face. This does not alter core vertices, normals, bounds, or
 contributors. Profile zero is the unmatched fallback, including for imported measured
 faces without a reviewed rule. Selector precedence, tangent fallback, attribute limits,
 and the single-material choice are recorded in
 [ADR 0006](decisions/0006-face-local-surface-encoding.md).
+
+Generic microvariation is a shader-only artistic layer on the single physical material.
+It uses face-local coordinates and stable state-derived seeds to perturb shading normals
+and roughness without displacement. Its edge response is grazing-angle shading and does
+not change the scientific silhouette. The shader and additive state decision is recorded
+in [ADR 0007](decisions/0007-generic-surface-microvariation.md).
 
 ```ts
 function createThreeGeometry(

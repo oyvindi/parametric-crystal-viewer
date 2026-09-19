@@ -79,7 +79,7 @@ describe("SR3 face-local tangent and GPU encoding", () => {
         expect(local.buffer.getAttribute("surfaceProfile").count).toBe(local.buffer.getAttribute("position").count);
         expect(local.buffer.getAttribute("surfaceTangent").itemSize).toBe(3);
         expect(local.buffer.getAttribute("surfaceCoord").itemSize).toBe(2);
-        expect(FACE_LOCAL_VERTEX_ATTRIBUTE_LOCATIONS).toBe(4);
+        expect(FACE_LOCAL_VERTEX_ATTRIBUTE_LOCATIONS).toBe(5);
         expect(local.triangleFaces).toHaveLength(12);
         for (let triangle = 0; triangle < local.triangleFaces.length; triangle++) {
             const profile = local.buffer.getAttribute("surfaceProfile");

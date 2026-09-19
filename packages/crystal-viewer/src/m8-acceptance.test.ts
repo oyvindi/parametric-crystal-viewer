@@ -105,6 +105,44 @@ describe("M8 appearance parameter mapping", () => {
     });
 });
 
+describe("SR4 generic surface detail", () => {
+    it("defaults off, enforces the strength limit, and leaves geometry identity intact", async () => {
+        const viewer = await loaded("quartz");
+        const mesh = (viewer as unknown as { mesh: Mesh }).mesh;
+        const geometry = mesh.geometry;
+        const position = geometry.getAttribute("position");
+        expect(viewer.getSurfaceDetail()).toEqual({ enabled: false, strength: 0.35 });
+        viewer.setSurfaceDetail(true, 0.6);
+        expect(viewer.getSurfaceDetail()).toEqual({ enabled: true, strength: 0.6 });
+        expect(mesh.geometry).toBe(geometry);
+        expect(mesh.geometry.getAttribute("position")).toBe(position);
+        expect(() => viewer.setSurfaceDetail(true, 1.01)).toThrow(ViewerOperationError);
+    });
+
+    it("round-trips enabled detail and restores legacy version-1 state as off", async () => {
+        const viewer = await loaded("pyrite");
+        viewer.setSurfaceDetail(true, 0.72);
+        const saved = viewer.getState();
+        expect(saved.surfaceDetail).toEqual({ enabled: true, strength: 0.72 });
+        const fresh = await loaded("quartz");
+        fresh.setState(saved);
+        expect(fresh.getSurfaceDetail()).toEqual({ enabled: true, strength: 0.72 });
+
+        const legacy = { ...saved } as Record<string, unknown>;
+        delete legacy["surfaceDetail"];
+        fresh.setState(legacy);
+        expect(fresh.getSurfaceDetail()).toEqual({ enabled: false, strength: 0.35 });
+    });
+
+    it("rejects malformed detail state transactionally", async () => {
+        const viewer = await loaded("quartz");
+        viewer.setSurfaceDetail(true, 0.4);
+        const before = viewer.getState();
+        expect(() => viewer.setState({ ...before, surfaceDetail: { enabled: true, strength: 2 } })).toThrow(ViewerOperationError);
+        expect(viewer.getState()).toEqual(before);
+    });
+});
+
 describe("M8 appearance API and validation", () => {
     it("auto-selects the first appearance preset on load", async () => {
         const viewer = await loaded("quartz");

@@ -44,6 +44,24 @@ Each preset may carry a categorical `luster` classification (`vitreous`, `pearly
 
 The API exposes `getAppearances`, `getAppearanceId`, `getAppearance`, `setAppearance`, and `setAppearanceField`. State serialization covers the selected appearance and user overrides under [Persistent State Coverage](#persistent-state-coverage). Changes emit `appearance-changed` so host controls stay synchronized, including after programmatic changes and state restoration.
 
+### Generic Surface Detail
+
+`getSurfaceDetail` and `setSurfaceDetail(enabled, strength)` control an optional generic
+artistic naturalization layer. Strength is constrained to `[0, 1]`; the default is off
+with a retained default strength of `0.35`. The effect adds low-amplitude normal and
+roughness variation plus restrained grazing-angle edge response. It does not displace
+geometry and must not be presented as a measured or mineral-specific feature. Changes
+emit `surface-detail-changed`.
+
+The enabled flag and strength are serialized as the optional `surfaceDetail` member of
+version-1 state. States written before SR4 omit the member and restore with detail off.
+The procedural realization is derived from stable mineral, habit, appearance, and face
+identifiers; camera and model motion do not reseed it.
+
+Face selection uses a translucent front-side tint that does not write depth. The
+highlight preserves the underlying material's depth cues—particularly for transmissive
+crystals—and never changes the camera, projection, geometry, or picked contributor.
+
 ---
 
 ## Viewer API

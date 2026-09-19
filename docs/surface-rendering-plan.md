@@ -172,6 +172,8 @@ Acceptance:
 
 ### SR4 — Generic Microvariation and Edge Response
 
+**Status:** complete. See the [SR4 acceptance audit](sr4-acceptance.md).
+
 Add optional, low-amplitude procedural normal and roughness variation. Seed it from
 stable mineral, habit, appearance, and face identifiers so state restoration and image
 tests are deterministic. Add a screen- or object-space edge highlight/bevel
@@ -264,6 +266,21 @@ At minimum, test:
 
 Pixel comparisons are supporting evidence, not the sole correctness test. Scientific
 direction and face selection require numeric tests independent of raster output.
+
+### Human Visual Review Workflow
+
+Prefer reproducible browser demos and targeted review directions over loading captured
+images into the implementation session. When a visual decision needs human judgment,
+provide the reviewer with the exact demo URL or command, fixed scene settings, and a
+short checklist of what to compare. The reviewer records confirmation or requested
+changes; that confirmation becomes the primary visual-review evidence.
+
+Use automated capture and byte or pixel comparisons for determinism and regression
+checks without inspecting the image contents conversationally. Load images for direct
+assistant inspection only when the reviewer requests it, when an automated check reports
+an unexplained difference, or when reproducing a visual defect requires it. This keeps
+visual verification efficient while preserving the automated and scientific acceptance
+gates.
 
 ## Decisions Deferred
 

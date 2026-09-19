@@ -82,6 +82,12 @@ export interface AppearanceState {
     readonly overrides?: AppearanceOverride;
 }
 
+/** Generic artistic surface detail. Legacy version-1 states omit it and restore off. */
+export interface SurfaceDetailState {
+    readonly enabled: boolean;
+    readonly strength: number;
+}
+
 export interface ViewerState {
     readonly version: 1;
     readonly mineral?: MineralRefState;
@@ -89,6 +95,7 @@ export interface ViewerState {
     readonly forms: Readonly<Record<string, FormState>>;
     readonly morphologyScale?: number;
     readonly appearance?: AppearanceState;
+    readonly surfaceDetail?: SurfaceDetailState;
     readonly display: DisplayState;
     readonly camera: CameraState;
     readonly atomic: AtomicState;
@@ -181,6 +188,18 @@ export function validateStateShape(input: unknown): { ok: true; value: ViewerSta
                         if (overrides[key] !== undefined && !isNumber(overrides[key])) diagnostics.push(diag("viewer.state.malformed", `appearance.overrides.${key} must be a number.`, `/appearance/overrides/${key}`));
                     }
                 }
+            }
+        }
+    }
+
+    const surfaceDetail = input["surfaceDetail"];
+    if (surfaceDetail !== undefined) {
+        if (!isObject(surfaceDetail)) {
+            diagnostics.push(diag("viewer.state.malformed", "surfaceDetail must be an object.", "/surfaceDetail"));
+        } else {
+            if (!isBool(surfaceDetail["enabled"])) diagnostics.push(diag("viewer.state.malformed", "surfaceDetail.enabled must be a boolean.", "/surfaceDetail/enabled"));
+            if (!isNumber(surfaceDetail["strength"]) || (surfaceDetail["strength"] as number) < 0 || (surfaceDetail["strength"] as number) > 1) {
+                diagnostics.push(diag("viewer.state.malformed", "surfaceDetail.strength must be a finite number in [0, 1].", "/surfaceDetail/strength"));
             }
         }
     }

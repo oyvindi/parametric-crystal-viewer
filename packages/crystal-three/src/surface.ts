@@ -1,5 +1,5 @@
 import type { CrystalFace, CrystalGeometry, FaceContributor, MillerIndices } from "@crystal/core";
-import { BufferGeometry, Float32BufferAttribute, ShaderMaterial } from "three";
+import { BufferGeometry, Float32BufferAttribute, MeshPhysicalMaterial, ShaderMaterial } from "three";
 
 export type SurfaceVec3 = readonly [number, number, number];
 
@@ -35,6 +35,108 @@ export interface FaceLocalGeometry {
     readonly faces: readonly FaceSurface[];
 }
 
+export interface SurfaceDetailOptions {
+    /** Artistic normal/roughness variation strength, constrained to [0, 1]. */
+    readonly strength: number;
+}
+
+export interface SurfaceDetailUniforms {
+    readonly surfaceDetailStrength: { value: number };
+}
+
+const SURFACE_DETAIL_UNIFORMS = "surfaceDetailUniforms";
+
+/** Stable, platform-independent FNV-1a hash reduced to the exact Float32 integer range. */
+export function stableSurfaceSeed(value: string): number {
+    let hash = 0x811c9dc5;
+    for (let index = 0; index < value.length; index++) {
+        hash ^= value.charCodeAt(index);
+        hash = Math.imul(hash, 0x01000193) >>> 0;
+    }
+    return hash & 0x00ff_ffff;
+}
+
+function validateSurfaceDetailStrength(strength: number): void {
+    if (!Number.isFinite(strength) || strength < 0 || strength > 1) {
+        throw new RangeError("Surface detail strength must be in [0, 1].");
+    }
+}
+
+/**
+ * Adds generic, object-locked microvariation and a restrained grazing-angle edge
+ * response to one physical material. The effect only changes shader normals and
+ * roughness; it never displaces vertices or changes the scientific silhouette.
+ */
+export function applySurfaceDetail(material: MeshPhysicalMaterial, options: SurfaceDetailOptions): void {
+    validateSurfaceDetailStrength(options.strength);
+    const uniforms: SurfaceDetailUniforms = {
+        surfaceDetailStrength: { value: options.strength },
+    };
+    material.userData[SURFACE_DETAIL_UNIFORMS] = uniforms;
+    material.onBeforeCompile = (shader) => {
+        shader.uniforms["surfaceDetailStrength"] = uniforms.surfaceDetailStrength;
+        shader.vertexShader = shader.vertexShader
+            .replace("#include <common>", `#include <common>
+attribute vec2 surfaceCoord;
+attribute float surfaceSeed;
+varying vec2 vSurfaceCoord;
+varying float vSurfaceSeed;`)
+            .replace("#include <begin_vertex>", `#include <begin_vertex>
+vSurfaceCoord = surfaceCoord;
+vSurfaceSeed = surfaceSeed;`);
+        shader.fragmentShader = shader.fragmentShader
+            .replace("#include <common>", `#include <common>
+uniform float surfaceDetailStrength;
+varying vec2 vSurfaceCoord;
+varying float vSurfaceSeed;
+vec2 surfacePhase(float seed) {
+    return vec2(fract(seed * 0.00000113), fract(seed * 0.00000179)) * 6.28318530718;
+}
+float surfaceWave(vec2 p, float seed) {
+    vec2 phase = surfacePhase(seed);
+    return 0.65 * sin(dot(p, vec2(13.1, 17.3)) + phase.x)
+        + 0.35 * sin(dot(p, vec2(-21.7, 11.9)) + phase.y);
+}
+vec2 surfaceWaveGradient(vec2 p, float seed) {
+    vec2 phase = surfacePhase(seed);
+    float first = 0.65 * cos(dot(p, vec2(13.1, 17.3)) + phase.x);
+    float second = 0.35 * cos(dot(p, vec2(-21.7, 11.9)) + phase.y);
+    return first * vec2(13.1, 17.3) + second * vec2(-21.7, 11.9);
+}`)
+            .replace("#include <normal_fragment_maps>", `#include <normal_fragment_maps>
+if (surfaceDetailStrength > 0.0) {
+    vec3 q0 = dFdx(vViewPosition);
+    vec3 q1 = dFdy(vViewPosition);
+    vec2 st0 = dFdx(vSurfaceCoord);
+    vec2 st1 = dFdy(vSurfaceCoord);
+    vec3 tangent = normalize(q0 * st1.y - q1 * st0.y);
+    vec3 bitangent = normalize(-q0 * st1.x + q1 * st0.x);
+    vec2 slope = surfaceWaveGradient(vSurfaceCoord, vSurfaceSeed);
+    normal = normalize(normal + surfaceDetailStrength * 0.0012 * (slope.x * tangent + slope.y * bitangent));
+}`)
+            .replace("#include <roughnessmap_fragment>", `#include <roughnessmap_fragment>
+if (surfaceDetailStrength > 0.0) {
+    float variation = surfaceWave(vSurfaceCoord, vSurfaceSeed);
+    roughnessFactor = clamp(roughnessFactor + surfaceDetailStrength * 0.08 * variation, 0.04, 1.0);
+}`)
+            .replace("#include <opaque_fragment>", `#include <opaque_fragment>
+if (surfaceDetailStrength > 0.0) {
+    float grazing = pow(1.0 - clamp(abs(dot(normal, normalize(vViewPosition))), 0.0, 1.0), 5.0);
+    outgoingLight += vec3(0.025 * surfaceDetailStrength * grazing);
+}`);
+    };
+    material.customProgramCacheKey = () => "crystal-surface-detail-v1";
+    material.needsUpdate = true;
+}
+
+/** Updates strength without recompilation; the material must already have SR4 detail. */
+export function updateSurfaceDetailStrength(material: MeshPhysicalMaterial, strength: number): void {
+    validateSurfaceDetailStrength(strength);
+    const uniforms = material.userData[SURFACE_DETAIL_UNIFORMS] as SurfaceDetailUniforms | undefined;
+    if (!uniforms) throw new RangeError("Surface detail has not been applied to this material.");
+    uniforms.surfaceDetailStrength.value = strength;
+}
+
 /** Diagnostic-only single material used to verify face profile routing in SR3. */
 export function createSurfaceProfileTestMaterial(): ShaderMaterial {
     return new ShaderMaterial({
@@ -61,8 +163,8 @@ export function createSurfaceProfileTestMaterial(): ShaderMaterial {
 export const FALLBACK_SURFACE_PROFILE = 0;
 /** Float attributes represent all integers exactly up to this supported limit. */
 export const MAX_SURFACE_PROFILE_ID = 65_535;
-/** SR3 uses position plus three face-local attributes: four vertex locations total. */
-export const FACE_LOCAL_VERTEX_ATTRIBUTE_LOCATIONS = 4;
+/** SR4 uses position plus four face-local attributes: five vertex locations total. */
+export const FACE_LOCAL_VERTEX_ATTRIBUTE_LOCATIONS = 5;
 
 const EPSILON = 1e-10;
 const dot = (a: SurfaceVec3, b: SurfaceVec3): number => a[0] * b[0] + a[1] * b[1] + a[2] * b[2];
@@ -169,10 +271,11 @@ export function createFaceLocalGeometry(
     geometry: CrystalGeometry,
     rules: readonly SurfaceRule[] = [],
     defaultReferenceDirection: SurfaceVec3 = [1, 0, 0],
+    seedKey = "",
 ): FaceLocalGeometry {
     validateRules(rules);
     if (!normalize(defaultReferenceDirection)) throw new RangeError("Default surface reference direction must be finite and non-zero.");
-    const positions: number[] = [], tangents: number[] = [], coordinates: number[] = [], profiles: number[] = [];
+    const positions: number[] = [], tangents: number[] = [], coordinates: number[] = [], profiles: number[] = [], seeds: number[] = [];
     const triangleFaces: number[] = [];
     const faces: FaceSurface[] = [];
 
@@ -191,6 +294,11 @@ export function createFaceLocalGeometry(
             ...frame,
         };
         faces.push(surface);
+        const contributorKey = [...face.contributors]
+            .map((contributor) => `${contributor.formId}:${contributor.indices ? indexKey(contributor.indices, false) : "none"}`)
+            .sort()
+            .join("|");
+        const faceSeed = stableSurfaceSeed(`${seedKey}|${faceIndex}|${contributorKey}`);
         for (let offset = 1; offset < face.vertexIndices.length - 1; offset++) {
             for (const vertexIndex of [face.vertexIndices[0]!, face.vertexIndices[offset]!, face.vertexIndices[offset + 1]!]) {
                 const point: SurfaceVec3 = [geometry.vertices[vertexIndex * 3]!, geometry.vertices[vertexIndex * 3 + 1]!, geometry.vertices[vertexIndex * 3 + 2]!];
@@ -199,6 +307,7 @@ export function createFaceLocalGeometry(
                 tangents.push(...frame.tangent);
                 coordinates.push(dot(relative, frame.tangent), dot(relative, frame.bitangent));
                 profiles.push(surface.profileId);
+                seeds.push(faceSeed);
             }
             triangleFaces.push(faceIndex);
         }
@@ -209,6 +318,7 @@ export function createFaceLocalGeometry(
     buffer.setAttribute("surfaceTangent", new Float32BufferAttribute(tangents, 3));
     buffer.setAttribute("surfaceCoord", new Float32BufferAttribute(coordinates, 2));
     buffer.setAttribute("surfaceProfile", new Float32BufferAttribute(profiles, 1));
+    buffer.setAttribute("surfaceSeed", new Float32BufferAttribute(seeds, 1));
     buffer.setIndex(Array.from({ length: positions.length / 3 }, (_, index) => index));
     return { buffer, triangleFaces: new Uint32Array(triangleFaces), faces };
 }
@@ -223,14 +333,15 @@ export function updateFaceLocalAttributes(
     geometry: CrystalGeometry,
     rules: readonly SurfaceRule[] = [],
     defaultReferenceDirection: SurfaceVec3 = [1, 0, 0],
+    seedKey = "",
 ): readonly FaceSurface[] {
-    const resolved = createFaceLocalGeometry(geometry, rules, defaultReferenceDirection);
+    const resolved = createFaceLocalGeometry(geometry, rules, defaultReferenceDirection, seedKey);
     const expected = buffer.getAttribute("position").count;
     if (resolved.buffer.getAttribute("position").count !== expected) {
         resolved.buffer.dispose();
         throw new RangeError("Existing render buffer does not match the supplied core geometry.");
     }
-    for (const name of ["surfaceTangent", "surfaceCoord", "surfaceProfile"] as const) {
+    for (const name of ["surfaceTangent", "surfaceCoord", "surfaceProfile", "surfaceSeed"] as const) {
         buffer.setAttribute(name, resolved.buffer.getAttribute(name));
     }
     resolved.buffer.dispose();

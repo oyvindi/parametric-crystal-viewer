@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { Color, Group, Mesh, PerspectiveCamera, Scene } from "three";
+import { Color, FrontSide, Group, Mesh, MeshBasicMaterial, PerspectiveCamera, Scene } from "three";
 import { FLUORITE, QUARTZ } from "@crystal/data";
 import { CrystalViewer, ViewerOperationError } from "./index.js";
 
@@ -273,5 +273,20 @@ describe("M7 contributor-specific face equivalence", () => {
         viewer.addEventListener("face-selected", selected);
         viewer.highlightEquivalentFaces(sharedFace!.faceIndex, "a-copy");
         expect(selected).toHaveBeenCalledWith(expect.objectContaining({ detail: expect.objectContaining({ equivalentFormId: "a-copy", equivalentFaces: copyEquivalent }) }));
+    });
+});
+
+describe("face selection presentation", () => {
+    it("preserves camera state and uses a depth-safe translucent front-face tint", async () => {
+        const { viewer, camera } = await setup("quartz");
+        const cameraBefore = camera.toJSON();
+        viewer.selectFace(0);
+        const highlight = (viewer as unknown as { highlightMesh: Mesh | null }).highlightMesh!;
+        const material = highlight.material as MeshBasicMaterial;
+        expect(camera.toJSON()).toEqual(cameraBefore);
+        expect(material.side).toBe(FrontSide);
+        expect(material.transparent).toBe(true);
+        expect(material.opacity).toBeLessThan(0.5);
+        expect(material.depthWrite).toBe(false);
     });
 });
