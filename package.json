@@ -19,6 +19,7 @@
     "benchmark:m1": "bash -lc 'node ./node_modules/typescript/bin/tsc --build && node scripts/benchmark-m1.mjs'",
     "baseline:sr0": "bash -lc 'node ./node_modules/typescript/bin/tsc --build && node scripts/capture-surface-baseline.mjs'",
     "baseline:sr1": "bash -lc 'node ./node_modules/typescript/bin/tsc --build && node scripts/capture-surface-baseline.mjs sr1'",
+    "baseline:sr2": "bash -lc 'node ./node_modules/typescript/bin/tsc --build && node scripts/capture-surface-baseline.mjs sr2'",
     "serve": "bash -lc 'node ./node_modules/typescript/bin/tsc --build && node scripts/serve-demo.mjs'"
   },
   "devDependencies": {

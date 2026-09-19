@@ -2,7 +2,7 @@
   "id": "albite",
   "name": "Albite",
   "formula": "NaAlSi₃O₈",
-  "dataRevision": "m8-2",
+  "dataRevision": "sr2-1",
   "crystallography": {
     "crystalSystem": "triclinic",
     "pointGroup": "-1",
@@ -23,6 +23,12 @@
       "title": "Ribbe, Megaw, Ferguson, Taylor and Traill (1969), The albite structures, Acta Crystallographica B25, 1503-1518",
       "url": "https://www.crystallography.net/cod/2107372.html",
       "notes": "COD CC0; low albite, conventional C-centered cell. Space group C-1 (No. 2)."
+    },
+    {
+      "id": "handbook-albite-v1",
+      "title": "Mineral Data Publishing, Albite, version 1",
+      "url": "https://www.handbookofmineralogy.org/pdfs/albite.pdf",
+      "notes": "Publicly readable; accessed 2026-09-19. Used as a factual citation only; the source distinguishes vitreous crystal luster from pearly cleavage surfaces."
     }
   ],
   "provenance": [
@@ -44,6 +50,15 @@
     },
     {
       "coverage": [
+        "appearance.*.luster"
+      ],
+      "referenceIds": [
+        "handbook-albite-v1"
+      ],
+      "status": "reported"
+    },
+    {
+      "coverage": [
         "appearance"
       ],
       "status": "curated",
@@ -53,6 +68,7 @@
   "appearance": [
     {
       "id": "white",
+      "luster": "vitreous",
       "name": "White",
       "baseColor": "#eef0f2",
       "roughness": 0.15,

@@ -38,7 +38,9 @@ redundant form can become shape-affecting after further edits.
 
 ## Appearance Controls
 
-Appearance controls operate on the V1 [mineral appearance](data-model.md#mineral-appearance) fields and never modify scientific geometry. A loaded mineral exposes its curated appearance presets; the host selects one and may override individual fields. Selecting a preset clears prior overrides, mirroring the morphology habit/forms pattern. The effective appearance (preset merged with overrides) is applied to the rendered material in place, without regenerating geometry.
+Appearance controls operate on the [mineral appearance](data-model.md#mineral-appearance) fields and never modify scientific geometry. A loaded mineral exposes its curated appearance presets; the host selects one and may override individual fields. Selecting a preset clears prior overrides, mirroring the morphology habit/forms pattern. The effective appearance (preset merged with overrides) is applied to the rendered material in place, without regenerating geometry.
+
+Each preset may carry a categorical `luster` classification (`vitreous`, `pearly`, `metallic`, or `dull`) that selects a curated renderer profile — primarily sheen for pearly surfaces. `luster` is part of the preset, not a user-overridable field, and does not enter serialized state independently; it is resolved through the selected preset. Explicit numeric overrides (roughness, metalness, transmission, IOR, absorption) always take precedence over the category profile. `getAppearance` reports the effective resolved appearance including the luster category and derived sheen values.
 
 The API exposes `getAppearances`, `getAppearanceId`, `getAppearance`, `setAppearance`, and `setAppearanceField`. State serialization covers the selected appearance and user overrides under [Persistent State Coverage](#persistent-state-coverage). Changes emit `appearance-changed` so host controls stay synchronized, including after programmatic changes and state restoration.
 

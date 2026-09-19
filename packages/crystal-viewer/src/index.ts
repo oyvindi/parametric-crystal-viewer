@@ -3,7 +3,7 @@ import { HDRLoader } from "three/addons/loaders/HDRLoader.js";
 import { EXRLoader } from "three/addons/loaders/EXRLoader.js";
 import { createLattice, expandAtomicStructure, generateCrystal, generateCrystalFromFaces, inferBonds, validatePeriodicBonds, type Diagnostic, type GeometryResult, type CrystalGeometry, type CrystalFace, type ExpandedAtom, type Lattice, type PeriodicBond } from "@crystal/core";
 import { loadMineral as loadMineralData, createCrystalInput, resolveHabit, resolveCrystallography, importCif, getMineral, validateMineral, MineralDataError, type Mineral, type MineralCrystallography, type StructuralDefinition } from "@crystal/data";
-import { createThreeGeometryWithPicking, createAtomicStructure, atomicBounds, createCrystalMaterial, applyAppearance, resolveAppearance, APPEARANCE_FIELDS, type AppearanceParams, type AppearanceField } from "@crystal/three";
+import { createThreeGeometryWithPicking, createAtomicStructure, atomicBounds, createCrystalMaterial, applyAppearance, resolveAppearance, APPEARANCE_FIELDS, type AppearanceParams, type AppearanceField, type ResolvedAppearance, type LusterCategory } from "@crystal/three";
 import { cameraBasis } from "./camera.js";
 import { STATE_VERSION, validateStateShape, type ViewerState, type ViewMode, type FormState, type MineralRefState, type AppearanceState, type AppearanceOverride } from "./state.js";
 
@@ -11,6 +11,7 @@ export type { ViewerState, ViewMode, AppearanceState, AppearanceOverride } from 
 export { STATE_VERSION } from "./state.js";
 export { listMinerals, getMineral } from "@crystal/data";
 export type { Mineral } from "@crystal/data";
+export type { LusterCategory } from "@crystal/three";
 
 export class ViewerOperationError extends Error {
     constructor(readonly diagnostics: readonly Diagnostic[]) {
@@ -52,9 +53,10 @@ export interface VariantInfo {
 export interface AppearanceInfo {
     readonly id: string;
     readonly name: string;
+    readonly luster?: LusterCategory;
 }
 
-export interface AppearanceValues extends Required<AppearanceParams> {}
+export interface AppearanceValues extends ResolvedAppearance {}
 
 /** Display transform used for high-dynamic-range environment lighting. */
 export type ViewerToneMapping = "none" | "agx" | "aces-filmic";
@@ -531,7 +533,7 @@ export class CrystalViewer extends EventTarget {
     /** Lists the loaded mineral's appearance presets. */
     getAppearances(): AppearanceInfo[] {
         if (!this.mineral?.appearance) return [];
-        return this.mineral.appearance.map((a) => ({ id: a.id, name: a.name }));
+        return this.mineral.appearance.map((a) => ({ id: a.id, name: a.name, ...(a.luster ? { luster: a.luster } : {}) }));
     }
 
     /** Returns the selected appearance preset id, or null when none is selected. */
@@ -539,7 +541,8 @@ export class CrystalViewer extends EventTarget {
         return this.appearanceId ?? null;
     }
 
-    /** Returns the effective appearance values (preset merged with user overrides, resolved against defaults). */
+    /** Returns the effective resolved appearance: preset merged with user overrides,
+     * resolved against defaults, including the luster category and derived sheen. */
     getAppearance(): AppearanceValues {
         return resolveAppearance(this.effectiveAppearance());
     }
@@ -587,6 +590,7 @@ export class CrystalViewer extends EventTarget {
                 ...(preset.ior !== undefined ? { ior: preset.ior } : {}),
                 ...(preset.absorptionColor !== undefined ? { absorptionColor: preset.absorptionColor } : {}),
                 ...(preset.absorptionDensity !== undefined ? { absorptionDensity: preset.absorptionDensity } : {}),
+                ...(preset.luster !== undefined ? { luster: preset.luster } : {}),
             }
             : {};
         return { ...base, ...this.appearanceOverrides };

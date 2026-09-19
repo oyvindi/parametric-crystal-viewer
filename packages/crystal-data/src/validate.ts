@@ -1,5 +1,6 @@
 import { validateCrystallography, validateMorphology, type Diagnostic, type Result } from "@crystal/core";
 import type { Mineral, MineralCrystallography, Reference, CrystalFormSetting } from "./types.js";
+import { LUSTER_CATEGORIES } from "./types.js";
 import { unwrapData, type DataDiagnosticCode } from "./diagnostics.js";
 import { validatePreferredView } from "./preferred-view.js";
 
@@ -143,8 +144,11 @@ export function validateMineral(value: unknown): Result<Mineral> {
     }, false);
     v.references(value.references, "/references");
     if (value.appearance !== undefined) v.entries(value.appearance, "/appearance", (ap, path) => {
-        v.keys(ap, ["id", "name", "baseColor", "roughness", "metalness", "transmission", "ior", "absorptionColor", "absorptionDensity"], path);
+        v.keys(ap, ["id", "name", "luster", "baseColor", "roughness", "metalness", "transmission", "ior", "absorptionColor", "absorptionDensity"], path);
         v.string(ap.name, `${path}/name`);
+        if (ap.luster !== undefined) {
+            if (typeof ap.luster !== "string" || !(LUSTER_CATEGORIES as readonly string[]).includes(ap.luster)) v.error(`${path}/luster`, "Unknown luster category.");
+        }
         for (const key of ["baseColor", "absorptionColor"] as const) if (ap[key] !== undefined) v.string(ap[key], `${path}/${key}`);
         for (const key of ["roughness", "metalness", "transmission"] as const) {
             if (ap[key] !== undefined) {
@@ -249,7 +253,7 @@ export function validateMineral(value: unknown): Result<Mineral> {
         for (const key of ["development", ...(form.enabled !== undefined ? ["enabled"] : [])]) requireCoverage(`habits.${i}.forms.${j}.${key}`);
     }));
     mineral.appearance?.forEach((preset, i) => {
-        for (const key of ["baseColor", "roughness", "metalness", "transmission", "ior", "absorptionColor", "absorptionDensity"] as const) {
+        for (const key of ["luster", "baseColor", "roughness", "metalness", "transmission", "ior", "absorptionColor", "absorptionDensity"] as const) {
             if (preset[key] !== undefined) requireCoverage(`appearance.${i}.${key}`);
         }
     });

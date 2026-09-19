@@ -52,16 +52,20 @@ try {
   for (const mineral of minerals) {
     const screenshot = join(output, `${mineral}.png`);
     const url = `http://127.0.0.1:${port}/packages/crystal-demo/surface-baseline.html?mineral=${mineral}`;
+    const timingUrl = `${url}&timing=1`;
     await run(chrome, [
       "--headless=new", "--no-sandbox", "--enable-unsafe-swiftshader",
       "--hide-scrollbars", "--force-device-scale-factor=1", "--window-size=960,720",
       `--screenshot=${screenshot}`, url,
     ], { cwd: root });
-    const { stdout } = await run(chrome, [
-      "--headless=new", "--no-sandbox", "--enable-unsafe-swiftshader",
-      "--virtual-time-budget=2500", "--dump-dom", url,
-    ], { cwd: root });
-    const match = stdout.match(/<output id="surface-baseline-result" hidden="">([^<]+)<\/output>/);
+    let match;
+    for (let attempt = 1; attempt <= 3 && !match; attempt += 1) {
+      const { stdout } = await run(chrome, [
+        "--headless=new", "--no-sandbox", "--enable-unsafe-swiftshader",
+        "--virtual-time-budget=2500", "--dump-dom", timingUrl,
+      ], { cwd: root });
+      match = stdout.match(/<output id="surface-baseline-result" hidden="">([^<]+)<\/output>/);
+    }
     if (!match) throw new Error(`No timing result produced for ${mineral}.`);
     scenes.push(JSON.parse(match[1].replaceAll("&quot;", '"')));
   }

@@ -457,6 +457,8 @@ interface MineralAppearance {
     id: string;
     name: string;
 
+    luster?: "vitreous" | "pearly" | "metallic" | "dull";
+
     baseColor?: string;
 
     roughness?: number;
@@ -475,13 +477,22 @@ interface MineralAppearance {
 }
 ```
 
+`luster` is an optional categorical classification drawn from the controlled vocabulary
+`vitreous`, `pearly`, `metallic`, and `dull`. When absent, the fallback is `vitreous`.
+The classification is a documented mineral property owned by `crystal-data`; the
+numeric renderer mapping (sheen parameters for pearly surfaces) is a curated choice
+centralized in `crystal-three`. Explicit numeric preset fields always take precedence
+over category defaults. `luster` is not a user-overridable field and does not enter
+serialized viewer state independently — it is resolved through the selected appearance
+preset. See the [categorical luster decision](decisions/0005-categorical-luster-pearly-sheen.md).
+
 In V1, `transmission` is the mineral-transparency control and uses a normalized range from `0` (no transmission) to `1` (full transmission). It models light passing through a solid material.
 
 `roughness` and `metalness` also use normalized ranges from `0` to `1`. `ior` must be finite and strictly positive. `absorptionDensity` must be finite and non-negative. Exact defaults are selected during M8 and documented with the implemented material mapping.
 
 `opacity` is deferred beyond V1. Renderer-level fading for interaction or illustrative overlays is not part of the mineral appearance record. Before `opacity` can be used in mineral presets or serialized appearance overrides, define its alpha-compositing behavior and interaction with transmission. The two properties must not be treated as complements.
 
-The implemented V1 material mapping lives in [`crystal-three`](../packages/crystal-three/src/appearance.ts). Appearance fields map to a Three.js `MeshPhysicalMaterial`: `baseColor → color`, `roughness → roughness`, `metalness → metalness`, `transmission → transmission`, `ior → ior`, `absorptionColor → attenuationColor`, and `absorptionDensity → attenuationDistance` as `1 / density` (a density of `0` disables absorption, mapped to `Infinity`). Omitted fields resolve to the V1 defaults: base color `#6fb7d4`, roughness `0.3`, metalness `0.1`, transmission `0`, IOR `1.5`, absorption color `#ffffff`, absorption density `0`. A transmissive material (`transmission > 0`) is marked transparent so the renderer sorts it correctly; the volumetric `thickness` is set from the displayed crystal's bounds so absorption scales with the model.
+The implemented material mapping lives in [`crystal-three`](../packages/crystal-three/src/appearance.ts). Appearance fields map to a Three.js `MeshPhysicalMaterial`: `baseColor → color`, `roughness → roughness`, `metalness → metalness`, `transmission → transmission`, `ior → ior`, `absorptionColor → attenuationColor`, and `absorptionDensity → attenuationDistance` as `1 / density` (a density of `0` disables absorption, mapped to `Infinity`). Omitted fields resolve to the defaults: base color `#6fb7d4`, roughness `0.3`, metalness `0.1`, transmission `0`, IOR `1.5`, absorption color `#ffffff`, absorption density `0`. A transmissive material (`transmission > 0`) is marked transparent so the renderer sorts it correctly; the volumetric `thickness` is set from the displayed crystal's bounds so absorption scales with the model. The `luster` category maps to curated sheen parameters (`sheen`, `sheenColor`, `sheenRoughness`) on the same material; `pearly` enables a non-zero sheen, while `vitreous`, `metallic`, and `dull` keep sheen at zero. Every renderer constant in the luster mapping is identified as curated rather than measured.
 
 Examples for quartz may include:
 

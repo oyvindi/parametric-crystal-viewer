@@ -38,7 +38,8 @@ describe("M8 mineral appearance records", () => {
             // Strip appearance and its provenance coverage; regenerate. Geometry must be identical.
             const stripped = structuredClone(source) as any;
             delete stripped.appearance;
-            stripped.provenance = stripped.provenance.filter((e: { coverage: readonly string[] }) => !e.coverage.includes("appearance"));
+            stripped.provenance = stripped.provenance.filter((e: { coverage: readonly string[] }) =>
+                !e.coverage.some((coverage) => coverage === "appearance" || coverage.startsWith("appearance.")));
             const withoutAppearance = createCrystalInput(loadMineral(stripped));
             expect(generateCrystal(withAppearance.crystallography, withAppearance.morphology))
                 .toEqual(generateCrystal(withoutAppearance.crystallography, withoutAppearance.morphology));

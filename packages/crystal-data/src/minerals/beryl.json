@@ -2,7 +2,7 @@
   "id": "beryl",
   "name": "Beryl",
   "formula": "Be₃Al₂Si₆O₁₈",
-  "dataRevision": "m8-2",
+  "dataRevision": "sr2-1",
   "crystallography": {
     "crystalSystem": "hexagonal",
     "pointGroup": "6/mmm",
@@ -23,6 +23,12 @@
       "title": "Hazen, Au and Finger (1986), High-pressure crystal chemistry of beryl, American Mineralogist 71, 977-984",
       "url": "https://www.crystallography.net/cod/9001018.html",
       "notes": "COD CC0; space group P6/mcc (No. 192). Ambient-pressure sample (0.001 kbar). Unit cell a=9.208, c=9.188 Å."
+    },
+    {
+      "id": "handbook-beryl-v1",
+      "title": "Mineral Data Publishing, Beryl, version 1",
+      "url": "https://www.handbookofmineralogy.org/pdfs/beryl.pdf",
+      "notes": "Publicly readable; accessed 2026-09-19. Used as a factual citation only; the source reports a vitreous-to-resinous luster range. Current presets use the supported vitreous category."
     }
   ],
   "provenance": [
@@ -44,6 +50,15 @@
     },
     {
       "coverage": [
+        "appearance.*.luster"
+      ],
+      "referenceIds": [
+        "handbook-beryl-v1"
+      ],
+      "status": "reported"
+    },
+    {
+      "coverage": [
         "appearance"
       ],
       "status": "curated",
@@ -53,6 +68,7 @@
   "appearance": [
     {
       "id": "emerald",
+      "luster": "vitreous",
       "name": "Emerald",
       "baseColor": "#2d8a4a",
       "roughness": 0.08,
@@ -64,6 +80,7 @@
     },
     {
       "id": "aquamarine",
+      "luster": "vitreous",
       "name": "Aquamarine",
       "baseColor": "#5bb8d4",
       "roughness": 0.06,
@@ -75,6 +92,7 @@
     },
     {
       "id": "goshenite",
+      "luster": "vitreous",
       "name": "Goshenite",
       "baseColor": "#eef0f2",
       "roughness": 0.05,

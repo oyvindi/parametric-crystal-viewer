@@ -6,7 +6,7 @@ export const FLUORITE = defineMineral({
   "id": "fluorite",
   "name": "Fluorite",
   "formula": "CaF₂",
-  "dataRevision": "m8-1",
+  "dataRevision": "sr2-1",
   "crystallography": {
     "crystalSystem": "cubic",
     "pointGroup": "m-3m",
@@ -27,6 +27,12 @@ export const FLUORITE = defineMineral({
       "title": "Materials Project - mp-2741: CaF2 (Cubic, Fm-3m, 225)",
       "url": "https://nextgen.materialsproject.org/materials/mp-2741",
       "notes": "Publicly accessible crystallographic data under CC-BY 4.0. Unit-cell parameter a = 5.463 Å."
+    },
+    {
+      "id": "handbook-fluorite-v1",
+      "title": "Mineral Data Publishing, Fluorite, version 1",
+      "url": "https://www.handbookofmineralogy.org/pdfs/fluorite.pdf",
+      "notes": "Publicly readable; accessed 2026-09-19. Used as a factual citation only; the source describes crystal luster as vitreous."
     }
   ],
   "provenance": [
@@ -53,6 +59,15 @@ export const FLUORITE = defineMineral({
     },
     {
       "coverage": [
+        "appearance.*.luster"
+      ],
+      "referenceIds": [
+        "handbook-fluorite-v1"
+      ],
+      "status": "reported"
+    },
+    {
+      "coverage": [
         "appearance"
       ],
       "status": "curated",
@@ -62,6 +77,7 @@ export const FLUORITE = defineMineral({
   "appearance": [
     {
       "id": "violet",
+      "luster": "vitreous",
       "name": "Violet",
       "baseColor": "#8a5cd4",
       "roughness": 0.08,
@@ -73,6 +89,7 @@ export const FLUORITE = defineMineral({
     },
     {
       "id": "green",
+      "luster": "vitreous",
       "name": "Green",
       "baseColor": "#3cb46a",
       "roughness": 0.1,
@@ -84,6 +101,7 @@ export const FLUORITE = defineMineral({
     },
     {
       "id": "colorless",
+      "luster": "vitreous",
       "name": "Colorless",
       "baseColor": "#eef0f2",
       "roughness": 0.05,
@@ -242,7 +260,7 @@ export const QUARTZ = defineMineral({
   "id": "quartz",
   "name": "Quartz",
   "formula": "SiO₂",
-  "dataRevision": "m8-1",
+  "dataRevision": "sr2-1",
   "crystallography": {
     "crystalSystem": "trigonal",
     "pointGroup": "32",
@@ -319,6 +337,12 @@ export const QUARTZ = defineMineral({
       "title": "Materials Project - mp-6930: SiO2 (Trigonal, P3_221, 154)",
       "url": "https://nextgen.materialsproject.org/materials/mp-6930",
       "notes": "Publicly accessible crystallographic data under CC-BY 4.0. Left-handed α-quartz enantiomorph."
+    },
+    {
+      "id": "handbook-quartz-v1.2",
+      "title": "Mineral Data Publishing, Quartz, version 1.2",
+      "url": "https://www.handbookofmineralogy.org/pdfs/quartz.pdf",
+      "notes": "Publicly readable; accessed 2026-09-19. Used as a factual citation only; the source describes crystal luster as vitreous."
     }
   ],
   "provenance": [
@@ -347,6 +371,15 @@ export const QUARTZ = defineMineral({
     },
     {
       "coverage": [
+        "appearance.*.luster"
+      ],
+      "referenceIds": [
+        "handbook-quartz-v1.2"
+      ],
+      "status": "reported"
+    },
+    {
+      "coverage": [
         "appearance"
       ],
       "status": "curated",
@@ -356,6 +389,7 @@ export const QUARTZ = defineMineral({
   "appearance": [
     {
       "id": "rock-crystal",
+      "luster": "vitreous",
       "name": "Rock crystal",
       "baseColor": "#eef0f2",
       "roughness": 0.05,
@@ -367,6 +401,7 @@ export const QUARTZ = defineMineral({
     },
     {
       "id": "amethyst",
+      "luster": "vitreous",
       "name": "Amethyst",
       "baseColor": "#9b6dd4",
       "roughness": 0.1,
@@ -378,6 +413,7 @@ export const QUARTZ = defineMineral({
     },
     {
       "id": "smoky",
+      "luster": "vitreous",
       "name": "Smoky quartz",
       "baseColor": "#5a4a3a",
       "roughness": 0.15,
@@ -389,6 +425,7 @@ export const QUARTZ = defineMineral({
     },
     {
       "id": "citrine",
+      "luster": "vitreous",
       "name": "Citrine",
       "baseColor": "#d4a017",
       "roughness": 0.1,
@@ -400,6 +437,7 @@ export const QUARTZ = defineMineral({
     },
     {
       "id": "rose",
+      "luster": "vitreous",
       "name": "Rose quartz",
       "baseColor": "#d4a0a0",
       "roughness": 0.12,
@@ -797,7 +835,7 @@ export const PYRITE = defineMineral({
   "id": "pyrite",
   "name": "Pyrite",
   "formula": "FeS₂",
-  "dataRevision": "m8-1",
+  "dataRevision": "sr2-1",
   "crystallography": {
     "crystalSystem": "cubic",
     "pointGroup": "m-3",
@@ -824,6 +862,12 @@ export const PYRITE = defineMineral({
       "title": "Arrouvel and Eon (2019), Understanding the Surfaces and Crystal Growth of Pyrite FeS2",
       "url": "https://doi.org/10.1590/1980-5373-MR-2017-1140",
       "notes": "Creative Commons Attribution; Figures 2 and 3 identify cube and pyritohedron."
+    },
+    {
+      "id": "handbook-pyrite-v1",
+      "title": "Mineral Data Publishing, Pyrite, version 1",
+      "url": "https://www.handbookofmineralogy.org/pdfs/pyrite.pdf",
+      "notes": "Publicly readable; accessed 2026-09-19. Used as a factual citation only; the source describes luster as metallic and splendent."
     }
   ],
   "provenance": [
@@ -857,6 +901,15 @@ export const PYRITE = defineMineral({
     },
     {
       "coverage": [
+        "appearance.*.luster"
+      ],
+      "referenceIds": [
+        "handbook-pyrite-v1"
+      ],
+      "status": "reported"
+    },
+    {
+      "coverage": [
         "appearance"
       ],
       "status": "curated",
@@ -866,6 +919,7 @@ export const PYRITE = defineMineral({
   "appearance": [
     {
       "id": "brass",
+      "luster": "metallic",
       "name": "Brass",
       "baseColor": "#c8a848",
       "roughness": 0.35,
@@ -877,6 +931,7 @@ export const PYRITE = defineMineral({
     },
     {
       "id": "tarnished",
+      "luster": "metallic",
       "name": "Tarnished",
       "baseColor": "#a89048",
       "roughness": 0.5,
@@ -1134,7 +1189,7 @@ export const ALBITE = defineMineral({
   "id": "albite",
   "name": "Albite",
   "formula": "NaAlSi₃O₈",
-  "dataRevision": "m8-2",
+  "dataRevision": "sr2-1",
   "crystallography": {
     "crystalSystem": "triclinic",
     "pointGroup": "-1",
@@ -1155,6 +1210,12 @@ export const ALBITE = defineMineral({
       "title": "Ribbe, Megaw, Ferguson, Taylor and Traill (1969), The albite structures, Acta Crystallographica B25, 1503-1518",
       "url": "https://www.crystallography.net/cod/2107372.html",
       "notes": "COD CC0; low albite, conventional C-centered cell. Space group C-1 (No. 2)."
+    },
+    {
+      "id": "handbook-albite-v1",
+      "title": "Mineral Data Publishing, Albite, version 1",
+      "url": "https://www.handbookofmineralogy.org/pdfs/albite.pdf",
+      "notes": "Publicly readable; accessed 2026-09-19. Used as a factual citation only; the source distinguishes vitreous crystal luster from pearly cleavage surfaces."
     }
   ],
   "provenance": [
@@ -1176,6 +1237,15 @@ export const ALBITE = defineMineral({
     },
     {
       "coverage": [
+        "appearance.*.luster"
+      ],
+      "referenceIds": [
+        "handbook-albite-v1"
+      ],
+      "status": "reported"
+    },
+    {
+      "coverage": [
         "appearance"
       ],
       "status": "curated",
@@ -1185,6 +1255,7 @@ export const ALBITE = defineMineral({
   "appearance": [
     {
       "id": "white",
+      "luster": "vitreous",
       "name": "White",
       "baseColor": "#eef0f2",
       "roughness": 0.15,
@@ -1486,7 +1557,7 @@ export const FORSTERITE = defineMineral({
   "id": "forsterite",
   "name": "Forsterite",
   "formula": "Mg₂SiO₄",
-  "dataRevision": "m8-2",
+  "dataRevision": "sr2-1",
   "crystallography": {
     "crystalSystem": "orthorhombic",
     "pointGroup": "mmm",
@@ -1507,6 +1578,12 @@ export const FORSTERITE = defineMineral({
       "title": "Smyth and Hazen (1973), American Mineralogist 58, 588-593",
       "url": "https://www.crystallography.net/cod/9000319.html",
       "notes": "COD CC0; forsterite endmember, space group Pbnm (No. 62). Unit cell a=4.756, b=10.207, c=5.980 Å."
+    },
+    {
+      "id": "handbook-forsterite-v1",
+      "title": "Mineral Data Publishing, Forsterite, version 1",
+      "url": "https://www.handbookofmineralogy.org/pdfs/forsterite.pdf",
+      "notes": "Publicly readable; accessed 2026-09-19. Used as a factual citation only; the source describes luster as vitreous."
     }
   ],
   "provenance": [
@@ -1528,6 +1605,15 @@ export const FORSTERITE = defineMineral({
     },
     {
       "coverage": [
+        "appearance.*.luster"
+      ],
+      "referenceIds": [
+        "handbook-forsterite-v1"
+      ],
+      "status": "reported"
+    },
+    {
+      "coverage": [
         "appearance"
       ],
       "status": "curated",
@@ -1537,6 +1623,7 @@ export const FORSTERITE = defineMineral({
   "appearance": [
     {
       "id": "olive",
+      "luster": "vitreous",
       "name": "Olive green",
       "baseColor": "#6b8e23",
       "roughness": 0.3,
@@ -1548,6 +1635,7 @@ export const FORSTERITE = defineMineral({
     },
     {
       "id": "colorless",
+      "luster": "vitreous",
       "name": "Colorless",
       "baseColor": "#eef0f2",
       "roughness": 0.1,
@@ -1668,7 +1756,7 @@ export const BERYL = defineMineral({
   "id": "beryl",
   "name": "Beryl",
   "formula": "Be₃Al₂Si₆O₁₈",
-  "dataRevision": "m8-2",
+  "dataRevision": "sr2-1",
   "crystallography": {
     "crystalSystem": "hexagonal",
     "pointGroup": "6/mmm",
@@ -1689,6 +1777,12 @@ export const BERYL = defineMineral({
       "title": "Hazen, Au and Finger (1986), High-pressure crystal chemistry of beryl, American Mineralogist 71, 977-984",
       "url": "https://www.crystallography.net/cod/9001018.html",
       "notes": "COD CC0; space group P6/mcc (No. 192). Ambient-pressure sample (0.001 kbar). Unit cell a=9.208, c=9.188 Å."
+    },
+    {
+      "id": "handbook-beryl-v1",
+      "title": "Mineral Data Publishing, Beryl, version 1",
+      "url": "https://www.handbookofmineralogy.org/pdfs/beryl.pdf",
+      "notes": "Publicly readable; accessed 2026-09-19. Used as a factual citation only; the source reports a vitreous-to-resinous luster range. Current presets use the supported vitreous category."
     }
   ],
   "provenance": [
@@ -1710,6 +1804,15 @@ export const BERYL = defineMineral({
     },
     {
       "coverage": [
+        "appearance.*.luster"
+      ],
+      "referenceIds": [
+        "handbook-beryl-v1"
+      ],
+      "status": "reported"
+    },
+    {
+      "coverage": [
         "appearance"
       ],
       "status": "curated",
@@ -1719,6 +1822,7 @@ export const BERYL = defineMineral({
   "appearance": [
     {
       "id": "emerald",
+      "luster": "vitreous",
       "name": "Emerald",
       "baseColor": "#2d8a4a",
       "roughness": 0.08,
@@ -1730,6 +1834,7 @@ export const BERYL = defineMineral({
     },
     {
       "id": "aquamarine",
+      "luster": "vitreous",
       "name": "Aquamarine",
       "baseColor": "#5bb8d4",
       "roughness": 0.06,
@@ -1741,6 +1846,7 @@ export const BERYL = defineMineral({
     },
     {
       "id": "goshenite",
+      "luster": "vitreous",
       "name": "Goshenite",
       "baseColor": "#eef0f2",
       "roughness": 0.05,

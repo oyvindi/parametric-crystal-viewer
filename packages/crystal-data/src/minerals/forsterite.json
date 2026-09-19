@@ -2,7 +2,7 @@
   "id": "forsterite",
   "name": "Forsterite",
   "formula": "Mg₂SiO₄",
-  "dataRevision": "m8-2",
+  "dataRevision": "sr2-1",
   "crystallography": {
     "crystalSystem": "orthorhombic",
     "pointGroup": "mmm",
@@ -23,6 +23,12 @@
       "title": "Smyth and Hazen (1973), American Mineralogist 58, 588-593",
       "url": "https://www.crystallography.net/cod/9000319.html",
       "notes": "COD CC0; forsterite endmember, space group Pbnm (No. 62). Unit cell a=4.756, b=10.207, c=5.980 Å."
+    },
+    {
+      "id": "handbook-forsterite-v1",
+      "title": "Mineral Data Publishing, Forsterite, version 1",
+      "url": "https://www.handbookofmineralogy.org/pdfs/forsterite.pdf",
+      "notes": "Publicly readable; accessed 2026-09-19. Used as a factual citation only; the source describes luster as vitreous."
     }
   ],
   "provenance": [
@@ -44,6 +50,15 @@
     },
     {
       "coverage": [
+        "appearance.*.luster"
+      ],
+      "referenceIds": [
+        "handbook-forsterite-v1"
+      ],
+      "status": "reported"
+    },
+    {
+      "coverage": [
         "appearance"
       ],
       "status": "curated",
@@ -53,6 +68,7 @@
   "appearance": [
     {
       "id": "olive",
+      "luster": "vitreous",
       "name": "Olive green",
       "baseColor": "#6b8e23",
       "roughness": 0.3,
@@ -64,6 +80,7 @@
     },
     {
       "id": "colorless",
+      "luster": "vitreous",
       "name": "Colorless",
       "baseColor": "#eef0f2",
       "roughness": 0.1,

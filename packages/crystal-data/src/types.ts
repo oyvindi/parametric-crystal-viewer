@@ -86,10 +86,21 @@ export interface Mineral {
     readonly dataRevision: string;
 }
 
+/**
+ * Categorical luster classification for mineral appearance. The vocabulary is
+ * documented in [Mineral Appearance](../../docs/data-model.md#mineral-appearance);
+ * the numeric renderer mapping is a curated choice owned by `crystal-three`.
+ */
+export type LusterCategory = "vitreous" | "pearly" | "metallic" | "dull";
+
+/** All luster categories in canonical order. */
+export const LUSTER_CATEGORIES: readonly LusterCategory[] = ["vitreous", "pearly", "metallic", "dull"];
+
 /** A named appearance preset: curated visual material parameters separate from geometry. */
 export interface MineralAppearance {
     readonly id: string;
     readonly name: string;
+    readonly luster?: LusterCategory;
     readonly baseColor?: string;
     readonly roughness?: number;
     readonly metalness?: number;

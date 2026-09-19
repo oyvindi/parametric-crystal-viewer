@@ -2,7 +2,7 @@
   "id": "quartz",
   "name": "Quartz",
   "formula": "SiO₂",
-  "dataRevision": "m8-1",
+  "dataRevision": "sr2-1",
   "crystallography": {
     "crystalSystem": "trigonal",
     "pointGroup": "32",
@@ -79,6 +79,12 @@
       "title": "Materials Project - mp-6930: SiO2 (Trigonal, P3_221, 154)",
       "url": "https://nextgen.materialsproject.org/materials/mp-6930",
       "notes": "Publicly accessible crystallographic data under CC-BY 4.0. Left-handed α-quartz enantiomorph."
+    },
+    {
+      "id": "handbook-quartz-v1.2",
+      "title": "Mineral Data Publishing, Quartz, version 1.2",
+      "url": "https://www.handbookofmineralogy.org/pdfs/quartz.pdf",
+      "notes": "Publicly readable; accessed 2026-09-19. Used as a factual citation only; the source describes crystal luster as vitreous."
     }
   ],
   "provenance": [
@@ -107,6 +113,15 @@
     },
     {
       "coverage": [
+        "appearance.*.luster"
+      ],
+      "referenceIds": [
+        "handbook-quartz-v1.2"
+      ],
+      "status": "reported"
+    },
+    {
+      "coverage": [
         "appearance"
       ],
       "status": "curated",
@@ -116,6 +131,7 @@
   "appearance": [
     {
       "id": "rock-crystal",
+      "luster": "vitreous",
       "name": "Rock crystal",
       "baseColor": "#eef0f2",
       "roughness": 0.05,
@@ -127,6 +143,7 @@
     },
     {
       "id": "amethyst",
+      "luster": "vitreous",
       "name": "Amethyst",
       "baseColor": "#9b6dd4",
       "roughness": 0.1,
@@ -138,6 +155,7 @@
     },
     {
       "id": "smoky",
+      "luster": "vitreous",
       "name": "Smoky quartz",
       "baseColor": "#5a4a3a",
       "roughness": 0.15,
@@ -149,6 +167,7 @@
     },
     {
       "id": "citrine",
+      "luster": "vitreous",
       "name": "Citrine",
       "baseColor": "#d4a017",
       "roughness": 0.1,
@@ -160,6 +179,7 @@
     },
     {
       "id": "rose",
+      "luster": "vitreous",
       "name": "Rose quartz",
       "baseColor": "#d4a0a0",
       "roughness": 0.12,

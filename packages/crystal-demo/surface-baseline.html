@@ -48,37 +48,37 @@ viewer.setToneMapping("agx");
 viewer.setExposure(1);
 await viewer.loadMineral(mineralId);
 viewer.resetCamera();
-viewer.start();
 
 const mineral = getMineral(mineralId);
 document.getElementById("name").textContent = mineral.name;
 document.getElementById("details").textContent =
   `${viewer.getHabitId()} · ${viewer.getAppearanceId() ?? "default material"}`;
 
-const samples = [];
-let sampling = true;
-let previous;
-function sample(now) {
-  if (!sampling) return;
-  if (previous !== undefined) samples.push(now - previous);
-  previous = now;
+const result = { mineralId, habitId: viewer.getHabitId(), appearanceId: viewer.getAppearanceId() };
+if (params.get("timing") === "1") {
+  const samples = [];
+  let sampling = true;
+  let previous;
+  function sample(now) {
+    if (!sampling) return;
+    if (previous !== undefined) samples.push(now - previous);
+    previous = now;
+    requestAnimationFrame(sample);
+  }
+  viewer.start();
   requestAnimationFrame(sample);
+  await new Promise(resolve => setTimeout(resolve, 1000));
+  sampling = false;
+  viewer.stop();
+  samples.sort((a, b) => a - b);
+  const mean = samples.reduce((sum, value) => sum + value, 0) / samples.length;
+  Object.assign(result, {
+    frames: samples.length,
+    meanFrameMs: Number(mean.toFixed(3)),
+    medianFrameMs: Number(samples[Math.floor(samples.length / 2)].toFixed(3)),
+    p95FrameMs: Number(samples[Math.floor(samples.length * 0.95)].toFixed(3)),
+  });
 }
-requestAnimationFrame(sample);
-await new Promise(resolve => setTimeout(resolve, 1000));
-sampling = false;
-viewer.stop();
-samples.sort((a, b) => a - b);
-const mean = samples.reduce((sum, value) => sum + value, 0) / samples.length;
-const result = {
-  mineralId,
-  habitId: viewer.getHabitId(),
-  appearanceId: viewer.getAppearanceId(),
-  frames: samples.length,
-  meanFrameMs: Number(mean.toFixed(3)),
-  medianFrameMs: Number(samples[Math.floor(samples.length / 2)].toFixed(3)),
-  p95FrameMs: Number(samples[Math.floor(samples.length * 0.95)].toFixed(3)),
-};
 document.getElementById("surface-baseline-result").textContent = JSON.stringify(result);
 document.documentElement.dataset.baselineReady = "true";
 </script>

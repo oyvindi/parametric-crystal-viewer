@@ -2,7 +2,7 @@
   "id": "pyrite",
   "name": "Pyrite",
   "formula": "FeS₂",
-  "dataRevision": "m8-1",
+  "dataRevision": "sr2-1",
   "crystallography": {
     "crystalSystem": "cubic",
     "pointGroup": "m-3",
@@ -29,6 +29,12 @@
       "title": "Arrouvel and Eon (2019), Understanding the Surfaces and Crystal Growth of Pyrite FeS2",
       "url": "https://doi.org/10.1590/1980-5373-MR-2017-1140",
       "notes": "Creative Commons Attribution; Figures 2 and 3 identify cube and pyritohedron."
+    },
+    {
+      "id": "handbook-pyrite-v1",
+      "title": "Mineral Data Publishing, Pyrite, version 1",
+      "url": "https://www.handbookofmineralogy.org/pdfs/pyrite.pdf",
+      "notes": "Publicly readable; accessed 2026-09-19. Used as a factual citation only; the source describes luster as metallic and splendent."
     }
   ],
   "provenance": [
@@ -62,6 +68,15 @@
     },
     {
       "coverage": [
+        "appearance.*.luster"
+      ],
+      "referenceIds": [
+        "handbook-pyrite-v1"
+      ],
+      "status": "reported"
+    },
+    {
+      "coverage": [
         "appearance"
       ],
       "status": "curated",
@@ -71,6 +86,7 @@
   "appearance": [
     {
       "id": "brass",
+      "luster": "metallic",
       "name": "Brass",
       "baseColor": "#c8a848",
       "roughness": 0.35,
@@ -82,6 +98,7 @@
     },
     {
       "id": "tarnished",
+      "luster": "metallic",
       "name": "Tarnished",
       "baseColor": "#a89048",
       "roughness": 0.5,

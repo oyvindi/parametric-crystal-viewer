@@ -118,6 +118,8 @@ Acceptance:
 
 ### SR2 — Categorical Luster Model
 
+**Status:** complete. See the [SR2 acceptance audit](sr2-acceptance.md).
+
 Add a small controlled vocabulary to mineral appearance data. Begin with only the
 categories required by the current minerals. Map categories to renderer parameters in
 `crystal-three`; keep optional preset overrides for color, roughness, transmission,

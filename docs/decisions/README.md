@@ -19,3 +19,4 @@ Decision records explain why a choice was made. Update the owning contract when 
 * [0002 — Direct Half-Space Intersection and Polygon Output](0002-direct-half-space-intersection.md) — accepted.
 * [0003 — M1 Intersection Performance Envelope](0003-m1-intersection-performance.md) — accepted.
 * [0004 — Viewer State Serialization](0004-viewer-state-serialization.md) — accepted.
+* [0005 — Categorical Luster and Pearly Sheen](0005-categorical-luster-pearly-sheen.md) — accepted.
