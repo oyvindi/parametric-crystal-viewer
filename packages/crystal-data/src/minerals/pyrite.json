@@ -2,7 +2,7 @@
   "id": "pyrite",
   "name": "Pyrite",
   "formula": "FeS₂",
-  "dataRevision": "sr2-1",
+  "dataRevision": "sr5-1",
   "crystallography": {
     "crystalSystem": "cubic",
     "pointGroup": "m-3",
@@ -35,6 +35,12 @@
       "title": "Mineral Data Publishing, Pyrite, version 1",
       "url": "https://www.handbookofmineralogy.org/pdfs/pyrite.pdf",
       "notes": "Publicly readable; accessed 2026-09-19. Used as a factual citation only; the source describes luster as metallic and splendent."
+    },
+    {
+      "id": "eb1911-pyrites",
+      "title": "L. J. Spencer (1911), Pyrites, Encyclopædia Britannica, vol. 22, pp. 696–697",
+      "url": "https://en.wikisource.org/wiki/1911_Encyclop%C3%A6dia_Britannica/Pyrites",
+      "notes": "Public-domain historical source; accessed 2026-09-19. Used as a factual citation only; cube-face striations follow cube/pyritohedron intersection edges."
     }
   ],
   "provenance": [
@@ -81,6 +87,44 @@
       ],
       "status": "curated",
       "derivation": "Appearance presets use curated visualization parameters (base color, roughness, metalness, transmission, IOR, absorption color and density) selected to represent pyrite's metallic brass-yellow luster and tarnished surfaces. Values are not measured optical constants."
+    },
+    {
+      "coverage": [
+        "surfaceProfiles"
+      ],
+      "referenceIds": [
+        "eb1911-pyrites",
+        "handbook-pyrite-v1"
+      ],
+      "status": "reported"
+    },
+    {
+      "coverage": [
+        "surfaceProfiles.*.description"
+      ],
+      "status": "curated",
+      "derivation": "Profile text identifies a documented typical growth-face observation, not a specimen measurement. Frequency, amplitude, phase and irregularity are renderer-owned curated values."
+    }
+  ],
+  "surfaceProfiles": [
+    {
+      "id": "pyrite.100-cube-striations",
+      "kind": "directional-striations",
+      "claimId": "surface.pyrite.100-striation",
+      "surfaceOrigin": "growth-face",
+      "selector": {
+        "formId": "a"
+      },
+      "direction": {
+        "kind": "intersection-edge",
+        "otherFamily": {
+          "notation": "miller",
+          "h": 2,
+          "k": 1,
+          "l": 0
+        }
+      },
+      "description": "Typical cube {100} growth-face striations parallel to cube/pyritohedron {210} intersection edges; not specimen-measured."
     }
   ],
   "appearance": [

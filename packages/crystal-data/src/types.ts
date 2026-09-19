@@ -80,10 +80,38 @@ export interface Mineral {
     readonly crystallography: MineralCrystallography;
     readonly habits: readonly HabitPreset[];
     readonly appearance?: readonly MineralAppearance[];
+    /** Reviewed, face-specific surface observations. Renderer realization is separate. */
+    readonly surfaceProfiles?: readonly SurfaceProfile[];
     readonly variants?: readonly MineralVariant[];
     readonly references: readonly Reference[];
     readonly provenance: readonly ProvenanceEntry[];
     readonly dataRevision: string;
+}
+
+/** A selector for a reviewed surface observation; it never changes morphology. */
+export interface SurfaceSelector {
+    readonly formId?: string;
+    readonly family?: MillerIndices;
+    readonly orientedIndices?: MillerIndices;
+}
+
+/** The documented directional relationship for a reviewed surface observation. */
+export type SurfaceDirection =
+    | { readonly kind: "perpendicular-to-crystal-axis"; readonly axis: "a" | "b" | "c" }
+    | { readonly kind: "intersection-edge"; readonly otherFamily: MillerIndices };
+
+/**
+ * A traceable, typical (not specimen-measured) surface observation eligible for
+ * a renderer profile. Frequencies and amplitudes deliberately do not belong here.
+ */
+export interface SurfaceProfile {
+    readonly id: string;
+    readonly kind: "directional-striations" | "pearly-luster";
+    readonly claimId: string;
+    readonly surfaceOrigin: "growth-face";
+    readonly selector: SurfaceSelector;
+    readonly direction?: SurfaceDirection;
+    readonly description: string;
 }
 
 /**

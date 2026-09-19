@@ -44,6 +44,12 @@ Each preset may carry a categorical `luster` classification (`vitreous`, `pearly
 
 The API exposes `getAppearances`, `getAppearanceId`, `getAppearance`, `setAppearance`, and `setAppearanceField`. State serialization covers the selected appearance and user overrides under [Persistent State Coverage](#persistent-state-coverage). Changes emit `appearance-changed` so host controls stay synchronized, including after programmatic changes and state restoration.
 
+`getSurfaceProfiles` reports each reviewed, documented-typical surface profile, its
+claim ID and description, plus the number of currently matched faces. A match indicates
+an eligible typical rendering treatment, not a measurement of the displayed specimen.
+Profiles resolve from the selected mineral and current generated faces; they are not an
+independent serialized state field.
+
 ### Generic Surface Detail
 
 `getSurfaceDetail` and `setSurfaceDetail(enabled, strength)` control an optional generic

@@ -205,6 +205,13 @@ and roughness without displacement. Its edge response is grazing-angle shading a
 not change the scientific silhouette. The shader and additive state decision is recorded
 in [ADR 0007](decisions/0007-generic-surface-microvariation.md).
 
+SR5 reviewed profiles reuse these face-local attributes and the same single physical
+material. `crystal-data` owns the reviewed claim, growth-face selector, and documented
+direction relationship; `crystal-three` owns profile IDs and all procedural constants.
+Unknown or unmatched profiles route to profile zero. The mapping must not infer a
+profile from a mineral name, camera, world coordinate, or an unreviewed face; see
+[ADR 0008](decisions/0008-reviewed-surface-profiles.md).
+
 ```ts
 function createThreeGeometry(
     crystal: CrystalGeometry

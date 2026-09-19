@@ -1,4 +1,4 @@
-import type { CrystalFace, CrystalGeometry, FaceContributor, MillerIndices } from "@crystal/core";
+import { createLattice, type CrystalFace, type CrystalGeometry, type FaceContributor, type MillerIndices, type UnitCell } from "@crystal/core";
 import { BufferGeometry, Float32BufferAttribute, MeshPhysicalMaterial, ShaderMaterial } from "three";
 
 export type SurfaceVec3 = readonly [number, number, number];
@@ -17,8 +17,22 @@ export interface SurfaceRule {
     readonly selector: SurfaceSelector;
     readonly priority?: number;
     /** Crystal-local Cartesian reference direction used to orient the face tangent. */
-    readonly referenceDirection?: SurfaceVec3;
+    readonly referenceDirection?: SurfaceVec3 | ((face: CrystalFace, contributor: FaceContributor) => SurfaceVec3);
 }
+
+/** Structural input accepted from data without making this renderer depend on crystal-data. */
+export interface ReviewedSurfaceProfileInput {
+    readonly id: string;
+    readonly kind: "directional-striations" | "pearly-luster";
+    readonly selector: SurfaceSelector;
+}
+
+/** Curated renderer IDs for the three SR5 profiles; none are scientific measurements. */
+export const REVIEWED_SURFACE_PROFILE_IDS = {
+    "quartz.m-prism-striations": 1,
+    "calcite.0001-pearly": 2,
+    "pyrite.100-cube-striations": 3,
+} as const;
 
 export interface FaceSurface {
     readonly faceIndex: number;
@@ -45,6 +59,34 @@ export interface SurfaceDetailUniforms {
 }
 
 const SURFACE_DETAIL_UNIFORMS = "surfaceDetailUniforms";
+
+/**
+ * Maps only reviewed data profile IDs to renderer behavior. Shader constants
+ * are curated visualization values; unknown profiles receive no inferred rule.
+ */
+export function createReviewedSurfaceRules(
+    profiles: readonly ReviewedSurfaceProfileInput[] | undefined,
+    unitCell: UnitCell,
+): readonly SurfaceRule[] {
+    if (!profiles?.length) return [];
+    const lattice = createLattice(unitCell);
+    if (!lattice.ok) return [];
+    const axis = (index: 0 | 1 | 2): SurfaceVec3 => [lattice.value.direct[0][index], lattice.value.direct[1][index], lattice.value.direct[2][index]];
+    return profiles.flatMap((profile): readonly SurfaceRule[] => {
+        const profileId = REVIEWED_SURFACE_PROFILE_IDS[profile.id as keyof typeof REVIEWED_SURFACE_PROFILE_IDS];
+        if (!profileId) return [];
+        if (profile.id === "quartz.m-prism-striations" && profile.kind === "directional-striations") {
+            return [{ id: profile.id, profileId, selector: profile.selector, referenceDirection: axis(2) }];
+        }
+        if (profile.id === "calcite.0001-pearly" && profile.kind === "pearly-luster") {
+            return [{ id: profile.id, profileId, selector: profile.selector }];
+        }
+        if (profile.id === "pyrite.100-cube-striations" && profile.kind === "directional-striations") {
+            return [{ id: profile.id, profileId, selector: profile.selector, referenceDirection: (face) => pyriteCubeIntersectionEdge(face.normal) }];
+        }
+        return [];
+    });
+}
 
 /** Stable, platform-independent FNV-1a hash reduced to the exact Float32 integer range. */
 export function stableSurfaceSeed(value: string): number {
@@ -79,16 +121,20 @@ export function applySurfaceDetail(material: MeshPhysicalMaterial, options: Surf
             .replace("#include <common>", `#include <common>
 attribute vec2 surfaceCoord;
 attribute float surfaceSeed;
+attribute float surfaceProfile;
 varying vec2 vSurfaceCoord;
-varying float vSurfaceSeed;`)
+varying float vSurfaceSeed;
+varying float vSurfaceProfile;`)
             .replace("#include <begin_vertex>", `#include <begin_vertex>
 vSurfaceCoord = surfaceCoord;
-vSurfaceSeed = surfaceSeed;`);
+vSurfaceSeed = surfaceSeed;
+vSurfaceProfile = surfaceProfile;`);
         shader.fragmentShader = shader.fragmentShader
             .replace("#include <common>", `#include <common>
 uniform float surfaceDetailStrength;
 varying vec2 vSurfaceCoord;
 varying float vSurfaceSeed;
+varying float vSurfaceProfile;
 vec2 surfacePhase(float seed) {
     return vec2(fract(seed * 0.00000113), fract(seed * 0.00000179)) * 6.28318530718;
 }
@@ -102,30 +148,54 @@ vec2 surfaceWaveGradient(vec2 p, float seed) {
     float first = 0.65 * cos(dot(p, vec2(13.1, 17.3)) + phase.x);
     float second = 0.35 * cos(dot(p, vec2(-21.7, 11.9)) + phase.y);
     return first * vec2(13.1, 17.3) + second * vec2(-21.7, 11.9);
+}
+// SR5 values are curated visualization constants, not reported measurements.
+float profileStripe(float coordinate, float frequency, float phase) {
+    return sin(coordinate * frequency + phase);
+}
+float hasSurfaceProfile(float id) {
+    return 1.0 - step(0.25, abs(vSurfaceProfile - id));
 }`)
             .replace("#include <normal_fragment_maps>", `#include <normal_fragment_maps>
+vec3 q0 = dFdx(vViewPosition);
+vec3 q1 = dFdy(vViewPosition);
+vec2 st0 = dFdx(vSurfaceCoord);
+vec2 st1 = dFdy(vSurfaceCoord);
+vec3 tangent = normalize(q0 * st1.y - q1 * st0.y);
+vec3 bitangent = normalize(-q0 * st1.x + q1 * st0.x);
 if (surfaceDetailStrength > 0.0) {
-    vec3 q0 = dFdx(vViewPosition);
-    vec3 q1 = dFdy(vViewPosition);
-    vec2 st0 = dFdx(vSurfaceCoord);
-    vec2 st1 = dFdy(vSurfaceCoord);
-    vec3 tangent = normalize(q0 * st1.y - q1 * st0.y);
-    vec3 bitangent = normalize(-q0 * st1.x + q1 * st0.x);
     vec2 slope = surfaceWaveGradient(vSurfaceCoord, vSurfaceSeed);
     normal = normalize(normal + surfaceDetailStrength * 0.0012 * (slope.x * tangent + slope.y * bitangent));
-}`)
+}
+float quartzStriation = hasSurfaceProfile(1.0);
+float pyriteStriation = hasSurfaceProfile(3.0);
+float quartzStripe = profileStripe(vSurfaceCoord.x, 18.0, vSurfaceSeed * 0.0000031);
+float pyriteStripe = profileStripe(vSurfaceCoord.y, 15.0, vSurfaceSeed * 0.0000027);
+normal = normalize(normal
+    + quartzStriation * 0.012 * cos(vSurfaceCoord.x * 18.0 + vSurfaceSeed * 0.0000031) * tangent
+    + pyriteStriation * 0.010 * cos(vSurfaceCoord.y * 15.0 + vSurfaceSeed * 0.0000027) * bitangent
+);`)
             .replace("#include <roughnessmap_fragment>", `#include <roughnessmap_fragment>
 if (surfaceDetailStrength > 0.0) {
     float variation = surfaceWave(vSurfaceCoord, vSurfaceSeed);
     roughnessFactor = clamp(roughnessFactor + surfaceDetailStrength * 0.08 * variation, 0.04, 1.0);
-}`)
+}
+roughnessFactor = clamp(roughnessFactor
+    + hasSurfaceProfile(1.0) * 0.10 * profileStripe(vSurfaceCoord.x, 18.0, vSurfaceSeed * 0.0000031)
+    + hasSurfaceProfile(3.0) * 0.08 * profileStripe(vSurfaceCoord.y, 15.0, vSurfaceSeed * 0.0000027),
+    0.04, 1.0
+);`)
             .replace("#include <opaque_fragment>", `#include <opaque_fragment>
 if (surfaceDetailStrength > 0.0) {
     float grazing = pow(1.0 - clamp(abs(dot(normal, normalize(vViewPosition))), 0.0, 1.0), 5.0);
     outgoingLight += vec3(0.025 * surfaceDetailStrength * grazing);
-}`);
+}
+// Curated face-local pearly contribution for reviewed calcite {0001} growth faces.
+float pearly = hasSurfaceProfile(2.0);
+float pearlyGrazing = pow(1.0 - clamp(abs(dot(normal, normalize(vViewPosition))), 0.0, 1.0), 2.5);
+outgoingLight += pearly * vec3(0.055, 0.052, 0.045) * pearlyGrazing;`);
     };
-    material.customProgramCacheKey = () => "crystal-surface-detail-v1";
+    material.customProgramCacheKey = () => "crystal-surface-detail-sr5-v1";
     material.needsUpdate = true;
 }
 
@@ -248,6 +318,25 @@ export function createFaceTangentFrame(normalInput: SurfaceVec3, reference: Surf
     return { tangent, bitangent };
 }
 
+/**
+ * Uses a cyclic, symmetry-equivalent {210} plane for an oriented cube face.
+ * Its cross product with the cube normal is the documented intersection-edge
+ * direction; the cyclic choice gives perpendicular directions on neighbours.
+ */
+function pyriteCubeIntersectionEdge(normalInput: SurfaceVec3): SurfaceVec3 {
+    const normal = normalize(normalInput);
+    if (!normal) throw new RangeError("Pyrite cube face normal must be finite and non-zero.");
+    const absolute = [Math.abs(normal[0]), Math.abs(normal[1]), Math.abs(normal[2])];
+    const axis = absolute.indexOf(Math.max(...absolute));
+    const sign = normal[axis]! >= 0 ? 1 : -1;
+    const pyritohedronNormal: SurfaceVec3 = axis === 0 ? [2 * sign, 1, 0]
+        : axis === 1 ? [0, 2 * sign, 1]
+            : [1, 0, 2 * sign];
+    const edge = normalize(cross(normal, pyritohedronNormal));
+    if (!edge) throw new RangeError("Could not construct pyrite cube/pyritohedron intersection edge.");
+    return edge;
+}
+
 function validateRules(rules: readonly SurfaceRule[]): void {
     const ids = new Set<string>();
     for (const rule of rules) {
@@ -257,7 +346,7 @@ function validateRules(rules: readonly SurfaceRule[]): void {
             throw new RangeError(`Surface profile IDs must be integers from 1 to ${MAX_SURFACE_PROFILE_ID}.`);
         }
         if (specificity(rule.selector) === 0) throw new RangeError("A surface rule must contain at least one selector.");
-        if (rule.referenceDirection && !normalize(rule.referenceDirection)) throw new RangeError("Surface reference directions must be finite and non-zero.");
+        if (rule.referenceDirection && typeof rule.referenceDirection !== "function" && !normalize(rule.referenceDirection)) throw new RangeError("Surface reference directions must be finite and non-zero.");
     }
 }
 
@@ -281,7 +370,11 @@ export function createFaceLocalGeometry(
 
     geometry.faces.forEach((face, faceIndex) => {
         const selected = selectSurfaceRule(face, rules);
-        const frame = createFaceTangentFrame(face.normal, selected?.rule.referenceDirection ?? defaultReferenceDirection);
+        const reference = selected?.rule.referenceDirection;
+        const resolvedReference = typeof reference === "function"
+            ? reference(face, selected!.contributor)
+            : reference ?? defaultReferenceDirection;
+        const frame = createFaceTangentFrame(face.normal, resolvedReference);
         const centroid: SurfaceVec3 = face.vertexIndices.reduce<readonly [number, number, number]>((sum, vertexIndex) => [
             sum[0] + geometry.vertices[vertexIndex * 3]!,
             sum[1] + geometry.vertices[vertexIndex * 3 + 1]!,

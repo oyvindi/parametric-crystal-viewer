@@ -260,7 +260,7 @@ export const QUARTZ = defineMineral({
   "id": "quartz",
   "name": "Quartz",
   "formula": "SiO₂",
-  "dataRevision": "sr2-1",
+  "dataRevision": "sr5-1",
   "crystallography": {
     "crystalSystem": "trigonal",
     "pointGroup": "32",
@@ -384,6 +384,38 @@ export const QUARTZ = defineMineral({
       ],
       "status": "curated",
       "derivation": "Appearance presets use curated visualization parameters (base color, roughness, metalness, transmission, IOR, absorption color and density) selected to represent common quartz varieties. IOR values are representative approximations, not measured optical constants."
+    },
+    {
+      "coverage": [
+        "surfaceProfiles"
+      ],
+      "referenceIds": [
+        "handbook-quartz-v1.2"
+      ],
+      "status": "reported"
+    },
+    {
+      "coverage": [
+        "surfaceProfiles.*.description"
+      ],
+      "status": "curated",
+      "derivation": "Profile text identifies a documented typical growth-face observation, not a specimen measurement. Frequency, amplitude, phase and irregularity are renderer-owned curated values."
+    }
+  ],
+  "surfaceProfiles": [
+    {
+      "id": "quartz.m-prism-striations",
+      "kind": "directional-striations",
+      "claimId": "surface.quartz.m-striation",
+      "surfaceOrigin": "growth-face",
+      "selector": {
+        "formId": "m"
+      },
+      "direction": {
+        "kind": "perpendicular-to-crystal-axis",
+        "axis": "c"
+      },
+      "description": "Typical prism m {10-10} growth-face striations, perpendicular to the c-axis; not specimen-measured."
     }
   ],
   "appearance": [
@@ -678,7 +710,7 @@ export const CALCITE = defineMineral({
   "id": "calcite",
   "name": "Calcite",
   "formula": "CaCO₃",
-  "dataRevision": "m5-1",
+  "dataRevision": "sr5-1",
   "crystallography": {
     "crystalSystem": "trigonal",
     "pointGroup": "-3m",
@@ -705,6 +737,12 @@ export const CALCITE = defineMineral({
       "title": "Dickson (2023), Insights into the growth morphology of calcite cement",
       "url": "https://doi.org/10.1002/dep2.210",
       "notes": "CC-BY 4.0; forms in structural hexagonal axes, section 2.2."
+    },
+    {
+      "id": "handbook-calcite-v1",
+      "title": "Mineral Data Publishing, Calcite, version 1",
+      "url": "https://www.handbookofmineralogy.org/pdfs/calcite.pdf",
+      "notes": "Publicly readable; accessed 2026-09-19. Used as a factual citation only; pearly luster on growth faces {0001} is separate from cleavage appearance."
     }
   ],
   "provenance": [
@@ -735,6 +773,40 @@ export const CALCITE = defineMineral({
       ],
       "status": "curated",
       "derivation": "Named idealized habit presets use documented forms. Development values, disabled forms and preferred views are curated visualization choices, not measured growth or surface-energy parameters."
+    },
+    {
+      "coverage": [
+        "surfaceProfiles"
+      ],
+      "referenceIds": [
+        "handbook-calcite-v1"
+      ],
+      "status": "reported"
+    },
+    {
+      "coverage": [
+        "surfaceProfiles.*.description"
+      ],
+      "status": "curated",
+      "derivation": "Profile text identifies a documented typical growth-face observation, not a specimen measurement. Renderer sheen values are curated and do not apply the separate cleavage claim."
+    }
+  ],
+  "surfaceProfiles": [
+    {
+      "id": "calcite.0001-pearly",
+      "kind": "pearly-luster",
+      "claimId": "surface.calcite.0001-pearly",
+      "surfaceOrigin": "growth-face",
+      "selector": {
+        "family": {
+          "notation": "miller-bravais",
+          "h": 0,
+          "k": 0,
+          "i": 0,
+          "l": 1
+        }
+      },
+      "description": "Typical pearly luster on calcite basal {0001} growth faces; cleavage-only appearance is intentionally excluded and this is not specimen-measured."
     }
   ],
   "habits": [
@@ -835,7 +907,7 @@ export const PYRITE = defineMineral({
   "id": "pyrite",
   "name": "Pyrite",
   "formula": "FeS₂",
-  "dataRevision": "sr2-1",
+  "dataRevision": "sr5-1",
   "crystallography": {
     "crystalSystem": "cubic",
     "pointGroup": "m-3",
@@ -868,6 +940,12 @@ export const PYRITE = defineMineral({
       "title": "Mineral Data Publishing, Pyrite, version 1",
       "url": "https://www.handbookofmineralogy.org/pdfs/pyrite.pdf",
       "notes": "Publicly readable; accessed 2026-09-19. Used as a factual citation only; the source describes luster as metallic and splendent."
+    },
+    {
+      "id": "eb1911-pyrites",
+      "title": "L. J. Spencer (1911), Pyrites, Encyclopædia Britannica, vol. 22, pp. 696–697",
+      "url": "https://en.wikisource.org/wiki/1911_Encyclop%C3%A6dia_Britannica/Pyrites",
+      "notes": "Public-domain historical source; accessed 2026-09-19. Used as a factual citation only; cube-face striations follow cube/pyritohedron intersection edges."
     }
   ],
   "provenance": [
@@ -914,6 +992,44 @@ export const PYRITE = defineMineral({
       ],
       "status": "curated",
       "derivation": "Appearance presets use curated visualization parameters (base color, roughness, metalness, transmission, IOR, absorption color and density) selected to represent pyrite's metallic brass-yellow luster and tarnished surfaces. Values are not measured optical constants."
+    },
+    {
+      "coverage": [
+        "surfaceProfiles"
+      ],
+      "referenceIds": [
+        "eb1911-pyrites",
+        "handbook-pyrite-v1"
+      ],
+      "status": "reported"
+    },
+    {
+      "coverage": [
+        "surfaceProfiles.*.description"
+      ],
+      "status": "curated",
+      "derivation": "Profile text identifies a documented typical growth-face observation, not a specimen measurement. Frequency, amplitude, phase and irregularity are renderer-owned curated values."
+    }
+  ],
+  "surfaceProfiles": [
+    {
+      "id": "pyrite.100-cube-striations",
+      "kind": "directional-striations",
+      "claimId": "surface.pyrite.100-striation",
+      "surfaceOrigin": "growth-face",
+      "selector": {
+        "formId": "a"
+      },
+      "direction": {
+        "kind": "intersection-edge",
+        "otherFamily": {
+          "notation": "miller",
+          "h": 2,
+          "k": 1,
+          "l": 0
+        }
+      },
+      "description": "Typical cube {100} growth-face striations parallel to cube/pyritohedron {210} intersection edges; not specimen-measured."
     }
   ],
   "appearance": [

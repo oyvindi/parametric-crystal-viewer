@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Reviewed Surface Profiles — SR5</title>
+<style>
+  * { box-sizing: border-box; }
+  body { margin: 0; min-height: 100vh; font-family: system-ui, sans-serif; background: #25282c; color: #eee; display: grid; grid-template-columns: minmax(0, 1fr) 310px; }
+  main { min-width: 0; position: relative; }
+  canvas { display: block; width: 100%; height: 100vh; touch-action: none; }
+  aside { padding: 20px; background: #30343a; border-left: 1px solid #555; }
+  h1 { margin: 0 0 18px; font-size: 1.1rem; }
+  label { display: grid; gap: 6px; font-size: .85rem; margin-bottom: 18px; }
+  select, button { font: inherit; padding: 6px; }
+  button { width: 100%; }
+  .profile { margin: 16px 0; padding: 12px; border-radius: 5px; background: #24272c; border: 1px solid #4b5159; }
+  .profile strong { display: block; font-size: .9rem; }
+  .profile code { color: #9dd5ff; font-size: .75rem; }
+  .profile p { margin: 8px 0 0; color: #c4c9cf; font-size: .8rem; line-height: 1.4; }
+  .match { color: #9fe0aa; font-size: .8rem; margin-top: 8px; }
+  .inactive { color: #f0c978; }
+  .note { margin-top: 20px; color: #aeb6c0; font-size: .78rem; line-height: 1.45; }
+  @media (max-width: 760px) { body { grid-template-columns: 1fr; grid-template-rows: 60vh auto; } canvas { height: 60vh; } aside { border-left: 0; border-top: 1px solid #555; } }
+</style>
+<script type="importmap">
+{
+  "imports": {
+    "three": "../../node_modules/three/build/three.module.js",
+    "three/addons/": "../../node_modules/three/examples/jsm/",
+    "@crystal/core": "../crystal-core/dist/index.js",
+    "@crystal/data": "../crystal-data/dist/index.js",
+    "@crystal/three": "../crystal-three/dist/index.js",
+    "@crystal/viewer": "../crystal-viewer/dist/index.js"
+  }
+}
+</script>
+</head>
+<body>
+<main><canvas id="canvas"></canvas></main>
+<aside>
+  <h1>SR5 Reviewed Surface Profiles</h1>
+  <label>Mineral <select id="mineral">
+    <option value="quartz">Quartz — prism striations</option>
+    <option value="calcite">Calcite — basal pearly luster</option>
+    <option value="pyrite">Pyrite — cube striations</option>
+  </select></label>
+  <button id="reset" type="button">Reset view</button>
+  <div id="profiles"></div>
+  <p class="note">Profiles describe documented typical growth-face features, not measurements of this displayed specimen. Rotate the model to check that the detail stays crystal-local.</p>
+</aside>
+<script type="module">
+import { CrystalViewer } from "@crystal/viewer";
+
+const canvas = document.getElementById("canvas");
+const viewer = new CrystalViewer(canvas);
+const select = document.getElementById("mineral");
+const profiles = document.getElementById("profiles");
+const requestedMineral = new URL(window.location.href).searchParams.get("mineral");
+if ([...select.options].some((option) => option.value === requestedMineral)) select.value = requestedMineral;
+
+function renderProfiles() {
+  profiles.replaceChildren();
+  for (const profile of viewer.getSurfaceProfiles()) {
+    const card = document.createElement("section");
+    card.className = "profile";
+    const title = document.createElement("strong");
+    title.textContent = profile.kind === "pearly-luster" ? "Pearly growth-face luster" : "Directional growth-face striations";
+    const claim = document.createElement("code");
+    claim.textContent = profile.claimId;
+    const description = document.createElement("p");
+    description.textContent = profile.description;
+    const match = document.createElement("div");
+    match.className = `match${profile.matchedFaceCount ? "" : " inactive"}`;
+    match.textContent = profile.matchedFaceCount ? `Active on ${profile.matchedFaceCount} generated face${profile.matchedFaceCount === 1 ? "" : "s"}.` : "No matching generated growth face in this shipped habit.";
+    card.append(title, claim, description, match);
+    profiles.append(card);
+  }
+}
+
+async function load() {
+  await viewer.loadMineral(select.value);
+  viewer.resetCamera();
+  renderProfiles();
+}
+
+function resize() { viewer.resize(canvas.clientWidth, canvas.clientHeight); }
+select.addEventListener("change", load);
+document.getElementById("reset").addEventListener("click", () => viewer.resetCamera());
+window.addEventListener("resize", resize);
+resize();
+await load();
+await new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve)));
+viewer.render();
+document.documentElement.dataset.demoReady = "true";
+</script>
+</body>
+</html>

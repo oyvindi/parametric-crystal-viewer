@@ -193,6 +193,9 @@ Acceptance:
 
 ### SR5 — Reviewed Form-Specific Profiles
 
+**Status:** complete. See the
+[SR5 acceptance audit](sr5-acceptance.md).
+
 Implement the first three reviewed cases in this order:
 
 1. quartz prism-face striations;

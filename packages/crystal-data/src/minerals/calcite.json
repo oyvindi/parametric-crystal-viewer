@@ -2,7 +2,7 @@
   "id": "calcite",
   "name": "Calcite",
   "formula": "CaCO₃",
-  "dataRevision": "m5-1",
+  "dataRevision": "sr5-1",
   "crystallography": {
     "crystalSystem": "trigonal",
     "pointGroup": "-3m",
@@ -29,6 +29,12 @@
       "title": "Dickson (2023), Insights into the growth morphology of calcite cement",
       "url": "https://doi.org/10.1002/dep2.210",
       "notes": "CC-BY 4.0; forms in structural hexagonal axes, section 2.2."
+    },
+    {
+      "id": "handbook-calcite-v1",
+      "title": "Mineral Data Publishing, Calcite, version 1",
+      "url": "https://www.handbookofmineralogy.org/pdfs/calcite.pdf",
+      "notes": "Publicly readable; accessed 2026-09-19. Used as a factual citation only; pearly luster on growth faces {0001} is separate from cleavage appearance."
     }
   ],
   "provenance": [
@@ -59,6 +65,40 @@
       ],
       "status": "curated",
       "derivation": "Named idealized habit presets use documented forms. Development values, disabled forms and preferred views are curated visualization choices, not measured growth or surface-energy parameters."
+    },
+    {
+      "coverage": [
+        "surfaceProfiles"
+      ],
+      "referenceIds": [
+        "handbook-calcite-v1"
+      ],
+      "status": "reported"
+    },
+    {
+      "coverage": [
+        "surfaceProfiles.*.description"
+      ],
+      "status": "curated",
+      "derivation": "Profile text identifies a documented typical growth-face observation, not a specimen measurement. Renderer sheen values are curated and do not apply the separate cleavage claim."
+    }
+  ],
+  "surfaceProfiles": [
+    {
+      "id": "calcite.0001-pearly",
+      "kind": "pearly-luster",
+      "claimId": "surface.calcite.0001-pearly",
+      "surfaceOrigin": "growth-face",
+      "selector": {
+        "family": {
+          "notation": "miller-bravais",
+          "h": 0,
+          "k": 0,
+          "i": 0,
+          "l": 1
+        }
+      },
+      "description": "Typical pearly luster on calcite basal {0001} growth faces; cleavage-only appearance is intentionally excluded and this is not specimen-measured."
     }
   ],
   "habits": [

@@ -508,6 +508,27 @@ Appearance settings must not modify scientific geometry. Rendering behavior and 
 
 ---
 
+## Reviewed Surface Profiles
+
+`surfaceProfiles` carries only reviewed, typical surface observations eligible for
+face-local rendering. Each record has a stable profile and claim ID, a growth-face
+selector, a concise description, and—where documented—a crystallographic direction
+relationship. It does not contain frequency, amplitude, phase, seed, or a claim that
+the displayed specimen was measured. Those are curated renderer choices owned by
+`crystal-three`.
+
+The initial records are quartz prism `m {10-10}` striations perpendicular to c,
+calcite `{0001}` growth-face pearly luster, and pyrite cube `{100}` striations along
+the cube/pyritohedron `{210}` intersection edge. Calcite's separate pearly cleavage
+claim is renderer-ineligible and is intentionally absent. An unmatched, absent,
+ambiguous, or unknown profile falls back to no face-local treatment.
+
+Profile selectors and renderer mapping do not alter mineral forms, generated vertices,
+face normals, contributors, bounds, exports, or scientific inspection. The separation
+is recorded in [ADR 0008](decisions/0008-reviewed-surface-profiles.md).
+
+---
+
 ## Phase Data
 
 A mineral may have multiple structural phases.

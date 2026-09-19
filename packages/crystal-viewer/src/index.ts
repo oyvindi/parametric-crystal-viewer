@@ -2,8 +2,8 @@ import { Scene, PerspectiveCamera, WebGLRenderer, MeshPhysicalMaterial, Mesh, Me
 import { HDRLoader } from "three/addons/loaders/HDRLoader.js";
 import { EXRLoader } from "three/addons/loaders/EXRLoader.js";
 import { createLattice, expandAtomicStructure, generateCrystal, generateCrystalFromFaces, inferBonds, validatePeriodicBonds, type Diagnostic, type GeometryResult, type CrystalGeometry, type CrystalFace, type ExpandedAtom, type Lattice, type PeriodicBond } from "@crystal/core";
-import { loadMineral as loadMineralData, createCrystalInput, resolveHabit, resolveCrystallography, importCif, getMineral, validateMineral, MineralDataError, type Mineral, type MineralCrystallography, type StructuralDefinition } from "@crystal/data";
-import { createFaceLocalGeometry, updateFaceLocalAttributes, createAtomicStructure, atomicBounds, createCrystalMaterial, applyAppearance, applySurfaceDetail, updateSurfaceDetailStrength, resolveAppearance, APPEARANCE_FIELDS, type AppearanceParams, type AppearanceField, type ResolvedAppearance, type LusterCategory } from "@crystal/three";
+import { loadMineral as loadMineralData, createCrystalInput, resolveHabit, resolveCrystallography, importCif, getMineral, validateMineral, MineralDataError, type Mineral, type MineralCrystallography, type StructuralDefinition, type SurfaceProfile } from "@crystal/data";
+import { createFaceLocalGeometry, updateFaceLocalAttributes, createReviewedSurfaceRules, createAtomicStructure, atomicBounds, createCrystalMaterial, applyAppearance, applySurfaceDetail, updateSurfaceDetailStrength, resolveAppearance, APPEARANCE_FIELDS, type AppearanceParams, type AppearanceField, type ResolvedAppearance, type LusterCategory, type FaceSurface } from "@crystal/three";
 import { cameraBasis } from "./camera.js";
 import { STATE_VERSION, validateStateShape, type ViewerState, type ViewMode, type FormState, type MineralRefState, type AppearanceState, type AppearanceOverride, type SurfaceDetailState } from "./state.js";
 
@@ -57,6 +57,15 @@ export interface AppearanceInfo {
 }
 
 export interface AppearanceValues extends ResolvedAppearance {}
+
+/** A reviewed typical surface observation and whether it matches the current geometry. */
+export interface SurfaceProfileInfo {
+    readonly id: string;
+    readonly kind: SurfaceProfile["kind"];
+    readonly claimId: string;
+    readonly description: string;
+    readonly matchedFaceCount: number;
+}
 
 /** Display transform used for high-dynamic-range environment lighting. */
 export type ViewerToneMapping = "none" | "agx" | "aces-filmic";
@@ -140,6 +149,7 @@ export class CrystalViewer extends EventTarget {
     private currentResult: GeometryResult | null = null;
     private currentGeometry: CrystalGeometry | null = null;
     private triangleFaces: Uint32Array | null = null;
+    private faceSurfaces: readonly FaceSurface[] = [];
     private disposed = false;
     private disconnected = false;
     private wasRunning = false;
@@ -548,6 +558,17 @@ export class CrystalViewer extends EventTarget {
         return resolveAppearance(this.effectiveAppearance());
     }
 
+    /** Lists reviewed typical surface profiles and their current face matches. */
+    getSurfaceProfiles(): readonly SurfaceProfileInfo[] {
+        return (this.mineral?.surfaceProfiles ?? []).map((profile) => ({
+            id: profile.id,
+            kind: profile.kind,
+            claimId: profile.claimId,
+            description: profile.description,
+            matchedFaceCount: this.faceSurfaces.filter((face) => face.ruleId === profile.id).length,
+        }));
+    }
+
     /** Selects an appearance preset and clears user overrides. */
     setAppearance(id: string): void {
         this.assertNotDisposed();
@@ -600,9 +621,14 @@ export class CrystalViewer extends EventTarget {
     private applyAppearanceToMesh(): void {
         if (this.mesh) {
             applyAppearance(this.mesh.material, this.effectiveAppearance());
-            if (this.currentGeometry) updateFaceLocalAttributes(this.mesh.geometry, this.currentGeometry, [], [1, 0, 0], this.surfaceSeedKey());
+            if (this.currentGeometry) this.faceSurfaces = updateFaceLocalAttributes(this.mesh.geometry, this.currentGeometry, this.surfaceRules(), [1, 0, 0], this.surfaceSeedKey());
             this.renderOnce();
         }
+    }
+
+    private surfaceRules() {
+        if (!this.mineral) return [];
+        return createReviewedSurfaceRules(this.mineral.surfaceProfiles, resolveCrystallography(this.mineral, this.variantId).unitCell);
     }
 
     private surfaceSeedKey(): string {
@@ -1397,8 +1423,9 @@ export class CrystalViewer extends EventTarget {
         this.clearMesh();
         this.clearLabels();
         const seedKey = this.surfaceSeedKey();
-        const { buffer, triangleFaces } = createFaceLocalGeometry(result.geometry, [], [1, 0, 0], seedKey);
+        const { buffer, triangleFaces, faces } = createFaceLocalGeometry(result.geometry, this.surfaceRules(), [1, 0, 0], seedKey);
         this.triangleFaces = triangleFaces;
+        this.faceSurfaces = faces;
         buffer.center();
         const material = createCrystalMaterial(this.effectiveAppearance(), {
             side: DoubleSide,
@@ -1426,6 +1453,7 @@ export class CrystalViewer extends EventTarget {
             this.mesh.material.dispose();
             this.mesh = null;
         }
+        this.faceSurfaces = [];
     }
 
     private clearHighlight(): void {

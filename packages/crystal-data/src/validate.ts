@@ -1,5 +1,5 @@
 import { validateCrystallography, validateMorphology, type Diagnostic, type Result } from "@crystal/core";
-import type { Mineral, MineralCrystallography, Reference, CrystalFormSetting } from "./types.js";
+import type { Mineral, MineralCrystallography, Reference, CrystalFormSetting, SurfaceSelector } from "./types.js";
 import { LUSTER_CATEGORIES } from "./types.js";
 import { unwrapData, type DataDiagnosticCode } from "./diagnostics.js";
 import { validatePreferredView } from "./preferred-view.js";
@@ -126,12 +126,32 @@ function coversExisting(value: unknown, segments: readonly string[]): boolean {
     return object(value) && Object.hasOwn(value, head!) && coversExisting(value[head!], tail);
 }
 
+function validateIndices(v: RecordValidator, value: unknown, path: string): value is SurfaceSelector {
+    if (!v.record(value, path)) return false;
+    const notation = value.notation;
+    const allowed = notation === "miller-bravais" ? ["notation", "h", "k", "i", "l"] : ["notation", "h", "k", "l"];
+    v.keys(value, allowed, path);
+    if (notation !== "miller" && notation !== "miller-bravais") v.error(`${path}/notation`, "Expected Miller or Miller-Bravais notation.");
+    for (const key of ["h", "k", "l"] as const) v.number(value[key], `${path}/${key}`);
+    if (notation === "miller-bravais") v.number(value.i, `${path}/i`);
+    return true;
+}
+
+function validateSurfaceSelector(v: RecordValidator, value: unknown, path: string): void {
+    if (!v.record(value, path)) return;
+    v.keys(value, ["formId", "family", "orientedIndices"], path);
+    if (value.formId !== undefined) v.string(value.formId, `${path}/formId`);
+    if (value.family !== undefined) validateIndices(v, value.family, `${path}/family`);
+    if (value.orientedIndices !== undefined) validateIndices(v, value.orientedIndices, `${path}/orientedIndices`);
+    if (value.formId === undefined && value.family === undefined && value.orientedIndices === undefined) v.error(path, "A surface selector needs a form ID or Miller selector.");
+}
+
 /** Validate, normalize and freeze a detached mineral snapshot. No geometry is required. */
 export function validateMineral(value: unknown): Result<Mineral> {
     if (object(value) && validated.has(value)) return { ok: true, value: value as unknown as Mineral, diagnostics: [] };
     const v = new RecordValidator();
     if (!v.record(value, "")) return { ok: false, diagnostics: v.diagnostics };
-    v.keys(value, ["id", "name", "formula", "dataRevision", "crystallography", "variants", "habits", "appearance", "references", "provenance"], "");
+    v.keys(value, ["id", "name", "formula", "dataRevision", "crystallography", "variants", "habits", "appearance", "surfaceProfiles", "references", "provenance"], "");
     for (const key of ["id", "name", "formula", "dataRevision"]) v.string(value[key], `/${key}`);
     const scientific: { value: MineralCrystallography; path: string }[] = [];
     if (v.crystallography(value.crystallography, "/crystallography")) scientific.push({ value: value.crystallography as unknown as MineralCrystallography, path: "/crystallography" });
@@ -164,6 +184,23 @@ export function validateMineral(value: unknown): Result<Mineral> {
             v.number(ap.absorptionDensity, `${path}/absorptionDensity`);
             if (typeof ap.absorptionDensity === "number" && ap.absorptionDensity < 0) v.error(`${path}/absorptionDensity`, "Absorption density must be non-negative.");
         }
+    });
+    if (value.surfaceProfiles !== undefined) v.entries(value.surfaceProfiles, "/surfaceProfiles", (profile, path) => {
+        v.keys(profile, ["id", "kind", "claimId", "surfaceOrigin", "selector", "direction", "description"], path);
+        if (profile.kind !== "directional-striations" && profile.kind !== "pearly-luster") v.error(`${path}/kind`, "Unknown surface profile kind.");
+        v.string(profile.claimId, `${path}/claimId`);
+        if (profile.surfaceOrigin !== "growth-face") v.error(`${path}/surfaceOrigin`, "Only reviewed growth-face profiles are renderer-eligible.");
+        v.string(profile.description, `${path}/description`);
+        validateSurfaceSelector(v, profile.selector, `${path}/selector`);
+        if (profile.kind === "directional-striations") {
+            if (!v.record(profile.direction, `${path}/direction`)) return;
+            v.keys(profile.direction, profile.direction.kind === "intersection-edge" ? ["kind", "otherFamily"] : ["kind", "axis"], `${path}/direction`);
+            if (profile.direction.kind === "perpendicular-to-crystal-axis") {
+                if (!["a", "b", "c"].includes(profile.direction.axis as string)) v.error(`${path}/direction/axis`, "Expected crystal axis a, b, or c.");
+            } else if (profile.direction.kind === "intersection-edge") {
+                validateIndices(v, profile.direction.otherFamily, `${path}/direction/otherFamily`);
+            } else v.error(`${path}/direction/kind`, "Unknown surface direction.");
+        } else if (profile.direction !== undefined) v.error(`${path}/direction`, "Pearly-luster profiles do not take a direction.");
     });
     const formLists: { forms: readonly CrystalFormSetting[]; path: string }[] = [];
     v.entries(value.habits, "/habits", (habit, path) => {
@@ -257,6 +294,11 @@ export function validateMineral(value: unknown): Result<Mineral> {
             if (preset[key] !== undefined) requireCoverage(`appearance.${i}.${key}`);
         }
     });
+    mineral.surfaceProfiles?.forEach((profile, i) => {
+        for (const key of ["kind", "claimId", "surfaceOrigin", "selector", "direction", "description"] as const) {
+            if (profile[key] !== undefined) requireCoverage(`surfaceProfiles.${i}.${key}`);
+        }
+    });
     if (v.diagnostics.some((d) => d.severity === "error")) return { ok: false, diagnostics: v.diagnostics };
     // Select supported fields before cloning: extra caller metadata is not part of this schema.
     const snapshot: Mineral = structuredClone({
@@ -264,6 +306,7 @@ export function validateMineral(value: unknown): Result<Mineral> {
         crystallography: normalizeCrystallography(mineral.crystallography),
         habits: mineral.habits, references: mineral.references, provenance: mineral.provenance,
         ...(mineral.appearance ? { appearance: mineral.appearance } : {}),
+        ...(mineral.surfaceProfiles ? { surfaceProfiles: mineral.surfaceProfiles } : {}),
         ...(mineral.variants ? { variants: mineral.variants.map((variant) => ({ ...variant, crystallography: normalizeCrystallography(variant.crystallography) })) } : {}),
     });
     freeze(snapshot);
