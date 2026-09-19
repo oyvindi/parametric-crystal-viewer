@@ -20,7 +20,7 @@
     <canvas id="off-canvas"></canvas>
   </section>
   <section class="view" id="on-view">
-    <div class="overlay-label"><strong>Detail enabled</strong><span id="on-description">Generic strength 0.35</span></div>
+    <div class="overlay-label"><strong>Detail enabled</strong><span id="on-description">Surface detail strength 0.35</span></div>
     <canvas id="on-canvas"></canvas>
   </section>
 </main>
@@ -189,7 +189,7 @@ function applyDetail() {
   const value = strength();
   strengthValue.value = value.toFixed(2);
   const on = enabled();
-  onDescription.textContent = on ? `Generic strength ${value.toFixed(2)}` : "Detail disabled";
+  onDescription.textContent = on ? `Surface detail strength ${value.toFixed(2)}` : "Detail disabled";
   offViewer.setSurfaceDetail(false, value);
   onViewer.setSurfaceDetail(on, value);
 }
