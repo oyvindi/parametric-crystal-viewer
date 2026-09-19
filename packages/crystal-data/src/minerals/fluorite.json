@@ -2,7 +2,7 @@
   "id": "fluorite",
   "name": "Fluorite",
   "formula": "CaF₂",
-  "dataRevision": "sr2-1",
+  "dataRevision": "sr8-2",
   "crystallography": {
     "crystalSystem": "cubic",
     "pointGroup": "m-3m",
@@ -29,6 +29,12 @@
       "title": "Mineral Data Publishing, Fluorite, version 1",
       "url": "https://www.handbookofmineralogy.org/pdfs/fluorite.pdf",
       "notes": "Publicly readable; accessed 2026-09-19. Used as a factual citation only; the source describes crystal luster as vitreous."
+    },
+    {
+      "id": "desai-fluorite-surfaces-1979",
+      "title": "Desai (1979), Surface structures of fluorite crystals",
+      "url": "https://doi.org/10.1002/crat.19790140306",
+      "notes": "Public abstract; accessed 2026-09-19. Used as a factual citation only; reports growth layers parallel to natural fluorite {100} faces and distinguishes natural etch pits."
     }
   ],
   "provenance": [
@@ -60,6 +66,16 @@
       "referenceIds": [
         "handbook-fluorite-v1"
       ],
+      "status": "reported"
+    },
+    {
+      "coverage": ["appearanceClaims.0", "appearanceClaims.1", "appearanceClaims.2"],
+      "referenceIds": ["handbook-fluorite-v1"],
+      "status": "reported"
+    },
+    {
+      "coverage": ["appearanceClaims.3"],
+      "referenceIds": ["desai-fluorite-surfaces-1979"],
       "status": "reported"
     },
     {
@@ -107,6 +123,12 @@
       "absorptionColor": "#ffffff",
       "absorptionDensity": 0
     }
+  ],
+  "appearanceClaims": [
+    {"id":"appearance.fluorite.color","property":"color","description":"Fluorite occurs colorless, white, purple, blue, green, yellow, orange, red, pink, brown, and bluish black; it is commonly zoned.","surfaceOrigin":"not-surface-specific","disposition":"descriptive-only","dispositionReason":"The colour range and zoning do not define measured renderer colours.","typicality":"general"},
+    {"id":"appearance.fluorite.diaphaneity","property":"diaphaneity","description":"Fluorite is reported as transparent to translucent.","surfaceOrigin":"not-surface-specific","disposition":"descriptive-only","dispositionReason":"Diaphaneity does not directly determine the curated transmission value.","typicality":"general"},
+    {"id":"appearance.fluorite.luster","property":"luster","description":"Fluorite has vitreous luster, becoming dull when massive.","surfaceOrigin":"not-surface-specific","disposition":"descriptive-only","dispositionReason":"The whole-mineral luster observation has no growth-face selector.","typicality":"general"},
+    {"id":"surface.fluorite.100-growth-steps","property":"growth-steps","description":"Natural fluorite may grow through spreading and piling growth layers parallel to {100} faces.","surfaceOrigin":"growth-face","disposition":"candidate","dispositionReason":"The source supports a {100} growth mechanism but not a renderer scale, density, or a claim that every fluorite specimen is terraced.","selector":{"family":{"notation":"miller","h":1,"k":0,"l":0}}}
   ],
   "habits": [
     {

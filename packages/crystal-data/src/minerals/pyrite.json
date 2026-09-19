@@ -2,7 +2,7 @@
   "id": "pyrite",
   "name": "Pyrite",
   "formula": "FeS₂",
-  "dataRevision": "sr5-1",
+  "dataRevision": "sr8-1",
   "crystallography": {
     "crystalSystem": "cubic",
     "pointGroup": "m-3",
@@ -90,7 +90,8 @@
     },
     {
       "coverage": [
-        "surfaceProfiles"
+        "surfaceProfiles",
+        "appearanceClaims"
       ],
       "referenceIds": [
         "eb1911-pyrites",
@@ -125,6 +126,18 @@
         }
       },
       "description": "Typical cube {100} growth-face striations parallel to cube/pyritohedron {210} intersection edges; not specimen-measured."
+    }
+  ],
+  "appearanceClaims": [
+    {
+      "id": "surface.pyrite.100-striation",
+      "property": "striations",
+      "description": "Pyrite cube {100} growth faces may be striated parallel to their intersections with pyritohedron {210} faces.",
+      "surfaceOrigin": "growth-face",
+      "disposition": "renderer-eligible",
+      "selector": {
+        "formId": "a"
+      }
     }
   ],
   "appearance": [

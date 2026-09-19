@@ -264,6 +264,142 @@ Define state migration before changing the serialized schema. Record visual revi
 automated mapping tests, performance results, accessibility behavior for motion or
 high-frequency effects, and browser coverage in a surface-rendering acceptance audit.
 
+### SR8 — Descriptive Appearance-Claim Catalogue
+
+**Status:** in progress. This phase improves the catalogue's scientific description of
+how minerals commonly appear; it does not by itself add a renderer effect.
+
+The current `MineralAppearance` presets contain selected rendering inputs, while
+`surfaceProfiles` contains only renderer-eligible, reviewed growth-face rules. Add a
+separate, provenance-backed descriptive-claim layer in `crystal-data` so the catalogue
+can preserve evidence that is useful to a reader but is not yet safe to realize as a
+face-local shader treatment. The exact record shape and validation contract belong in
+the [data model](data-model.md#mineral-appearance), not in this plan.
+
+Each claim must identify:
+
+* a stable ID, concise factual paraphrase, and provenance coverage;
+* the visual property — initially colour/variety, diaphaneity, luster, striations,
+  growth steps or terraces, cleavage appearance, twinning appearance, fibrous
+  appearance, coating/tarnish, or other explicitly named surface character;
+* its scope: general mineral or variety, a crystallographic form when known, and the
+  surface origin (`growth-face`, `cleavage`, `fracture`, `twinning`, aggregate/fibrous,
+  weathered/coated, or unknown);
+* typicality when the source states it; and
+* an explicit renderer disposition: `descriptive-only`, `candidate`,
+  `renderer-eligible`, `blocked`, or `rejected`, with the reason when it is not
+  renderer-eligible.
+
+Do not duplicate the renderer's RGB, roughness, transmission, IOR, or procedural
+constants in these claims. Those remain curated mappings. A colour claim describes a
+reported range, variety, zoning, or other source fact; it does not assert that a
+single hex value is measured. Likewise, a luster or diaphaneity claim must not imply
+that the current material model simulates birefringence, pleochroism, dispersion,
+inclusions, fluorescence, or other unsupported optical effects.
+
+Start with the current nine-mineral catalogue and the source queue in the
+[surface-rendering acquisition record](sources/surface-rendering-acquisition.md).
+Record concise paraphrases and citations only; do not commit restricted PDFs, scans,
+figures, or substantial source excerpts. Add a source to that record before a new
+claim enters the catalogue.
+
+Initial classification targets:
+
+| Mineral(s) | Claim coverage to capture | Initial disposition |
+|---|---|---|
+| Quartz, calcite, pyrite | Existing accepted growth-face claims, plus general luster/appearance context where sourced | Keep the three existing profiles renderer-eligible; other claims descriptive-only unless separately accepted |
+| Albite | Vitreous luster, pearly cleavage appearance, and polysynthetic twinning striae | Cleavage descriptive-only; twinning blocked pending twinning and surface-origin support |
+| Anatase | Adamantine-to-splendent/metallic luster range; candidate pyramidal-face striations | Keep striations candidate until the source's pyramid notation and local direction are reconciled with the shipped habits |
+| Beryl | Vitreous/resinous luster range and transparency | Descriptive-only; any prism striation remains candidate until a reliable form-specific source is reviewed |
+| Fluorite | Vitreous luster and rounded or stepped morphology; candidate `{100}` growth terraces | Keep steps candidate until source scope, face selector, and growth-versus-dissolution treatment are reviewed |
+| Forsterite | Vitreous luster and striations parallel to elongation | Striation blocked until the elongation direction is resolved for the shipped habits |
+| Gypsum | Coarse `[001]` striations, subvitreous luster, pearly `{010}` cleavage, and silky fibrous material | Growth-face striation candidate until its affected form is known; cleavage and fibrous claims descriptive-only |
+
+Promotion from a descriptive claim to `surfaceProfiles` requires all of the existing
+SR0/SR5 gates: an accessible traceable source, an unambiguous mineral identity and
+crystallographic basis, a compatible generated-face selector, an explicit growth-face
+origin, and—when directional—a verified local crystallographic direction. Promotion
+is a reviewed data change, not an automatic consequence of adding a descriptive
+claim. Claims with an unknown origin, or ones about cleavage, fracture, twinning,
+fibrous aggregates, polishing, coatings, or weathering, must never match ordinary
+generated growth faces.
+
+Acceptance:
+
+* all nine shipped minerals have at least one provenance-backed descriptive appearance
+  claim or an explicit documented no-claim outcome for each researched category;
+* every claim has a stable ID, source reference, property, scope/origin, disposition,
+  and concise paraphrase;
+* validation rejects unknown property, origin, disposition, missing provenance, and
+  a renderer-eligible claim without a compatible growth-face selector;
+* catalogue tests demonstrate that descriptive-only, blocked, and candidate claims
+  cannot alter materials or select faces;
+* the existing quartz, calcite, and pyrite `surfaceProfiles` remain the only
+  renderer-active mineral-specific rules unless a new claim has passed promotion; and
+* documentation distinguishes reported observations from curated appearance presets
+  and renderer constants.
+
+### SR9 — Face-Local Growth Steps and Dissolution
+
+**Status:** planned. This phase adds only face-local, shader-realized detail. It must
+not make a convex idealized crystal appear to have measured non-convex morphology.
+
+Extend the reviewed surface-profile vocabulary with `growth-steps` and `etch-pits`.
+Their factual claims must distinguish growth from dissolution and identify a
+crystallographic face family or form. Add an explicit dissolution/etch surface origin
+to the descriptive-claim model before accepting a natural etching claim; laboratory
+etching may inform mechanism but cannot by itself establish a typical natural-specimen
+renderer profile.
+
+Start with two evidence-gated candidates:
+
+1. **Fluorite `{100}` terraces.** Review evidence for two-dimensional growth layers
+   parallel to `{100}`, separately from etch pits reported on `{100}` and `{111}`.
+   Do not generalize the rule to every fluorite face or imply that the displayed
+   specimen is stepped.
+2. **Quartz etching.** Add natural quartz etching as a descriptive claim first.
+   A `z`-face profile is eligible for review only if the source supports the observed
+   feature, its natural dissolution origin, and its face selector. Synthetic or
+   deliberately etched quartz remains mechanism-only evidence.
+
+Anatase striations are a parallel candidate, not an SR9 implementation target: first
+resolve whether the reported pyramidal faces map unambiguously to a shipped form and
+whether the feature is representative beyond its documented locality.
+
+The renderer may use deterministic, sparse normal and roughness perturbations in a
+face-local crystallographic frame. It must not displace vertices, add cavities to the
+silhouette, change face picking, or simulate source-measured pit size, density, or
+depth. Growth steps and etch pits need distinct profiles, seeds, and visual language:
+etched pits must not read as raised growth terraces.
+
+Acceptance:
+
+* every activated profile has a reviewed growth or dissolution claim, compatible face
+  selector, and source-specific scope;
+* `{100}` fluorite growth steps and fluorite `{100}`/`{111}` etch pits remain separate;
+* the quartz effect appears only on the accepted face class and is identified as a
+  typical feature, never a measurement of the displayed specimen;
+* enabling either effect leaves core geometry, exports, picking, bounds, and face
+  normals unchanged; and
+* numeric tests cover selector matching and visual regressions demonstrate no seams,
+  camera-space swimming, or confusion between raised and recessed patterns.
+
+### SR10 — Non-Convex Growth Morphologies
+
+**Status:** deferred. Skeleton, hopper, window/fenster, and comparable quartz growth
+forms are not surface textures. Edge-dominant growth produces frame-like or recessed
+geometry that changes silhouette and may be non-convex.
+
+Before implementation, define a separate display-only growth-morphology layer linked
+to, but never modifying, an idealized `HabitPreset`. It must preserve the scientific
+core mesh and provide explicit provenance, terminology, and a mode/label that makes
+the display approximation clear. Do not use `surfaceProfiles`, normal mapping, or
+the current convex half-space intersection to imitate skeleton quartz.
+
+This phase requires a separate architecture and data-model decision covering
+non-convex display geometry, inspection/picking behavior, exports, state, and the
+ambiguous collector terminology around skeleton, hopper, window, and fenster quartz.
+
 ## Cross-Cutting Test Matrix
 
 At minimum, test:
@@ -309,6 +445,7 @@ The following require prototypes or evidence and are intentionally not decided h
 * built-in environment asset and its license;
 * serialized state coverage for seeds and surface controls;
 * whether geometric displacement or damage is ever supported; and
+* representation, interaction, and export of non-convex growth morphology; and
 * whether advanced anisotropic optics warrants a separate milestone.
 
 Adopt durable choices through the normal architecture or decision-record process.

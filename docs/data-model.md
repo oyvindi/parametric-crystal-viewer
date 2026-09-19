@@ -506,6 +506,32 @@ Rose quartz
 
 Appearance settings must not modify scientific geometry. Rendering behavior and visual validation are defined in [Appearance Validation](architecture.md#appearance-validation).
 
+### Descriptive Appearance Claims
+
+`appearanceClaims` records source-backed observations about how a mineral or variety
+typically appears. It is separate from `appearance`: RGB colours, roughness,
+transmission, IOR, and absorption fields remain curated renderer inputs and must not
+be presented as measured specimen properties. It is also separate from
+[`surfaceProfiles`](#reviewed-surface-profiles): a descriptive claim cannot select a
+face or change rendering.
+
+Each claim has a stable ID, property, concise factual paraphrase, surface origin,
+review disposition, and provenance. It may identify a variety, typicality, and a
+crystallographic selector when the source supports one. The implemented type defines
+the controlled property, origin, and disposition vocabularies.
+
+Use `not-surface-specific` for general colour, luster, or diaphaneity observations.
+Use a specific origin for growth faces, cleavage, fractures, twins, fibrous
+aggregates, weathered/coated material, and dissolution/etching. Claims whose origin is unknown remain
+descriptive and must not be mapped onto generated faces.
+
+`renderer-eligible` means that the claim has passed evidence review: it must describe
+a growth face and supply a compatible selector. It still does not render by itself;
+promotion into a reviewed `surfaceProfiles` record is a separate data change. Every
+other disposition requires a reason. This preserves candidate, blocked, cleavage,
+fracture, twinning, fibrous, and weathered observations without treating them as
+ordinary crystal growth faces.
+
 ---
 
 ## Reviewed Surface Profiles

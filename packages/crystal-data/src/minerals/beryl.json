@@ -2,7 +2,7 @@
   "id": "beryl",
   "name": "Beryl",
   "formula": "Be₃Al₂Si₆O₁₈",
-  "dataRevision": "sr7-1",
+  "dataRevision": "sr8-1",
   "crystallography": {
     "crystalSystem": "hexagonal",
     "pointGroup": "6/mmm",
@@ -58,6 +58,11 @@
       "status": "reported"
     },
     {
+      "coverage": ["appearanceClaims"],
+      "referenceIds": ["handbook-beryl-v1"],
+      "status": "reported"
+    },
+    {
       "coverage": [
         "appearance"
       ],
@@ -102,6 +107,11 @@
       "absorptionColor": "#ffffff",
       "absorptionDensity": 0
     }
+  ],
+  "appearanceClaims": [
+    {"id":"appearance.beryl.color","property":"color","description":"Beryl occurs colorless, white, blue, green, yellow, rose to red, and may be zoned.","surfaceOrigin":"not-surface-specific","disposition":"descriptive-only","dispositionReason":"The reported colour range and zoning do not define measured renderer colours.","typicality":"general"},
+    {"id":"appearance.beryl.diaphaneity","property":"diaphaneity","description":"Beryl is reported as transparent to translucent.","surfaceOrigin":"not-surface-specific","disposition":"descriptive-only","dispositionReason":"Diaphaneity does not directly determine the curated transmission value.","typicality":"general"},
+    {"id":"appearance.beryl.luster","property":"luster","description":"Beryl has vitreous to resinous luster.","surfaceOrigin":"not-surface-specific","disposition":"blocked","dispositionReason":"The current luster vocabulary has no resinous category, and a material mapping needs review.","typicality":"general"}
   ],
   "habits": [
     {

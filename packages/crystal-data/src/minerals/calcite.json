@@ -2,7 +2,7 @@
   "id": "calcite",
   "name": "Calcite",
   "formula": "CaCO₃",
-  "dataRevision": "sr7-1",
+  "dataRevision": "sr8-1",
   "crystallography": {
     "crystalSystem": "trigonal",
     "pointGroup": "-3m",
@@ -84,7 +84,8 @@
     },
     {
       "coverage": [
-        "surfaceProfiles"
+        "surfaceProfiles",
+        "appearanceClaims"
       ],
       "referenceIds": [
         "handbook-calcite-v1"
@@ -115,6 +116,32 @@
         }
       },
       "description": "Typical pearly luster on calcite basal {0001} growth faces; cleavage-only appearance is intentionally excluded and this is not specimen-measured."
+    }
+  ],
+  "appearanceClaims": [
+    {
+      "id": "surface.calcite.0001-pearly",
+      "property": "luster",
+      "description": "Calcite basal {0001} growth faces may have pearly luster.",
+      "surfaceOrigin": "growth-face",
+      "disposition": "renderer-eligible",
+      "selector": {
+        "family": {
+          "notation": "miller-bravais",
+          "h": 0,
+          "k": 0,
+          "i": 0,
+          "l": 1
+        }
+      }
+    },
+    {
+      "id": "surface.calcite.cleavage-pearly",
+      "property": "cleavage-appearance",
+      "description": "Calcite cleavage surfaces may have pearly luster.",
+      "surfaceOrigin": "cleavage",
+      "disposition": "descriptive-only",
+      "dispositionReason": "Cleavage observations must not select generated growth faces."
     }
   ],
   "appearance": [

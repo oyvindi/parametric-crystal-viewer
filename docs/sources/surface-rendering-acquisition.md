@@ -37,13 +37,17 @@ All URLs were accessible without authentication on 2026-09-19.
 | Quartz | [Handbook of Mineralogy: Quartz](https://www.handbookofmineralogy.org/pdfs/quartz.pdf) | Prismatic forms; striation relative to `[0001]`; vitreous luster for crystals | Publicly readable; all rights reserved; cite and paraphrase facts only | Visually verify the perpendicular symbol and barred indices; map the affected statement to the shipped `m` form |
 | Quartz | [The Quartz Page: Crystal Forms](https://www.quartzpage.de/crs_forms.html) | Secondary corroboration that the `m` face is commonly striated perpendicular to the c-axis | Publicly readable; reuse terms not yet recorded; link and paraphrase only | Record publisher/author and terms; use only as corroboration unless reuse status is clarified |
 | Quartz | [Van Praagh & Willis (1952), DOI 10.1038/169623b0](https://doi.org/10.1038/169623b0) | Research context for prism-face striations and their orientation | Abstract publicly readable; full article may require subscription; supplementary only | Do not make acceptance depend on paywalled text; check for an authorized open copy |
+| Quartz | [GIA: Causes of Iridescence in Natural Quartz](https://origin.prod.gia.edu/gems-gemology/spring-2017-iridescence-natural-quartz) | Preferential etching of periodic defects on a natural `z` face; ridge-and-valley texture | Publicly readable article; terms and reuse status must be recorded before any redistribution | Add a descriptive dissolution/etching claim; do not infer a universal quartz texture or profile from this locality-specific case |
+| Quartz | [Augustine (1960), DOI 10.1016/0022-3697(60)90019-6](https://doi.org/10.1016/0022-3697(60)90019-6) | Etched pits replacing growth hillocks on synthetic rhombohedral faces and basal pinacoids | Abstract publicly readable; full article may require subscription; supplementary mechanism evidence only | Do not use synthetic or deliberately etched material as sole support for a natural renderer profile |
 | Calcite | [Handbook of Mineralogy: Calcite](https://www.handbookofmineralogy.org/pdfs/calcite.pdf) | Vitreous general luster; pearly luster on `{0001}` and cleavage surfaces | Publicly readable; all rights reserved; cite and paraphrase facts only | Visually verify barred notation; separate basal growth-face evidence from cleavage appearance |
 | Pyrite | [Handbook of Mineralogy: Pyrite](https://www.handbookofmineralogy.org/pdfs/pyrite.pdf) | Metallic/splendent luster; striation conforming to pyritohedral symmetry | Publicly readable; all rights reserved; cite and paraphrase facts only | Verify point-group typography; insufficient alone for an exact cube-face tangent direction |
 | Pyrite | [1911 Encyclopaedia Britannica: Pyrites](https://en.wikisource.org/wiki/1911_Encyclop%C3%A6dia_Britannica/Pyrites) | Cube-face striations parallel to cube/pyritohedron intersection edges and perpendicular between adjoining faces | Historical article is public domain; Wikisource transcription metadata/license must be retained if copied | Verify the transcription against the page scan and normalize the cube `{100}` / pyritohedron `{210}` relationship |
 | Albite | [Handbook of Mineralogy: Albite](https://www.handbookofmineralogy.org/pdfs/albite.pdf) | Vitreous luster; pearly cleavage appearance; polysynthetic twinning striae on specified forms | Publicly readable; all rights reserved; cite and paraphrase facts only | Treat twinning striae as blocked until twinning and surface-origin semantics can represent them; do not use cleavage luster on growth faces |
 | Anatase | [Handbook of Mineralogy: Anatase](https://www.handbookofmineralogy.org/pdfs/anatase.pdf) | Adamantine-to-splendent/metallic luster range; common forms | Publicly readable; all rights reserved; cite and paraphrase facts only | Determine whether luster variation belongs to named appearance presets; no form-specific texture claim yet |
+| Anatase | [USGS Bulletin 1107-B: Heavy Minerals as Guides to Uranium-Vanadium Ore Deposits in the Morrison Formation, Colorado](https://pubs.usgs.gov/bul/1107b/report.pdf) | Closely spaced striations on some pyramidal faces, parallel to basal-pinacoid edges | Publicly accessible government report; citation and factual paraphrase only | Preserve as a locality-specific candidate; reconcile pyramid notation and direction with shipped Anatase forms before profile review |
 | Beryl | [Handbook of Mineralogy: Beryl](https://www.handbookofmineralogy.org/pdfs/beryl.pdf) | Vitreous/resinous luster range; transparency and common forms | Publicly readable; all rights reserved; cite and paraphrase facts only | Use for categorical luster review; locate a separate reliable source before adding prism striations |
 | Fluorite | [Handbook of Mineralogy: Fluorite](https://www.handbookofmineralogy.org/pdfs/fluorite.pdf) | Vitreous crystal luster; rounded or stepped morphology | Publicly readable; all rights reserved; cite and paraphrase facts only | Decide whether “stepped” is representable as shading-only detail; do not imply a form, direction, or scale absent from the source |
+| Fluorite | [Desai (1979), DOI 10.1002/crat.19790140306](https://onlinelibrary.wiley.com/doi/abs/10.1002/crat.19790140306) | Natural `{100}` and `{111}` face microstructures; growth layers parallel to `{100}`; distinct natural etch pits | Public abstract; full text subject to publisher terms; cite and paraphrase facts only | Review a `{100}` growth-step candidate separately from `{100}`/`{111}` dissolution/etch candidates |
 | Forsterite | [Handbook of Mineralogy: Forsterite](https://www.handbookofmineralogy.org/pdfs/forsterite.pdf) | Vitreous luster; striations parallel to elongation | Publicly readable; all rights reserved; cite and paraphrase facts only | Identify the crystallographic elongation direction for each shipped habit from another source or record; block shader direction until resolved |
 | Gypsum | [Handbook of Mineralogy: Gypsum](https://www.handbookofmineralogy.org/pdfs/gypsum.pdf) | Coarse striations parallel to `[001]`; subvitreous luster; pearly `{010}` cleavage and silky fibrous material | Publicly readable; all rights reserved; cite and paraphrase facts only | Determine which growth forms carry the stated striation; keep cleavage and fibrous appearances out of ordinary growth-face rules |
 
@@ -59,6 +63,9 @@ cite these IDs without treating procedural values as measurements.
 | `surface.calcite.0001-pearly` | accepted 2026-09-19 | growth face | Calcite basal `{0001}` faces may be pearly. No shipped calcite habit currently contains this form, so the accepted claim does not yet match a rendered face. | `handbook-calcite-v1`, Crystal Data and Optical Properties; visual PDF review confirmed `{0001}` and barred crystallographic notation. |
 | `surface.calcite.cleavage-pearly` | accepted, renderer-ineligible 2026-09-19 | cleavage | Calcite cleavage surfaces may be pearly. This must not select ordinary generated growth faces. | `handbook-calcite-v1`, Physical and Optical Properties. |
 | `surface.pyrite.100-striation` | accepted 2026-09-19 | growth face / oscillatory combination | Pyrite cube `{100}` faces may be striated parallel to their intersection edges with pyritohedron `{210}`; directions on adjacent cube faces are perpendicular. | `eb1911-pyrites`, article text and source scan; corroborated at mineral level by `handbook-pyrite-v1`. |
+| `surface.anatase.pyramid-striation` | candidate 2026-09-19 | unresolved | Some Colorado anatase pyramidal faces show closely spaced striations parallel to basal-pinacoid edges. | `usgs-anatase-striations-1107b`; locality-specific; exact pyramid family and representative scope remain unresolved. |
+| `surface.fluorite.100-growth-steps` | candidate 2026-09-19 | growth face, pending review | Natural fluorite may grow through spreading and piling growth layers parallel to `{100}`. | `desai-fluorite-surfaces-1979`; keep separate from reported natural etch pits on `{100}` and `{111}`. |
+| `surface.quartz.z-etching` | candidate 2026-09-19 | dissolution/etch | Natural quartz `z` faces can show ridge-and-valley texture through preferential etching of periodic defects. | `gia-quartz-iridescence-2017`; locality-specific and not a general quartz profile. |
 
 ### Stable references
 
@@ -71,6 +78,10 @@ cite these IDs without treating procedural values as measurements.
 | `handbook-beryl-v1` | Mineral Data Publishing, *Beryl*, version 1, [PDF](https://www.handbookofmineralogy.org/pdfs/beryl.pdf), accessed 2026-09-19. | Publicly readable, all rights reserved; facts paraphrased, no source artifact distributed. |
 | `handbook-fluorite-v1` | Mineral Data Publishing, *Fluorite*, version 1, [PDF](https://www.handbookofmineralogy.org/pdfs/fluorite.pdf), accessed 2026-09-19. | Publicly readable, all rights reserved; facts paraphrased, no source artifact distributed. |
 | `handbook-forsterite-v1` | Mineral Data Publishing, *Forsterite*, version 1, [PDF](https://www.handbookofmineralogy.org/pdfs/forsterite.pdf), accessed 2026-09-19. | Publicly readable, all rights reserved; facts paraphrased, no source artifact distributed. |
+| `usgs-anatase-striations-1107b` | U.S. Geological Survey, *Heavy Minerals as Guides to Uranium-Vanadium Ore Deposits in the Morrison Formation, Colorado*, Bulletin 1107-B, [PDF](https://pubs.usgs.gov/bul/1107b/report.pdf), accessed 2026-09-19. | Publicly accessible government report; facts paraphrased, no source artifact distributed. |
+| `desai-fluorite-surfaces-1979` | C. C. Desai (1979), “Surface structures of fluorite crystals,” *Kristall und Technik* 14, 289–293, [DOI](https://doi.org/10.1002/crat.19790140306), accessed 2026-09-19. | Abstract publicly readable; facts paraphrased, no source artifact distributed. |
+| `gia-quartz-iridescence-2017` | Lin et al. (2017), “Causes of Iridescence in Natural Quartz,” *Gems & Gemology*, [article](https://origin.prod.gia.edu/gems-gemology/spring-2017-iridescence-natural-quartz), accessed 2026-09-19. | Publicly readable; facts paraphrased, no source artifact distributed. |
+| `augustine-quartz-etching-1960` | F. Augustine (1960), “Topography and etch patterns of synthetic quartz,” *Journal of Physics and Chemistry of Solids* 13, 344–346, [DOI](https://doi.org/10.1016/0022-3697(60)90019-6), accessed 2026-09-19. | Abstract publicly readable; mechanism evidence only; facts paraphrased, no source artifact distributed. |
 | `eb1911-pyrites` | L. J. Spencer (1911), “Pyrites,” *Encyclopædia Britannica*, vol. 22, pp. 696–697, [transcription and scan link](https://en.wikisource.org/wiki/1911_Encyclop%C3%A6dia_Britannica/Pyrites), accessed 2026-09-19. | Original is public domain. No prose or figure is copied into distributable data. |
 
 ### Quartz prism striations
@@ -115,14 +126,18 @@ seek a modern open source.
 The Handbook sheets establish a common starting point for all current minerals but do
 not finish the evidence work. Research proceeds in this order:
 
-1. Resolve the explicit gypsum and forsterite striation selectors and directions.
-2. Find an accessible, reliable source for any proposed beryl prism striation.
-3. Determine whether fluorite growth steps can be represented without inventing scale
-   or face assignment.
-4. Separate albite twinning striae from growth-face rendering; wait for twinning support
+1. Review `{100}` fluorite growth steps separately from `{100}`/`{111}` dissolution and
+   determine whether either can be represented without inventing scale.
+2. Resolve the Anatase pyramid striation family, local direction, and representative
+   scope before any renderer profile is proposed.
+3. Classify natural quartz etching separately from synthetic/laboratory etching and
+   review the `z`-face candidate without treating it as a universal quartz feature.
+4. Resolve the explicit gypsum and forsterite striation selectors and directions.
+5. Find an accessible, reliable source for any proposed beryl prism striation.
+6. Separate albite twinning striae from growth-face rendering; wait for twinning support
    where required.
-5. Decide appearance-preset coverage for anatase's broad luster description.
-6. Search for form-specific evidence for the remaining minerals only after the common
+7. Decide appearance-preset coverage for anatase's broad luster description.
+8. Search for form-specific evidence for the remaining minerals only after the common
    luster and microvariation work is validated.
 
 For each new source, add its exact URL or DOI, access date, rights status, relevant

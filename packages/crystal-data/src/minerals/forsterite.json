@@ -2,7 +2,7 @@
   "id": "forsterite",
   "name": "Forsterite",
   "formula": "Mg₂SiO₄",
-  "dataRevision": "sr7-1",
+  "dataRevision": "sr8-1",
   "crystallography": {
     "crystalSystem": "orthorhombic",
     "pointGroup": "mmm",
@@ -58,6 +58,11 @@
       "status": "reported"
     },
     {
+      "coverage": ["appearanceClaims"],
+      "referenceIds": ["handbook-forsterite-v1"],
+      "status": "reported"
+    },
+    {
       "coverage": [
         "appearance"
       ],
@@ -90,6 +95,12 @@
       "absorptionColor": "#ffffff",
       "absorptionDensity": 0
     }
+  ],
+  "appearanceClaims": [
+    {"id":"appearance.forsterite.color","property":"color","description":"Forsterite occurs green, yellowish, lemon-yellow, white, grayish, or blue-gray.","surfaceOrigin":"not-surface-specific","disposition":"descriptive-only","dispositionReason":"The colour range does not define a measured renderer colour.","typicality":"general"},
+    {"id":"appearance.forsterite.diaphaneity","property":"diaphaneity","description":"Forsterite is reported as transparent to translucent.","surfaceOrigin":"not-surface-specific","disposition":"descriptive-only","dispositionReason":"Diaphaneity does not directly determine the curated transmission value.","typicality":"general"},
+    {"id":"appearance.forsterite.luster","property":"luster","description":"Forsterite has vitreous luster.","surfaceOrigin":"not-surface-specific","disposition":"descriptive-only","dispositionReason":"The whole-mineral luster observation has no growth-face selector.","typicality":"general"},
+    {"id":"appearance.forsterite.striations","property":"striations","description":"Euhedral or subhedral forsterite crystals may have striations parallel to their elongation.","surfaceOrigin":"unknown","disposition":"blocked","dispositionReason":"The source does not establish a growth-face origin, and the crystallographic elongation direction has not been resolved for the shipped habits."}
   ],
   "habits": [
     {

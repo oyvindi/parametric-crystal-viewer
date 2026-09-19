@@ -80,6 +80,8 @@ export interface Mineral {
     readonly crystallography: MineralCrystallography;
     readonly habits: readonly HabitPreset[];
     readonly appearance?: readonly MineralAppearance[];
+    /** Source-backed observations about typical appearance; never renderer input by itself. */
+    readonly appearanceClaims?: readonly AppearanceClaim[];
     /** Reviewed, face-specific surface observations. Renderer realization is separate. */
     readonly surfaceProfiles?: readonly SurfaceProfile[];
     readonly variants?: readonly MineralVariant[];
@@ -136,6 +138,56 @@ export interface MineralAppearance {
     readonly ior?: number;
     readonly absorptionColor?: string;
     readonly absorptionDensity?: number;
+}
+
+/** A reported visual-property category, deliberately independent of renderer parameters. */
+export type AppearanceClaimProperty =
+    | "color"
+    | "diaphaneity"
+    | "luster"
+    | "striations"
+    | "growth-steps"
+    | "etching"
+    | "cleavage-appearance"
+    | "twinning-appearance"
+    | "fibrous-appearance"
+    | "coating-or-tarnish"
+    | "surface-character";
+
+/** The physical context to which an appearance observation applies. */
+export type AppearanceClaimSurfaceOrigin =
+    | "not-surface-specific"
+    | "growth-face"
+    | "cleavage"
+    | "fracture"
+    | "twinning"
+    | "aggregate-or-fibrous"
+    | "weathered-or-coated"
+    | "dissolution-or-etch"
+    | "unknown";
+
+/** Review state for a descriptive claim; only a SurfaceProfile can change rendering. */
+export type AppearanceClaimDisposition =
+    | "descriptive-only"
+    | "candidate"
+    | "renderer-eligible"
+    | "blocked"
+    | "rejected";
+
+/**
+ * A traceable observation of how a mineral or variety typically appears.
+ * Numeric material and procedural values remain renderer-owned curated choices.
+ */
+export interface AppearanceClaim {
+    readonly id: string;
+    readonly property: AppearanceClaimProperty;
+    readonly description: string;
+    readonly surfaceOrigin: AppearanceClaimSurfaceOrigin;
+    readonly disposition: AppearanceClaimDisposition;
+    readonly dispositionReason?: string;
+    readonly selector?: SurfaceSelector;
+    readonly variety?: string;
+    readonly typicality?: "general" | "common" | "occasional" | "rare" | "specimen-specific";
 }
 
 /** A structural variant of the mineral (e.g. left/right-handed quartz). */

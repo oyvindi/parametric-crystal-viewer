@@ -2,7 +2,7 @@
   "id": "albite",
   "name": "Albite",
   "formula": "NaAlSi₃O₈",
-  "dataRevision": "sr7-1",
+  "dataRevision": "sr8-1",
   "crystallography": {
     "crystalSystem": "triclinic",
     "pointGroup": "-1",
@@ -59,6 +59,15 @@
     },
     {
       "coverage": [
+        "appearanceClaims"
+      ],
+      "referenceIds": [
+        "handbook-albite-v1"
+      ],
+      "status": "reported"
+    },
+    {
+      "coverage": [
         "appearance"
       ],
       "status": "curated",
@@ -77,6 +86,52 @@
       "ior": 1.529,
       "absorptionColor": "#ffffff",
       "absorptionDensity": 0
+    }
+  ],
+  "appearanceClaims": [
+    {
+      "id": "appearance.albite.color",
+      "property": "color",
+      "description": "Albite occurs white to gray, with bluish, greenish, or reddish colour reported.",
+      "surfaceOrigin": "not-surface-specific",
+      "disposition": "descriptive-only",
+      "dispositionReason": "Colour range describes mineral appearance and does not define a measured renderer colour.",
+      "typicality": "general"
+    },
+    {
+      "id": "appearance.albite.diaphaneity",
+      "property": "diaphaneity",
+      "description": "Albite is reported as transparent to translucent.",
+      "surfaceOrigin": "not-surface-specific",
+      "disposition": "descriptive-only",
+      "dispositionReason": "Diaphaneity does not directly determine the curated transmission value.",
+      "typicality": "general"
+    },
+    {
+      "id": "appearance.albite.luster",
+      "property": "luster",
+      "description": "Albite has vitreous luster, typically pearly on cleavage surfaces.",
+      "surfaceOrigin": "not-surface-specific",
+      "disposition": "descriptive-only",
+      "dispositionReason": "The general luster observation has no growth-face selector.",
+      "typicality": "general"
+    },
+    {
+      "id": "appearance.albite.cleavage-pearly",
+      "property": "cleavage-appearance",
+      "description": "Albite cleavage surfaces are typically pearly.",
+      "surfaceOrigin": "cleavage",
+      "disposition": "descriptive-only",
+      "dispositionReason": "Cleavage observations must not select generated growth faces.",
+      "typicality": "general"
+    },
+    {
+      "id": "appearance.albite.twinning-striae",
+      "property": "twinning-appearance",
+      "description": "Polysynthetic twinning can produce striae on {001} or {010} surfaces.",
+      "surfaceOrigin": "twinning",
+      "disposition": "blocked",
+      "dispositionReason": "Twinning and its surface-origin semantics are not yet represented by the morphology renderer."
     }
   ],
   "habits": [

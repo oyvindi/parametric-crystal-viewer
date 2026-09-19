@@ -3,6 +3,7 @@
  * Paired comparison demos pass both viewers so their framing stays comparable.
  */
 export function installProjectionControl(viewers) {
+  document.body.classList.add("has-projection-control");
   const control = document.createElement("div");
   control.className = "projection-topbar";
   control.innerHTML = `
@@ -26,6 +27,11 @@ export function installProjectionControl(viewers) {
 
 const style = document.createElement("style");
 style.textContent = `
+  /* Standalone demos commonly put Reset at the end of a top header. Reserve this
+     lane so the fixed projection control never obscures that action. */
+  body.has-projection-control > header {
+    padding-right: 210px;
+  }
   .projection-topbar {
     position: fixed;
     inset: 0 0 auto;
@@ -53,6 +59,12 @@ style.textContent = `
     border: 1px solid #777;
     border-radius: 4px;
     font: inherit;
+  }
+  @media (max-width: 640px) {
+    body.has-projection-control > header {
+      padding-right: 18px;
+      padding-top: 56px;
+    }
   }
 `;
 document.head.append(style);

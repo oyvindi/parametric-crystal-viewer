@@ -2,7 +2,7 @@
   "id": "quartz",
   "name": "Quartz",
   "formula": "SiO₂",
-  "dataRevision": "sr5-1",
+  "dataRevision": "sr8-1",
   "crystallography": {
     "crystalSystem": "trigonal",
     "pointGroup": "32",
@@ -85,6 +85,12 @@
       "title": "Mineral Data Publishing, Quartz, version 1.2",
       "url": "https://www.handbookofmineralogy.org/pdfs/quartz.pdf",
       "notes": "Publicly readable; accessed 2026-09-19. Used as a factual citation only; the source describes crystal luster as vitreous."
+    },
+    {
+      "id": "gia-quartz-iridescence-2017",
+      "title": "Lin et al. (2017), Causes of Iridescence in Natural Quartz",
+      "url": "https://origin.prod.gia.edu/gems-gemology/spring-2017-iridescence-natural-quartz",
+      "notes": "Publicly readable; accessed 2026-09-19. Used as a factual citation only; documents preferential etching of periodic defects on natural quartz z faces."
     }
   ],
   "provenance": [
@@ -129,10 +135,20 @@
     },
     {
       "coverage": [
-        "surfaceProfiles"
+        "surfaceProfiles",
+        "appearanceClaims.0"
       ],
       "referenceIds": [
         "handbook-quartz-v1.2"
+      ],
+      "status": "reported"
+    },
+    {
+      "coverage": [
+        "appearanceClaims.1"
+      ],
+      "referenceIds": [
+        "gia-quartz-iridescence-2017"
       ],
       "status": "reported"
     },
@@ -158,6 +174,27 @@
         "axis": "c"
       },
       "description": "Typical prism m {10-10} growth-face striations, perpendicular to the c-axis; not specimen-measured."
+    }
+  ],
+  "appearanceClaims": [
+    {
+      "id": "surface.quartz.m-striation",
+      "property": "striations",
+      "description": "Quartz prism m {10-10} growth faces are commonly striated perpendicular to the c-axis.",
+      "surfaceOrigin": "growth-face",
+      "disposition": "renderer-eligible",
+      "selector": {
+        "formId": "m"
+      },
+      "typicality": "common"
+    },
+    {
+      "id": "surface.quartz.z-etching",
+      "property": "etching",
+      "description": "Natural quartz z faces can show ridge-and-valley texture through preferential etching of periodic defects.",
+      "surfaceOrigin": "dissolution-or-etch",
+      "disposition": "candidate",
+      "dispositionReason": "The documented case is locality-specific, and mapping its z-face terminology to a renderer selector needs review."
     }
   ],
   "appearance": [

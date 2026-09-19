@@ -6,7 +6,7 @@ export const FLUORITE = defineMineral({
   "id": "fluorite",
   "name": "Fluorite",
   "formula": "CaF₂",
-  "dataRevision": "sr2-1",
+  "dataRevision": "sr8-2",
   "crystallography": {
     "crystalSystem": "cubic",
     "pointGroup": "m-3m",
@@ -33,6 +33,12 @@ export const FLUORITE = defineMineral({
       "title": "Mineral Data Publishing, Fluorite, version 1",
       "url": "https://www.handbookofmineralogy.org/pdfs/fluorite.pdf",
       "notes": "Publicly readable; accessed 2026-09-19. Used as a factual citation only; the source describes crystal luster as vitreous."
+    },
+    {
+      "id": "desai-fluorite-surfaces-1979",
+      "title": "Desai (1979), Surface structures of fluorite crystals",
+      "url": "https://doi.org/10.1002/crat.19790140306",
+      "notes": "Public abstract; accessed 2026-09-19. Used as a factual citation only; reports growth layers parallel to natural fluorite {100} faces and distinguishes natural etch pits."
     }
   ],
   "provenance": [
@@ -64,6 +70,16 @@ export const FLUORITE = defineMineral({
       "referenceIds": [
         "handbook-fluorite-v1"
       ],
+      "status": "reported"
+    },
+    {
+      "coverage": ["appearanceClaims.0", "appearanceClaims.1", "appearanceClaims.2"],
+      "referenceIds": ["handbook-fluorite-v1"],
+      "status": "reported"
+    },
+    {
+      "coverage": ["appearanceClaims.3"],
+      "referenceIds": ["desai-fluorite-surfaces-1979"],
       "status": "reported"
     },
     {
@@ -111,6 +127,12 @@ export const FLUORITE = defineMineral({
       "absorptionColor": "#ffffff",
       "absorptionDensity": 0
     }
+  ],
+  "appearanceClaims": [
+    {"id":"appearance.fluorite.color","property":"color","description":"Fluorite occurs colorless, white, purple, blue, green, yellow, orange, red, pink, brown, and bluish black; it is commonly zoned.","surfaceOrigin":"not-surface-specific","disposition":"descriptive-only","dispositionReason":"The colour range and zoning do not define measured renderer colours.","typicality":"general"},
+    {"id":"appearance.fluorite.diaphaneity","property":"diaphaneity","description":"Fluorite is reported as transparent to translucent.","surfaceOrigin":"not-surface-specific","disposition":"descriptive-only","dispositionReason":"Diaphaneity does not directly determine the curated transmission value.","typicality":"general"},
+    {"id":"appearance.fluorite.luster","property":"luster","description":"Fluorite has vitreous luster, becoming dull when massive.","surfaceOrigin":"not-surface-specific","disposition":"descriptive-only","dispositionReason":"The whole-mineral luster observation has no growth-face selector.","typicality":"general"},
+    {"id":"surface.fluorite.100-growth-steps","property":"growth-steps","description":"Natural fluorite may grow through spreading and piling growth layers parallel to {100} faces.","surfaceOrigin":"growth-face","disposition":"candidate","dispositionReason":"The source supports a {100} growth mechanism but not a renderer scale, density, or a claim that every fluorite specimen is terraced.","selector":{"family":{"notation":"miller","h":1,"k":0,"l":0}}}
   ],
   "habits": [
     {
@@ -260,7 +282,7 @@ export const QUARTZ = defineMineral({
   "id": "quartz",
   "name": "Quartz",
   "formula": "SiO₂",
-  "dataRevision": "sr5-1",
+  "dataRevision": "sr8-1",
   "crystallography": {
     "crystalSystem": "trigonal",
     "pointGroup": "32",
@@ -343,6 +365,12 @@ export const QUARTZ = defineMineral({
       "title": "Mineral Data Publishing, Quartz, version 1.2",
       "url": "https://www.handbookofmineralogy.org/pdfs/quartz.pdf",
       "notes": "Publicly readable; accessed 2026-09-19. Used as a factual citation only; the source describes crystal luster as vitreous."
+    },
+    {
+      "id": "gia-quartz-iridescence-2017",
+      "title": "Lin et al. (2017), Causes of Iridescence in Natural Quartz",
+      "url": "https://origin.prod.gia.edu/gems-gemology/spring-2017-iridescence-natural-quartz",
+      "notes": "Publicly readable; accessed 2026-09-19. Used as a factual citation only; documents preferential etching of periodic defects on natural quartz z faces."
     }
   ],
   "provenance": [
@@ -387,10 +415,20 @@ export const QUARTZ = defineMineral({
     },
     {
       "coverage": [
-        "surfaceProfiles"
+        "surfaceProfiles",
+        "appearanceClaims.0"
       ],
       "referenceIds": [
         "handbook-quartz-v1.2"
+      ],
+      "status": "reported"
+    },
+    {
+      "coverage": [
+        "appearanceClaims.1"
+      ],
+      "referenceIds": [
+        "gia-quartz-iridescence-2017"
       ],
       "status": "reported"
     },
@@ -416,6 +454,27 @@ export const QUARTZ = defineMineral({
         "axis": "c"
       },
       "description": "Typical prism m {10-10} growth-face striations, perpendicular to the c-axis; not specimen-measured."
+    }
+  ],
+  "appearanceClaims": [
+    {
+      "id": "surface.quartz.m-striation",
+      "property": "striations",
+      "description": "Quartz prism m {10-10} growth faces are commonly striated perpendicular to the c-axis.",
+      "surfaceOrigin": "growth-face",
+      "disposition": "renderer-eligible",
+      "selector": {
+        "formId": "m"
+      },
+      "typicality": "common"
+    },
+    {
+      "id": "surface.quartz.z-etching",
+      "property": "etching",
+      "description": "Natural quartz z faces can show ridge-and-valley texture through preferential etching of periodic defects.",
+      "surfaceOrigin": "dissolution-or-etch",
+      "disposition": "candidate",
+      "dispositionReason": "The documented case is locality-specific, and mapping its z-face terminology to a renderer selector needs review."
     }
   ],
   "appearance": [
@@ -710,7 +769,7 @@ export const CALCITE = defineMineral({
   "id": "calcite",
   "name": "Calcite",
   "formula": "CaCO₃",
-  "dataRevision": "sr7-1",
+  "dataRevision": "sr8-1",
   "crystallography": {
     "crystalSystem": "trigonal",
     "pointGroup": "-3m",
@@ -792,7 +851,8 @@ export const CALCITE = defineMineral({
     },
     {
       "coverage": [
-        "surfaceProfiles"
+        "surfaceProfiles",
+        "appearanceClaims"
       ],
       "referenceIds": [
         "handbook-calcite-v1"
@@ -823,6 +883,32 @@ export const CALCITE = defineMineral({
         }
       },
       "description": "Typical pearly luster on calcite basal {0001} growth faces; cleavage-only appearance is intentionally excluded and this is not specimen-measured."
+    }
+  ],
+  "appearanceClaims": [
+    {
+      "id": "surface.calcite.0001-pearly",
+      "property": "luster",
+      "description": "Calcite basal {0001} growth faces may have pearly luster.",
+      "surfaceOrigin": "growth-face",
+      "disposition": "renderer-eligible",
+      "selector": {
+        "family": {
+          "notation": "miller-bravais",
+          "h": 0,
+          "k": 0,
+          "i": 0,
+          "l": 1
+        }
+      }
+    },
+    {
+      "id": "surface.calcite.cleavage-pearly",
+      "property": "cleavage-appearance",
+      "description": "Calcite cleavage surfaces may have pearly luster.",
+      "surfaceOrigin": "cleavage",
+      "disposition": "descriptive-only",
+      "dispositionReason": "Cleavage observations must not select generated growth faces."
     }
   ],
   "appearance": [
@@ -949,7 +1035,7 @@ export const PYRITE = defineMineral({
   "id": "pyrite",
   "name": "Pyrite",
   "formula": "FeS₂",
-  "dataRevision": "sr5-1",
+  "dataRevision": "sr8-1",
   "crystallography": {
     "crystalSystem": "cubic",
     "pointGroup": "m-3",
@@ -1037,7 +1123,8 @@ export const PYRITE = defineMineral({
     },
     {
       "coverage": [
-        "surfaceProfiles"
+        "surfaceProfiles",
+        "appearanceClaims"
       ],
       "referenceIds": [
         "eb1911-pyrites",
@@ -1072,6 +1159,18 @@ export const PYRITE = defineMineral({
         }
       },
       "description": "Typical cube {100} growth-face striations parallel to cube/pyritohedron {210} intersection edges; not specimen-measured."
+    }
+  ],
+  "appearanceClaims": [
+    {
+      "id": "surface.pyrite.100-striation",
+      "property": "striations",
+      "description": "Pyrite cube {100} growth faces may be striated parallel to their intersections with pyritohedron {210} faces.",
+      "surfaceOrigin": "growth-face",
+      "disposition": "renderer-eligible",
+      "selector": {
+        "formId": "a"
+      }
     }
   ],
   "appearance": [
@@ -1194,7 +1293,7 @@ export const ANATASE = defineMineral({
   "id": "anatase",
   "name": "Anatase",
   "formula": "TiO₂",
-  "dataRevision": "sr7-2",
+  "dataRevision": "sr8-2",
   "crystallography": {
     "crystalSystem": "tetragonal",
     "pointGroup": "4/mmm",
@@ -1227,6 +1326,12 @@ export const ANATASE = defineMineral({
       "title": "Mineral Data Publishing, Anatase, version 1",
       "url": "https://www.handbookofmineralogy.org/pdfs/anatase.pdf",
       "notes": "Publicly readable; accessed 2026-09-19. Used as a factual citation only; luster is reported as adamantine to splendent, metallic, with colors including brown, yellow, blue, and nearly colorless."
+    },
+    {
+      "id": "usgs-anatase-striations-1107b",
+      "title": "U.S. Geological Survey, Heavy Minerals as Guides to Uranium-Vanadium Ore Deposits in the Morrison Formation, Colorado, Bulletin 1107-B",
+      "url": "https://pubs.usgs.gov/bul/1107b/report.pdf",
+      "notes": "Publicly accessible government report; accessed 2026-09-19. Used as a factual citation only; reports striations on some pyramidal anatase faces in the documented Colorado material."
     }
   ],
   "provenance": [
@@ -1268,6 +1373,16 @@ export const ANATASE = defineMineral({
       "status": "reported"
     },
     {
+      "coverage": ["appearanceClaims.0", "appearanceClaims.1", "appearanceClaims.2"],
+      "referenceIds": ["handbook-anatase-v1"],
+      "status": "reported"
+    },
+    {
+      "coverage": ["appearanceClaims.3"],
+      "referenceIds": ["usgs-anatase-striations-1107b"],
+      "status": "reported"
+    },
+    {
       "coverage": [
         "appearance"
       ],
@@ -1300,6 +1415,12 @@ export const ANATASE = defineMineral({
       "absorptionColor": "#6e421c",
       "absorptionDensity": 0.3
     }
+  ],
+  "appearanceClaims": [
+    {"id":"appearance.anatase.color","property":"color","description":"Anatase is reported brown, yellow, reddish brown, indigo, black, pale green, pale lilac, gray, and rarely nearly colorless.","surfaceOrigin":"not-surface-specific","disposition":"descriptive-only","dispositionReason":"The colour range does not define a measured renderer colour.","typicality":"general"},
+    {"id":"appearance.anatase.diaphaneity","property":"diaphaneity","description":"Anatase ranges from transparent when light coloured to nearly opaque when deeply coloured.","surfaceOrigin":"not-surface-specific","disposition":"descriptive-only","dispositionReason":"Diaphaneity does not directly determine the curated transmission value.","typicality":"general"},
+    {"id":"appearance.anatase.luster","property":"luster","description":"Anatase luster ranges from adamantine to splendent or metallic.","surfaceOrigin":"not-surface-specific","disposition":"blocked","dispositionReason":"The current luster vocabulary has no adamantine or splendent category, and a material mapping needs review.","typicality":"general"},
+    {"id":"surface.anatase.pyramid-striation","property":"striations","description":"Some pyramidal anatase crystals from the documented Colorado material have closely spaced striations parallel to basal-pinacoid edges.","surfaceOrigin":"unknown","disposition":"candidate","dispositionReason":"The report is locality-specific and does not resolve a pyramid family or a renderer direction in the shipped basis."}
   ],
   "habits": [
     {
@@ -1395,7 +1516,7 @@ export const ALBITE = defineMineral({
   "id": "albite",
   "name": "Albite",
   "formula": "NaAlSi₃O₈",
-  "dataRevision": "sr7-1",
+  "dataRevision": "sr8-1",
   "crystallography": {
     "crystalSystem": "triclinic",
     "pointGroup": "-1",
@@ -1452,6 +1573,15 @@ export const ALBITE = defineMineral({
     },
     {
       "coverage": [
+        "appearanceClaims"
+      ],
+      "referenceIds": [
+        "handbook-albite-v1"
+      ],
+      "status": "reported"
+    },
+    {
+      "coverage": [
         "appearance"
       ],
       "status": "curated",
@@ -1470,6 +1600,52 @@ export const ALBITE = defineMineral({
       "ior": 1.529,
       "absorptionColor": "#ffffff",
       "absorptionDensity": 0
+    }
+  ],
+  "appearanceClaims": [
+    {
+      "id": "appearance.albite.color",
+      "property": "color",
+      "description": "Albite occurs white to gray, with bluish, greenish, or reddish colour reported.",
+      "surfaceOrigin": "not-surface-specific",
+      "disposition": "descriptive-only",
+      "dispositionReason": "Colour range describes mineral appearance and does not define a measured renderer colour.",
+      "typicality": "general"
+    },
+    {
+      "id": "appearance.albite.diaphaneity",
+      "property": "diaphaneity",
+      "description": "Albite is reported as transparent to translucent.",
+      "surfaceOrigin": "not-surface-specific",
+      "disposition": "descriptive-only",
+      "dispositionReason": "Diaphaneity does not directly determine the curated transmission value.",
+      "typicality": "general"
+    },
+    {
+      "id": "appearance.albite.luster",
+      "property": "luster",
+      "description": "Albite has vitreous luster, typically pearly on cleavage surfaces.",
+      "surfaceOrigin": "not-surface-specific",
+      "disposition": "descriptive-only",
+      "dispositionReason": "The general luster observation has no growth-face selector.",
+      "typicality": "general"
+    },
+    {
+      "id": "appearance.albite.cleavage-pearly",
+      "property": "cleavage-appearance",
+      "description": "Albite cleavage surfaces are typically pearly.",
+      "surfaceOrigin": "cleavage",
+      "disposition": "descriptive-only",
+      "dispositionReason": "Cleavage observations must not select generated growth faces.",
+      "typicality": "general"
+    },
+    {
+      "id": "appearance.albite.twinning-striae",
+      "property": "twinning-appearance",
+      "description": "Polysynthetic twinning can produce striae on {001} or {010} surfaces.",
+      "surfaceOrigin": "twinning",
+      "disposition": "blocked",
+      "dispositionReason": "Twinning and its surface-origin semantics are not yet represented by the morphology renderer."
     }
   ],
   "habits": [
@@ -1595,7 +1771,7 @@ export const GYPSUM = defineMineral({
   "id": "gypsum",
   "name": "Gypsum",
   "formula": "CaSO₄·2H₂O",
-  "dataRevision": "sr7-1",
+  "dataRevision": "sr8-1",
   "crystallography": {
     "crystalSystem": "monoclinic",
     "pointGroup": "2/m",
@@ -1651,6 +1827,11 @@ export const GYPSUM = defineMineral({
       "status": "reported"
     },
     {
+      "coverage": ["appearanceClaims"],
+      "referenceIds": ["handbook-gypsum-v1"],
+      "status": "reported"
+    },
+    {
       "coverage": [
         "appearance"
       ],
@@ -1683,6 +1864,14 @@ export const GYPSUM = defineMineral({
       "absorptionColor": "#fff8e0",
       "absorptionDensity": 0.1
     }
+  ],
+  "appearanceClaims": [
+    {"id":"appearance.gypsum.color","property":"color","description":"Gypsum is colorless or white and may be yellow, tan, blue, pink, brown, reddish brown, gray, or black when coloured by impurities.","surfaceOrigin":"not-surface-specific","disposition":"descriptive-only","dispositionReason":"The colour range does not define a measured renderer colour.","typicality":"general"},
+    {"id":"appearance.gypsum.diaphaneity","property":"diaphaneity","description":"Gypsum is reported as transparent to translucent.","surfaceOrigin":"not-surface-specific","disposition":"descriptive-only","dispositionReason":"Diaphaneity does not directly determine the curated transmission value.","typicality":"general"},
+    {"id":"appearance.gypsum.luster","property":"luster","description":"Gypsum has subvitreous luster.","surfaceOrigin":"not-surface-specific","disposition":"blocked","dispositionReason":"The current luster vocabulary does not distinguish subvitreous luster.","typicality":"general"},
+    {"id":"appearance.gypsum.striations","property":"striations","description":"Gypsum crystals may be coarsely striated parallel to [001].","surfaceOrigin":"unknown","disposition":"candidate","dispositionReason":"The source does not establish a growth-face origin or assign the striations to a shipped growth form.","typicality":"general"},
+    {"id":"appearance.gypsum.cleavage-pearly","property":"cleavage-appearance","description":"Gypsum has pearly luster on {010} cleavage surfaces.","surfaceOrigin":"cleavage","disposition":"descriptive-only","dispositionReason":"Cleavage observations must not select generated growth faces."},
+    {"id":"appearance.gypsum.fibrous-silky","property":"fibrous-appearance","description":"Fibrous gypsum has silky luster.","surfaceOrigin":"aggregate-or-fibrous","disposition":"descriptive-only","dispositionReason":"Fibrous aggregate appearance must not be mapped onto an ordinary growth face."}
   ],
   "habits": [
     {
@@ -1808,7 +1997,7 @@ export const FORSTERITE = defineMineral({
   "id": "forsterite",
   "name": "Forsterite",
   "formula": "Mg₂SiO₄",
-  "dataRevision": "sr7-1",
+  "dataRevision": "sr8-1",
   "crystallography": {
     "crystalSystem": "orthorhombic",
     "pointGroup": "mmm",
@@ -1864,6 +2053,11 @@ export const FORSTERITE = defineMineral({
       "status": "reported"
     },
     {
+      "coverage": ["appearanceClaims"],
+      "referenceIds": ["handbook-forsterite-v1"],
+      "status": "reported"
+    },
+    {
       "coverage": [
         "appearance"
       ],
@@ -1896,6 +2090,12 @@ export const FORSTERITE = defineMineral({
       "absorptionColor": "#ffffff",
       "absorptionDensity": 0
     }
+  ],
+  "appearanceClaims": [
+    {"id":"appearance.forsterite.color","property":"color","description":"Forsterite occurs green, yellowish, lemon-yellow, white, grayish, or blue-gray.","surfaceOrigin":"not-surface-specific","disposition":"descriptive-only","dispositionReason":"The colour range does not define a measured renderer colour.","typicality":"general"},
+    {"id":"appearance.forsterite.diaphaneity","property":"diaphaneity","description":"Forsterite is reported as transparent to translucent.","surfaceOrigin":"not-surface-specific","disposition":"descriptive-only","dispositionReason":"Diaphaneity does not directly determine the curated transmission value.","typicality":"general"},
+    {"id":"appearance.forsterite.luster","property":"luster","description":"Forsterite has vitreous luster.","surfaceOrigin":"not-surface-specific","disposition":"descriptive-only","dispositionReason":"The whole-mineral luster observation has no growth-face selector.","typicality":"general"},
+    {"id":"appearance.forsterite.striations","property":"striations","description":"Euhedral or subhedral forsterite crystals may have striations parallel to their elongation.","surfaceOrigin":"unknown","disposition":"blocked","dispositionReason":"The source does not establish a growth-face origin, and the crystallographic elongation direction has not been resolved for the shipped habits."}
   ],
   "habits": [
     {
@@ -2021,7 +2221,7 @@ export const BERYL = defineMineral({
   "id": "beryl",
   "name": "Beryl",
   "formula": "Be₃Al₂Si₆O₁₈",
-  "dataRevision": "sr7-1",
+  "dataRevision": "sr8-1",
   "crystallography": {
     "crystalSystem": "hexagonal",
     "pointGroup": "6/mmm",
@@ -2077,6 +2277,11 @@ export const BERYL = defineMineral({
       "status": "reported"
     },
     {
+      "coverage": ["appearanceClaims"],
+      "referenceIds": ["handbook-beryl-v1"],
+      "status": "reported"
+    },
+    {
       "coverage": [
         "appearance"
       ],
@@ -2121,6 +2326,11 @@ export const BERYL = defineMineral({
       "absorptionColor": "#ffffff",
       "absorptionDensity": 0
     }
+  ],
+  "appearanceClaims": [
+    {"id":"appearance.beryl.color","property":"color","description":"Beryl occurs colorless, white, blue, green, yellow, rose to red, and may be zoned.","surfaceOrigin":"not-surface-specific","disposition":"descriptive-only","dispositionReason":"The reported colour range and zoning do not define measured renderer colours.","typicality":"general"},
+    {"id":"appearance.beryl.diaphaneity","property":"diaphaneity","description":"Beryl is reported as transparent to translucent.","surfaceOrigin":"not-surface-specific","disposition":"descriptive-only","dispositionReason":"Diaphaneity does not directly determine the curated transmission value.","typicality":"general"},
+    {"id":"appearance.beryl.luster","property":"luster","description":"Beryl has vitreous to resinous luster.","surfaceOrigin":"not-surface-specific","disposition":"blocked","dispositionReason":"The current luster vocabulary has no resinous category, and a material mapping needs review.","typicality":"general"}
   ],
   "habits": [
     {

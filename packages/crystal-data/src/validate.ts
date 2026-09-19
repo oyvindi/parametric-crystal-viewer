@@ -151,7 +151,7 @@ export function validateMineral(value: unknown): Result<Mineral> {
     if (object(value) && validated.has(value)) return { ok: true, value: value as unknown as Mineral, diagnostics: [] };
     const v = new RecordValidator();
     if (!v.record(value, "")) return { ok: false, diagnostics: v.diagnostics };
-    v.keys(value, ["id", "name", "formula", "dataRevision", "crystallography", "variants", "habits", "appearance", "surfaceProfiles", "references", "provenance"], "");
+    v.keys(value, ["id", "name", "formula", "dataRevision", "crystallography", "variants", "habits", "appearance", "appearanceClaims", "surfaceProfiles", "references", "provenance"], "");
     for (const key of ["id", "name", "formula", "dataRevision"]) v.string(value[key], `/${key}`);
     const scientific: { value: MineralCrystallography; path: string }[] = [];
     if (v.crystallography(value.crystallography, "/crystallography")) scientific.push({ value: value.crystallography as unknown as MineralCrystallography, path: "/crystallography" });
@@ -183,6 +183,28 @@ export function validateMineral(value: unknown): Result<Mineral> {
         if (ap.absorptionDensity !== undefined) {
             v.number(ap.absorptionDensity, `${path}/absorptionDensity`);
             if (typeof ap.absorptionDensity === "number" && ap.absorptionDensity < 0) v.error(`${path}/absorptionDensity`, "Absorption density must be non-negative.");
+        }
+    });
+    if (value.appearanceClaims !== undefined) v.entries(value.appearanceClaims, "/appearanceClaims", (claim, path) => {
+        v.keys(claim, ["id", "property", "description", "surfaceOrigin", "disposition", "dispositionReason", "selector", "variety", "typicality"], path);
+        v.string(claim.id, `${path}/id`);
+        v.string(claim.description, `${path}/description`);
+        if (![
+            "color", "diaphaneity", "luster", "striations", "growth-steps", "etching", "cleavage-appearance",
+            "twinning-appearance", "fibrous-appearance", "coating-or-tarnish", "surface-character",
+        ].includes(claim.property as string)) v.error(`${path}/property`, "Unknown appearance-claim property.");
+        if (![
+            "not-surface-specific", "growth-face", "cleavage", "fracture", "twinning", "aggregate-or-fibrous",
+            "weathered-or-coated", "dissolution-or-etch", "unknown",
+        ].includes(claim.surfaceOrigin as string)) v.error(`${path}/surfaceOrigin`, "Unknown appearance-claim surface origin.");
+        if (!["descriptive-only", "candidate", "renderer-eligible", "blocked", "rejected"].includes(claim.disposition as string)) v.error(`${path}/disposition`, "Unknown appearance-claim disposition.");
+        v.optionalStrings(claim, ["dispositionReason", "variety"], path);
+        if (claim.typicality !== undefined && !["general", "common", "occasional", "rare", "specimen-specific"].includes(claim.typicality as string)) v.error(`${path}/typicality`, "Unknown appearance-claim typicality.");
+        if (claim.selector !== undefined) validateSurfaceSelector(v, claim.selector, `${path}/selector`);
+        if (claim.disposition !== "renderer-eligible" && !text(claim.dispositionReason)) v.error(`${path}/dispositionReason`, "A non-eligible appearance claim needs a disposition reason.");
+        if (claim.disposition === "renderer-eligible") {
+            if (claim.surfaceOrigin !== "growth-face") v.error(`${path}/surfaceOrigin`, "Renderer-eligible appearance claims must describe growth faces.");
+            if (claim.selector === undefined) v.error(`${path}/selector`, "Renderer-eligible appearance claims need a growth-face selector.");
         }
     });
     if (value.surfaceProfiles !== undefined) v.entries(value.surfaceProfiles, "/surfaceProfiles", (profile, path) => {
@@ -294,6 +316,11 @@ export function validateMineral(value: unknown): Result<Mineral> {
             if (preset[key] !== undefined) requireCoverage(`appearance.${i}.${key}`);
         }
     });
+    mineral.appearanceClaims?.forEach((claim, i) => {
+        for (const key of ["id", "property", "description", "surfaceOrigin", "disposition", "dispositionReason", "selector", "variety", "typicality"] as const) {
+            if (claim[key] !== undefined) requireCoverage(`appearanceClaims.${i}.${key}`);
+        }
+    });
     mineral.surfaceProfiles?.forEach((profile, i) => {
         for (const key of ["kind", "claimId", "surfaceOrigin", "selector", "direction", "description"] as const) {
             if (profile[key] !== undefined) requireCoverage(`surfaceProfiles.${i}.${key}`);
@@ -306,6 +333,7 @@ export function validateMineral(value: unknown): Result<Mineral> {
         crystallography: normalizeCrystallography(mineral.crystallography),
         habits: mineral.habits, references: mineral.references, provenance: mineral.provenance,
         ...(mineral.appearance ? { appearance: mineral.appearance } : {}),
+        ...(mineral.appearanceClaims ? { appearanceClaims: mineral.appearanceClaims } : {}),
         ...(mineral.surfaceProfiles ? { surfaceProfiles: mineral.surfaceProfiles } : {}),
         ...(mineral.variants ? { variants: mineral.variants.map((variant) => ({ ...variant, crystallography: normalizeCrystallography(variant.crystallography) })) } : {}),
     });

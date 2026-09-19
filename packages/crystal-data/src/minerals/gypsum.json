@@ -2,7 +2,7 @@
   "id": "gypsum",
   "name": "Gypsum",
   "formula": "CaSO₄·2H₂O",
-  "dataRevision": "sr7-1",
+  "dataRevision": "sr8-1",
   "crystallography": {
     "crystalSystem": "monoclinic",
     "pointGroup": "2/m",
@@ -58,6 +58,11 @@
       "status": "reported"
     },
     {
+      "coverage": ["appearanceClaims"],
+      "referenceIds": ["handbook-gypsum-v1"],
+      "status": "reported"
+    },
+    {
       "coverage": [
         "appearance"
       ],
@@ -90,6 +95,14 @@
       "absorptionColor": "#fff8e0",
       "absorptionDensity": 0.1
     }
+  ],
+  "appearanceClaims": [
+    {"id":"appearance.gypsum.color","property":"color","description":"Gypsum is colorless or white and may be yellow, tan, blue, pink, brown, reddish brown, gray, or black when coloured by impurities.","surfaceOrigin":"not-surface-specific","disposition":"descriptive-only","dispositionReason":"The colour range does not define a measured renderer colour.","typicality":"general"},
+    {"id":"appearance.gypsum.diaphaneity","property":"diaphaneity","description":"Gypsum is reported as transparent to translucent.","surfaceOrigin":"not-surface-specific","disposition":"descriptive-only","dispositionReason":"Diaphaneity does not directly determine the curated transmission value.","typicality":"general"},
+    {"id":"appearance.gypsum.luster","property":"luster","description":"Gypsum has subvitreous luster.","surfaceOrigin":"not-surface-specific","disposition":"blocked","dispositionReason":"The current luster vocabulary does not distinguish subvitreous luster.","typicality":"general"},
+    {"id":"appearance.gypsum.striations","property":"striations","description":"Gypsum crystals may be coarsely striated parallel to [001].","surfaceOrigin":"unknown","disposition":"candidate","dispositionReason":"The source does not establish a growth-face origin or assign the striations to a shipped growth form.","typicality":"general"},
+    {"id":"appearance.gypsum.cleavage-pearly","property":"cleavage-appearance","description":"Gypsum has pearly luster on {010} cleavage surfaces.","surfaceOrigin":"cleavage","disposition":"descriptive-only","dispositionReason":"Cleavage observations must not select generated growth faces."},
+    {"id":"appearance.gypsum.fibrous-silky","property":"fibrous-appearance","description":"Fibrous gypsum has silky luster.","surfaceOrigin":"aggregate-or-fibrous","disposition":"descriptive-only","dispositionReason":"Fibrous aggregate appearance must not be mapped onto an ordinary growth face."}
   ],
   "habits": [
     {

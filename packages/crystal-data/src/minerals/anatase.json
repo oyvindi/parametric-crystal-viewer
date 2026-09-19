@@ -2,7 +2,7 @@
   "id": "anatase",
   "name": "Anatase",
   "formula": "TiO₂",
-  "dataRevision": "sr7-2",
+  "dataRevision": "sr8-2",
   "crystallography": {
     "crystalSystem": "tetragonal",
     "pointGroup": "4/mmm",
@@ -35,6 +35,12 @@
       "title": "Mineral Data Publishing, Anatase, version 1",
       "url": "https://www.handbookofmineralogy.org/pdfs/anatase.pdf",
       "notes": "Publicly readable; accessed 2026-09-19. Used as a factual citation only; luster is reported as adamantine to splendent, metallic, with colors including brown, yellow, blue, and nearly colorless."
+    },
+    {
+      "id": "usgs-anatase-striations-1107b",
+      "title": "U.S. Geological Survey, Heavy Minerals as Guides to Uranium-Vanadium Ore Deposits in the Morrison Formation, Colorado, Bulletin 1107-B",
+      "url": "https://pubs.usgs.gov/bul/1107b/report.pdf",
+      "notes": "Publicly accessible government report; accessed 2026-09-19. Used as a factual citation only; reports striations on some pyramidal anatase faces in the documented Colorado material."
     }
   ],
   "provenance": [
@@ -76,6 +82,16 @@
       "status": "reported"
     },
     {
+      "coverage": ["appearanceClaims.0", "appearanceClaims.1", "appearanceClaims.2"],
+      "referenceIds": ["handbook-anatase-v1"],
+      "status": "reported"
+    },
+    {
+      "coverage": ["appearanceClaims.3"],
+      "referenceIds": ["usgs-anatase-striations-1107b"],
+      "status": "reported"
+    },
+    {
       "coverage": [
         "appearance"
       ],
@@ -108,6 +124,12 @@
       "absorptionColor": "#6e421c",
       "absorptionDensity": 0.3
     }
+  ],
+  "appearanceClaims": [
+    {"id":"appearance.anatase.color","property":"color","description":"Anatase is reported brown, yellow, reddish brown, indigo, black, pale green, pale lilac, gray, and rarely nearly colorless.","surfaceOrigin":"not-surface-specific","disposition":"descriptive-only","dispositionReason":"The colour range does not define a measured renderer colour.","typicality":"general"},
+    {"id":"appearance.anatase.diaphaneity","property":"diaphaneity","description":"Anatase ranges from transparent when light coloured to nearly opaque when deeply coloured.","surfaceOrigin":"not-surface-specific","disposition":"descriptive-only","dispositionReason":"Diaphaneity does not directly determine the curated transmission value.","typicality":"general"},
+    {"id":"appearance.anatase.luster","property":"luster","description":"Anatase luster ranges from adamantine to splendent or metallic.","surfaceOrigin":"not-surface-specific","disposition":"blocked","dispositionReason":"The current luster vocabulary has no adamantine or splendent category, and a material mapping needs review.","typicality":"general"},
+    {"id":"surface.anatase.pyramid-striation","property":"striations","description":"Some pyramidal anatase crystals from the documented Colorado material have closely spaced striations parallel to basal-pinacoid edges.","surfaceOrigin":"unknown","disposition":"candidate","dispositionReason":"The report is locality-specific and does not resolve a pyramid family or a renderer direction in the shipped basis."}
   ],
   "habits": [
     {
