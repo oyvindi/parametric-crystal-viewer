@@ -1,48 +1,12 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-bs-theme="dark">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Minerals with HDRI — M5 Demo Variant</title>
-<style>
-  :root { color-scheme: dark; }
-  * { box-sizing: border-box; }
-  [hidden] { display: none !important; }
-  body { margin: 0; height: 100vh; display: flex; background: #202326; color: #ddd; font: 14px/1.4 system-ui, sans-serif; }
-  aside { width: 360px; padding: 18px; overflow-y: auto; background: #30343a; border-right: 1px solid #555; }
-  h1 { margin: 0; font-size: 1.25rem; }
-  .subtitle, .formula { color: #999; font-size: .82rem; }
-  h2 { margin: 18px 0 8px; padding-bottom: 3px; border-bottom: 1px solid #555; color: #ccc; font-size: .95rem; }
-  label { display: block; margin: 8px 0 3px; font-size: .82rem; }
-  select, input[type="file"], button { width: 100%; }
-  input[type="range"] { width: 100%; }
-  .row { display: flex; justify-content: space-between; gap: 10px; }
-  .info { margin-top: 10px; color: #aaa; font-size: .82rem; }
-  .info .value { color: #9cf; text-align: right; }
-  .control-value { float: right; color: #8cf; font-variant-numeric: tabular-nums; }
-  .form-row { margin: 8px 0; }
-  .form-label { display: flex; justify-content: space-between; font-size: .82rem; }
-  .check { display: flex; align-items: center; gap: 8px; margin-top: 10px; }
-  .check input { width: auto; }
-  .check label { margin: 0; }
-  .status { margin-top: 12px; padding: 8px; border-radius: 4px; background: #282b2f; color: #aaa; font-size: .8rem; overflow-wrap: anywhere; }
-  .status.ok { background: #29432f; color: #9eebad; }
-  .status.error { background: #4b2929; color: #ffaaaa; }
-  main { position: relative; flex: 1; min-width: 0; }
-  canvas { display: block; width: 100%; height: 100%; }
-  canvas:focus-visible { outline: 2px solid #8cf; outline-offset: -2px; }
-  .hint { position: absolute; right: 12px; bottom: 8px; color: #aaa; font-size: .75rem; text-shadow: 0 1px 2px #000; }
-</style>
-<script type="importmap">
-{
-  "imports": {
-    "@crystal/viewer": "../crystal-viewer/bundle/index.mjs",
-    "@crystal/viewer/component": "../crystal-viewer/bundle/component.mjs"
-  }
-}
-</script>
+<link rel="stylesheet" href="./demo.css">
 </head>
-<body>
+<body class="cv-hdri">
 <aside>
   <h1 id="name">Minerals with HDRI</h1>
   <div class="formula" id="formula"></div>

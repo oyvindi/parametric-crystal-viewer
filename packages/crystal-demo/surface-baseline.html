@@ -1,28 +1,12 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-bs-theme="dark">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Surface baseline</title>
-<style>
-  html, body { width: 100%; height: 100%; margin: 0; overflow: hidden; background: #2a2e33; }
-  body { font-family: system-ui, sans-serif; color: #f2f2f2; }
-  canvas { display: block; width: 100%; height: 100%; }
-  #caption { position: fixed; left: 24px; top: 20px; padding: 10px 14px; border-radius: 4px;
-    background: rgb(20 22 25 / 72%); letter-spacing: .02em; }
-  #caption strong { display: block; font-size: 18px; }
-  #caption span { color: #c4c9cf; font-size: 13px; }
-</style>
-<script type="importmap">
-{
-  "imports": {
-    "@crystal/viewer": "../crystal-viewer/bundle/index.mjs",
-    "@crystal/viewer/component": "../crystal-viewer/bundle/component.mjs"
-  }
-}
-</script>
+<link rel="stylesheet" href="./demo.css">
 </head>
-<body>
+<body class="cv-baseline">
 <canvas id="canvas" width="960" height="720"></canvas>
 <div id="caption"><strong id="name">Loading…</strong><span id="details"></span></div>
 <output id="surface-baseline-result" hidden></output>

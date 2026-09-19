@@ -4,10 +4,8 @@ import { extname, join, relative, resolve } from "node:path";
 
 const root = fileURLToPath(new URL("../", import.meta.url));
 const output = join(root, "dist", "pages");
-const demoSource = join(root, "packages", "crystal-demo");
+const demoBuild = join(root, "packages", "crystal-demo", "dist");
 const demoOutput = join(output, "packages", "crystal-demo");
-const bundleSource = join(root, "packages", "crystal-viewer", "bundle");
-const bundleOutput = join(output, "packages", "crystal-viewer", "bundle");
 const fixturesSource = join(root, "packages", "crystal-core", "test-fixtures", "m5");
 const fixturesOutput = join(output, "packages", "crystal-core", "test-fixtures", "m5");
 
@@ -61,11 +59,7 @@ async function validateReferences() {
 
 await rm(output, { recursive: true, force: true });
 await mkdir(output, { recursive: true });
-await cp(demoSource, demoOutput, {
-    recursive: true,
-    filter: (source) => ![join(demoSource, "dist"), join(demoSource, "src")].includes(source),
-});
-await cp(bundleSource, bundleOutput, { recursive: true });
+await cp(demoBuild, demoOutput, { recursive: true });
 await cp(fixturesSource, fixturesOutput, { recursive: true });
 await writeFile(join(output, "index.html"), '<!DOCTYPE html>\n<meta http-equiv="refresh" content="0; url=packages/crystal-demo/index.html">\n<a href="packages/crystal-demo/index.html">Demos</a>\n');
 await validateReferences();

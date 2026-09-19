@@ -25,5 +25,6 @@ Decision records explain why a choice was made. Update the owning contract when 
 * [0008 — Reviewed Surface Profile Data and Renderer Mapping](0008-reviewed-surface-profiles.md) — accepted.
 * [0009 — Transmission and Optical Refinement](0009-transmission-and-optical-refinement.md) — accepted.
 * [0010 — SR7 Surface State Finalization and Reduced-Motion Handling](0010-sr7-surface-state-and-reduced-motion.md) — accepted.
-* [0011 — Demo Production Bundling with tsdown](0011-demo-production-bundling.md) — accepted.
+* [0011 — Demo Production Bundling with tsdown](0011-demo-production-bundling.md) — superseded for the demo build path by 0013.
 * [0012 — Orthographic Camera Projection](0012-orthographic-projection.md) — accepted.
+* [0013 — Demo UI and Build Tooling](0013-demo-ui-and-build-tooling.md) — accepted. Supersedes 0011 for the demo build path.

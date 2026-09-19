@@ -6,9 +6,9 @@ Platform choices, package boundaries, rendering integration, and cross-package t
 
 ## Technology Stack
 
-The initial implementation should **not depend on React, Vue, Svelte, Angular, or another UI framework**.
+The viewer library and Web Component must **not depend on React, Vue, Svelte, Angular, or another UI framework**; they are framework-agnostic so they remain embeddable in any host page. The crystallographic core, data, and rendering packages are likewise renderer- and framework-neutral.
 
-The reference application uses plain HTML, CSS, and TypeScript.
+The reference application uses plain HTML, CSS, and TypeScript. The `crystal-demo` package is a development and reference interface, not the shipped product; it may use a CSS framework (Bootstrap) and a build tool (Vite) for demo presentation and developer convenience. These demo-only dependencies are confined to `crystal-demo` and must not enter the `crystal-viewer` boundary. See [ADR 0013](decisions/0013-demo-ui-and-build-tooling.md).
 
 Recommended initial stack:
 
@@ -97,10 +97,11 @@ packages/
         state serialization
 
     crystal-demo/
-        plain HTML
-        CSS
-        JavaScript
-        TypeScript
+        HTML
+        shared CSS
+        Bootstrap (demo presentation only)
+        JavaScript / TypeScript
+        Vite (demo build and dev server)
         multiple minimal demos
         development / reference interface
 ```
@@ -128,7 +129,7 @@ crystal-demo   → crystal-viewer
 
 `crystal-data` interprets imported bond references and converts them into core inputs; core performs atomic expansion and periodic bond calculations. Rendering consumes the resulting scientific data without importing the mineral catalog.
 
-Each `crystal-demo` page depends only on the exported `crystal-viewer` boundary. Demo controls own their HTML presentation and synchronize through viewer state and events; they must not duplicate scientific logic or reach into `crystal-core`, `crystal-data`, or `crystal-three` internals. Keep previously delivered milestone demos runnable when the viewer API evolves.
+Each `crystal-demo` page depends only on the exported `crystal-viewer` boundary. Demo controls own their HTML presentation and synchronize through viewer state and events; they must not duplicate scientific logic or reach into `crystal-core`, `crystal-data`, or `crystal-three` internals. Demos may use a CSS framework and build tool for presentation and convenience, but these dependencies are confined to `crystal-demo` and must not propagate into the viewer or scientific packages. Keep previously delivered milestone demos runnable when the viewer API evolves.
 
 The rationale is recorded in [Scientific Core Dependency Boundary](decisions/0001-scientific-core-dependency-boundary.md).
 

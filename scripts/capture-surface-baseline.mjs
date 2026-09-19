@@ -36,12 +36,12 @@ function run(command, args, options = {}) {
 
 await mkdir(output, { recursive: true });
 const port = await freePort();
-const server = spawn(process.execPath, [join(root, "scripts", "serve-demo.mjs"), String(port)], { cwd: root, stdio: "ignore" });
+const server = spawn(process.execPath, [join(root, "scripts", "serve-demo.mjs"), String(port), join(root, "packages", "crystal-demo", "dist")], { cwd: root, stdio: "ignore" });
 
 try {
   for (let attempt = 0; attempt < 50; attempt += 1) {
     try {
-      const response = await fetch(`http://127.0.0.1:${port}/packages/crystal-demo/surface-baseline.html`);
+      const response = await fetch(`http://127.0.0.1:${port}/surface-baseline.html`);
       if (response.ok) break;
     } catch {}
     await new Promise(resolve => setTimeout(resolve, 100));
@@ -52,7 +52,7 @@ try {
   for (const mineral of minerals) {
     const screenshot = join(output, `${mineral}.png`);
     const detail = label === "sr4" ? "&surfaceDetail=0.35" : "";
-    const url = `http://127.0.0.1:${port}/packages/crystal-demo/surface-baseline.html?mineral=${mineral}${detail}`;
+    const url = `http://127.0.0.1:${port}/surface-baseline.html?mineral=${mineral}${detail}`;
     const timingUrl = `${url}&timing=1`;
     await run(chrome, [
       "--headless=new", "--no-sandbox", "--enable-unsafe-swiftshader",

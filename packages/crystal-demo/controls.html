@@ -1,42 +1,11 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-bs-theme="dark">
 <head>
 <meta charset="utf-8">
 <title>Programmatic Controls & Events — M7 Demo</title>
-<style>
-  body { margin: 0; font-family: system-ui, sans-serif; background: #2a2a2a; color: #ddd; display: flex; height: 100vh; }
-  #panel { width: 360px; padding: 16px; overflow-y: auto; background: #333; border-right: 1px solid #555; }
-  #panel h1 { font-size: 1.1em; margin: 0 0 4px; }
-  #panel .sub { color: #999; font-size: 0.82em; margin-bottom: 12px; }
-  #panel h2 { font-size: 0.95em; margin: 14px 0 6px; color: #ccc; border-bottom: 1px solid #555; padding-bottom: 2px; }
-  #panel select { width: 100%; margin-bottom: 8px; }
-  #panel label { display: block; font-size: 0.85em; margin-bottom: 4px; }
-  #panel .form-row { margin-bottom: 8px; }
-  #panel .form-row .label-line { display: flex; justify-content: space-between; font-size: 0.82em; }
-  #panel input[type="range"] { width: 100%; }
-  #panel .value { color: #8cf; font-variant-numeric: tabular-nums; }
-  #panel .checkbox-row { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; font-size: 0.85em; }
-  #panel .checkbox-row input { width: auto; }
-  #panel .status { margin-top: 8px; padding: 6px; border-radius: 4px; font-size: 0.82em; }
-  #panel .status.valid { background: #2d4a2d; color: #8e8; }
-  #panel .status.invalid { background: #4a2d2d; color: #e88; }
-  #panel .status.stale { background: #4a4a2d; color: #dd8; }
-  #panel textarea { width: 100%; height: 90px; box-sizing: border-box; font-size: 0.7em; }
-  #panel button { margin: 4px 4px 4px 0; }
-  #panel #events { font-size: 0.72em; color: #9c9; max-height: 90px; overflow-y: auto; background: #2a2a2a; padding: 6px; border-radius: 4px; }
-  #canvas-container { flex: 1; position: relative; }
-  canvas { display: block; width: 100%; height: 100%; }
-</style>
-<script type="importmap">
-{
-  "imports": {
-    "@crystal/viewer": "../crystal-viewer/bundle/index.mjs",
-    "@crystal/viewer/component": "../crystal-viewer/bundle/component.mjs"
-  }
-}
-</script>
+<link rel="stylesheet" href="./demo.css">
 </head>
-<body>
+<body class="cv-sidebar">
 <div id="panel">
   <h1>Programmatic Controls & Events</h1>
   <div class="sub">Controls initialize from viewer state and stay synchronized through events after programmatic changes and state restoration (M7).</div>

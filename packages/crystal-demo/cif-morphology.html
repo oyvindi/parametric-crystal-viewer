@@ -1,17 +1,9 @@
 <!doctype html>
-<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<html lang="en" data-bs-theme="dark"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Crystal Viewer — CIF Morphology</title>
-<style>
-body{margin:0;display:flex;min-height:100vh;background:#202326;color:#ddd;font:15px system-ui,sans-serif}aside{width:300px;padding:18px;box-sizing:border-box;background:#2d3034}h1{font-size:1.2rem;margin:0 0 8px}p{color:#aaa;font-size:.85rem;line-height:1.45}input{width:100%;margin:12px 0}#status,#info{white-space:pre-wrap;margin-top:16px;padding:9px;background:#24272a;font-size:.8rem}#info{line-height:1.5}.ok{color:#9fdaaa}.error{color:#ffaaa8}main{flex:1;min-width:0}canvas{display:block;width:100%;height:100vh}
-</style><script type="importmap">
-{
-  "imports": {
-    "@crystal/viewer": "../crystal-viewer/bundle/index.mjs",
-    "@crystal/viewer/component": "../crystal-viewer/bundle/component.mjs"
-  }
-}
-</script></head>
-<body><aside><h1>CIF crystal morphology</h1><p>Upload a CIF with measured <code>_exptl_crystal_face_*</code> data. If absent, the demo shows a theoretical BFDH morphology derived from the unit cell and symmetry. It does not render atoms.</p><input id="file" type="file" accept=".cif,text/plain"><div id="status">Waiting for a CIF.</div><div id="info">No source metadata loaded.</div></aside><main><canvas id="canvas"></canvas></main>
+<link rel="stylesheet" href="./demo.css">
+</head>
+<body class="cv-cif-morph"><aside><h1>CIF crystal morphology</h1><p>Upload a CIF with measured <code>_exptl_crystal_face_*</code> data. If absent, the demo shows a theoretical BFDH morphology derived from the unit cell and symmetry. It does not render atoms.</p><input id="file" type="file" accept=".cif,text/plain"><div id="status">Waiting for a CIF.</div><div id="info">No source metadata loaded.</div></aside><main><canvas id="canvas"></canvas></main>
 <script type="module">
 import { CrystalViewer } from "@crystal/viewer";
 import { installProjectionControl } from "./projection-control.js";

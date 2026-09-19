@@ -1,6 +1,11 @@
 # 0011 — Demo Production Bundling with tsdown
 
-* **Status:** accepted.
+* **Status:** superseded for the demo build path by
+  [ADR 0013](0013-demo-ui-and-build-tooling.md). The `tsdown` viewer-bundle step,
+  the `bundle/` output, and the `build:bundle` / `serve-demo.mjs` scripts have been
+  removed. Vite now bundles `@crystal/viewer`, `three`, the three.js addons, and the
+  `@crystal/*` workspace packages into the demo build, deduplicating `three` into a
+  single shared chunk. The library build (`tsc --build`) is unchanged.
 * **Context:** The demos in `crystal-demo` load `@crystal/viewer` through browser
   import maps that remap `three` and `three/addons/` into `node_modules/three/`. The
   viewer (`crystal-viewer/src/index.ts`) imports `HDRLoader` and `EXRLoader` from
@@ -58,4 +63,5 @@
   unbundled source-with-HMR is not provided.
 * **References:** [Technology Stack](../architecture.md#technology-stack),
   [Package Dependencies and Ownership](../architecture.md#package-dependencies-and-ownership),
-  `packages/crystal-viewer/tsdown.config.ts`, `.github/workflows/deploy-demo.yml`.
+  [ADR 0013](0013-demo-ui-and-build-tooling.md),
+  `.github/workflows/deploy-demo.yml`.

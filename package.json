@@ -13,25 +13,25 @@
   },
   "scripts": {
     "build": "bash -lc 'node ./node_modules/typescript/bin/tsc --build'",
-    "build:bundle": "bash -lc 'cd packages/crystal-viewer && node ../../node_modules/tsdown/dist/run.mjs'",
-    "build:demo": "bash -lc 'node ./node_modules/typescript/bin/tsc --build && cd packages/crystal-viewer && node ../../node_modules/tsdown/dist/run.mjs'",
+    "serve": "bash -lc 'node ./node_modules/typescript/bin/tsc --build && node ./node_modules/vite/bin/vite.js --config packages/crystal-demo/vite.config.mjs'",
+    "build:demo": "bash -lc 'node ./node_modules/typescript/bin/tsc --build && node ./node_modules/vite/bin/vite.js build --config packages/crystal-demo/vite.config.mjs'",
     "build:pages": "bash -lc 'npm run build:demo && node scripts/build-pages.mjs'",
     "clean": "bash -lc 'node ./node_modules/typescript/bin/tsc --build --clean'",
     "test": "bash -lc 'node ./node_modules/vitest/vitest.mjs run'",
     "check": "bash -lc 'node scripts/check-workspace.mjs && node ./node_modules/typescript/bin/tsc --build && node ./node_modules/vitest/vitest.mjs run'",
     "benchmark:m1": "bash -lc 'node ./node_modules/typescript/bin/tsc --build && node scripts/benchmark-m1.mjs'",
-    "baseline:sr0": "bash -lc 'node ./node_modules/typescript/bin/tsc --build && node scripts/capture-surface-baseline.mjs'",
-    "baseline:sr1": "bash -lc 'node ./node_modules/typescript/bin/tsc --build && node scripts/capture-surface-baseline.mjs sr1'",
-    "baseline:sr2": "bash -lc 'node ./node_modules/typescript/bin/tsc --build && node scripts/capture-surface-baseline.mjs sr2'",
-    "baseline:sr4": "bash -lc 'node ./node_modules/typescript/bin/tsc --build && node scripts/capture-surface-baseline.mjs sr4'",
-    "serve": "bash -lc 'node ./node_modules/typescript/bin/tsc --build && cd packages/crystal-viewer && node ../../node_modules/tsdown/dist/run.mjs && node ../../scripts/serve-demo.mjs'"
+    "baseline:sr0": "bash -lc 'npm run build:demo && node scripts/capture-surface-baseline.mjs'",
+    "baseline:sr1": "bash -lc 'npm run build:demo && node scripts/capture-surface-baseline.mjs sr1'",
+    "baseline:sr2": "bash -lc 'npm run build:demo && node scripts/capture-surface-baseline.mjs sr2'",
+    "baseline:sr4": "bash -lc 'npm run build:demo && node scripts/capture-surface-baseline.mjs sr4'"
   },
   "devDependencies": {
     "@types/node": "^22.0.0",
     "@types/three": "^0.186.0",
+    "bootstrap": "^5.3.8",
     "happy-dom": "^20.14.5",
-    "tsdown": "^0.23.0",
     "typescript": "^5.9.0",
+    "vite": "^8.3.0",
     "vitest": "^4.0.0"
   }
 }

@@ -1,0 +1,286 @@
+/* Shared demo stylesheet — project-specific layout for the crystal-viewer demos.
+   Bootstrap is imported from projection-control.js (every demo imports it), so
+   Vite bundles it into the shared CSS chunk in both dev and production. */
+
+/* ---- Dark theme tokens ---- */
+:root {
+  --cv-bg: #2a2a2a;
+  --cv-panel-bg: #333;
+  --cv-panel-border: #555;
+  --cv-text: #ddd;
+  --cv-text-muted: #999;
+  --cv-heading: #ccc;
+  --cv-accent: #8cf;
+  --cv-accent2: #9cf;
+  --cv-indices: #fc8;
+  --cv-valid-bg: #2d4a2d;
+  --cv-valid-fg: #8e8;
+  --cv-invalid-bg: #4a2d2d;
+  --cv-invalid-fg: #e88;
+  --cv-stale-bg: #4a4a2d;
+  --cv-stale-fg: #dd8;
+  --cv-overlay-bg: rgb(20 22 25 / 75%);
+  --cv-overlay-text: #c4c9cf;
+  --cv-font: system-ui, sans-serif;
+}
+
+[data-bs-theme="dark"] {
+  --bs-body-bg: var(--cv-bg);
+  --bs-body-color: var(--cv-text);
+  --bs-border-color: var(--cv-panel-border);
+  --bs-primary: var(--cv-accent);
+}
+
+/* ---- Base ---- */
+html { color-scheme: dark; }
+body { font-family: var(--cv-font); }
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+canvas { display: block; width: 100%; height: 100%; touch-action: none; }
+canvas:focus-visible { outline: 2px solid var(--cv-accent); outline-offset: -2px; }
+
+/* ---- Body layout variants ---- */
+body.cv-sidebar { margin: 0; display: flex; height: 100vh; }
+body.cv-grid-rows { margin: 0; min-height: 100vh; display: grid; grid-template-rows: auto 1fr; }
+body.cv-grid-cols { margin: 0; min-height: 100vh; display: grid; grid-template-columns: minmax(0, 1fr) 320px; grid-template-rows: auto 1fr; }
+body.cv-panel-right { margin: 0; min-height: 100vh; display: grid; grid-template-columns: minmax(0, 1fr) 310px; }
+body.cv-embedding { margin: 0; }
+body.cv-cif-morph { margin: 0; display: flex; min-height: 100vh; }
+body.cv-index { padding: 40px; }
+body.cv-baseline { width: 100%; height: 100%; margin: 0; overflow: hidden; background: #2a2e33; color: #f2f2f2; }
+
+/* ---- Sidebar panel ---- */
+#panel {
+  width: 340px;
+  padding: 16px;
+  overflow-y: auto;
+  background: var(--cv-panel-bg);
+  border-right: 1px solid var(--cv-panel-border);
+}
+#panel h1 { font-size: 1.2em; margin: 0 0 4px; }
+#panel .formula { color: var(--cv-text-muted); font-size: 0.85em; margin-bottom: 12px; }
+#panel .subtitle, #panel .sub { color: var(--cv-text-muted); font-size: 0.82em; margin-bottom: 12px; }
+#panel h2 {
+  font-size: 0.95em; margin: 16px 0 6px; color: var(--cv-heading);
+  border-bottom: 1px solid var(--cv-panel-border); padding-bottom: 2px;
+}
+#panel label { display: block; margin-bottom: 8px; font-size: 0.85em; }
+#panel select { width: 100%; margin-bottom: 8px; }
+#panel input[type="range"] { width: 100%; }
+#panel input[type="color"] { width: 100%; height: 28px; padding: 0; border: none; background: none; cursor: pointer; }
+#panel input[type="number"] { width: 100%; }
+#panel input[type="file"] { width: 100%; margin-bottom: 8px; box-sizing: border-box; }
+#panel textarea { width: 100%; height: 90px; box-sizing: border-box; font-size: 0.7em; }
+#panel button { margin: 4px 4px 4px 0; }
+#canvas-container { flex: 1; position: relative; }
+
+/* ---- Crystal info rows ---- */
+.crystal-info { color: #bbb; font-size: 0.82em; margin-bottom: 12px; line-height: 1.5; }
+.crystal-info .row { display: flex; justify-content: space-between; }
+.crystal-info .k { color: #888; }
+.crystal-info .v { color: var(--cv-accent2); }
+
+/* ---- Form rows (sliders with value display) ---- */
+.form-row { margin-bottom: 10px; }
+.form-row .label-line { display: flex; justify-content: space-between; font-size: 0.82em; }
+.form-label { display: flex; justify-content: space-between; font-size: .82rem; }
+#panel .field { margin-bottom: 10px; }
+#panel .field .label-line { display: flex; justify-content: space-between; font-size: 0.82em; }
+.control-note { color: #aaa; font-size: 0.73em; line-height: 1.3; margin-top: 2px; }
+.value { color: var(--cv-accent); font-variant-numeric: tabular-nums; }
+.control-value { float: right; color: var(--cv-accent); font-variant-numeric: tabular-nums; }
+
+/* ---- Checkbox and radio rows ---- */
+.checkbox-row { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
+.checkbox-row input { width: auto; }
+.radio-row { display: flex; gap: 16px; margin-bottom: 8px; font-size: 0.85em; }
+.rep-row { display: flex; gap: 6px; margin-bottom: 8px; }
+.rep-row input { width: 100%; }
+
+/* ---- Status indicators ---- */
+.status { margin-top: 12px; padding: 8px; border-radius: 4px; font-size: 0.82em; }
+.status.valid { background: var(--cv-valid-bg); color: var(--cv-valid-fg); }
+.status.invalid { background: var(--cv-invalid-bg); color: var(--cv-invalid-fg); }
+.status.stale { background: var(--cv-stale-bg); color: var(--cv-stale-fg); }
+
+/* ---- HDRI status variants ---- */
+.status.ok { background: #29432f; color: #9eebad; }
+.status.error { background: #4b2929; color: #ffaaaa; }
+
+/* ---- Face info box ---- */
+#face-info { margin-top: 12px; padding: 8px; background: var(--cv-bg); border-radius: 4px; font-size: 0.82em; display: none; }
+#face-info .contributor { margin-bottom: 6px; padding-left: 8px; border-left: 2px solid var(--cv-accent); }
+#face-info .indices { color: var(--cv-indices); font-family: monospace; }
+
+/* ---- Diagnostics box ---- */
+.diagnostics { margin-top: 8px; padding: 8px; background: var(--cv-bg); border-radius: 4px; font-size: 0.78em; max-height: 120px; overflow-y: auto; }
+.diagnostics .warn { color: var(--cv-stale-fg); }
+.diagnostics .err { color: var(--cv-invalid-fg); }
+.diagnostics .ok { color: var(--cv-valid-fg); }
+
+/* ---- Events log ---- */
+#events { font-size: 0.72em; color: #9c9; max-height: 90px; overflow-y: auto; background: var(--cv-bg); padding: 6px; border-radius: 4px; }
+
+/* ---- Info blocks ---- */
+.info-block { font-size: 0.82em; line-height: 1.6; color: #bbb; }
+.info-block .row { display: flex; justify-content: space-between; }
+.info-block .k { color: #888; }
+.info-block .v { color: var(--cv-accent2); }
+.info { margin-top: 10px; color: #aaa; font-size: 0.82rem; }
+.info .value { color: var(--cv-accent2); text-align: right; }
+
+/* ---- Hint overlay ---- */
+.hint {
+  position: absolute; bottom: 8px; right: 12px;
+  font-size: 0.75em; color: #888;
+}
+.hint-fixed {
+  position: fixed; left: 50%; bottom: 12px; translate: -50%; z-index: 2;
+  padding: 5px 9px; border-radius: 4px;
+  background: rgb(20 22 25 / 74%); color: var(--cv-overlay-text);
+  font-size: .75rem; pointer-events: none;
+}
+
+/* ---- Canvas overlay caption (surface-baseline) ---- */
+#caption {
+  position: fixed; left: 24px; top: 20px; padding: 10px 14px; border-radius: 4px;
+  background: var(--cv-overlay-bg); letter-spacing: .02em;
+}
+#caption strong { display: block; font-size: 18px; }
+#caption span { color: var(--cv-overlay-text); font-size: 13px; }
+
+/* ---- Grid comparison layout (surface-detail, surface-overview) ---- */
+header.cv-header {
+  grid-column: 1 / -1;
+  display: flex; flex-wrap: wrap; align-items: center; gap: 18px; padding: 12px 18px;
+  background: #30343a; border-bottom: 1px solid var(--cv-panel-border);
+}
+.cv-header h1 { margin: 0 auto 0 0; font-size: 1.05rem; }
+.cv-header label { display: flex; align-items: center; gap: 8px; font-size: .85rem; }
+.cv-header select { min-width: 130px; }
+.cv-header input[type="range"] { width: 150px; }
+.cv-header output { min-width: 2.5em; color: #9dd5ff; font-variant-numeric: tabular-nums; }
+.cv-main { min-width: 0; min-height: 0; display: grid; grid-template-columns: 1fr 1fr; }
+.view { position: relative; min-width: 0; overflow: hidden; }
+.view + .view { border-left: 1px solid #777; }
+
+/* ---- Overlay label badges (surface demos) — renamed from .badge to avoid
+   Bootstrap's .badge class ---- */
+.overlay-label {
+  position: absolute; z-index: 1; top: 14px; left: 14px; padding: 8px 11px;
+  background: var(--cv-overlay-bg); border-radius: 4px; pointer-events: none;
+}
+.overlay-label strong { display: block; }
+.overlay-label span { color: var(--cv-overlay-text); font-size: .76rem; }
+
+/* ---- Side panel for surface-profiles ---- */
+.cv-panel-right main { min-width: 0; position: relative; }
+.cv-panel-right main canvas { height: 100vh; }
+aside.cv-aside { padding: 20px; background: #30343a; border-left: 1px solid var(--cv-panel-border); overflow: auto; }
+.cv-aside h1 { margin: 0 0 18px; font-size: 1.1rem; }
+.cv-aside h2 { margin: 0 0 12px; font-size: .95rem; }
+.cv-aside label { display: grid; gap: 6px; font-size: .85rem; margin-bottom: 18px; }
+.cv-aside select, .cv-aside button { font: inherit; padding: 6px; }
+.cv-aside button { width: 100%; }
+
+/* ---- Profile and claim cards ---- */
+.profile { margin: 16px 0; padding: 12px; border-radius: 5px; background: #24272c; border: 1px solid #4b5159; }
+.profile strong { display: block; font-size: .9rem; }
+.profile code { color: #9dd5ff; font-size: .75rem; }
+.profile p { margin: 8px 0 0; color: var(--cv-overlay-text); font-size: .8rem; line-height: 1.4; }
+.claim { margin: 12px 0; padding: 12px; border-radius: 5px; background: #282c31; border: 1px solid #4b5159; }
+.claim strong { display: block; font-size: .88rem; }
+.claim code { color: #9dd5ff; font-size: .75rem; }
+.claim p { margin: 8px 0 0; color: var(--cv-overlay-text); font-size: .8rem; line-height: 1.4; }
+.claim-meta { margin-top: 8px; color: #aeb6c0; font-size: .74rem; line-height: 1.45; }
+.claim-meta a { color: #9dd5ff; }
+.claim-status { display: inline-block; margin-top: 8px; padding: 2px 6px; border-radius: 3px; font-size: .72rem; font-weight: 600; text-transform: uppercase; letter-spacing: .03em; }
+.claim-status.renderer-eligible { color: #b7edc3; background: #294735; }
+.claim-status.candidate { color: #f3d18a; background: #514328; }
+.claim-status.blocked, .claim-status.rejected { color: #ffbbb8; background: #512f31; }
+.claim-status.descriptive-only { color: #b9d8ef; background: #2d4252; }
+.match { color: #9fe0aa; font-size: .8rem; margin-top: 8px; }
+.inactive { color: #f0c978; }
+.none { color: #aeb6c0; font-size: .82rem; line-height: 1.45; }
+.focus { margin: 16px 0 8px; padding: 10px 12px; border-radius: 5px; background: #2c3530; border: 1px solid #4d6b58; font-size: .8rem; line-height: 1.4; }
+.focus strong { color: #9fe0aa; }
+.note { margin-top: 16px; color: #aeb6c0; font-size: .76rem; line-height: 1.45; }
+
+/* ---- Basic embedding layout ---- */
+.cv-embedding h1 { font-size: 1.2em; margin: 0; padding: 16px; }
+.cv-embedding .note { color: var(--cv-text-muted); font-size: 0.85em; padding: 0 16px 12px; }
+.cv-embedding .demo-row { display: flex; gap: 16px; padding: 0 16px 16px; }
+.cv-embedding .cell { flex: 1; background: var(--cv-panel-bg); border: 1px solid var(--cv-panel-border); border-radius: 6px; overflow: hidden; }
+.cv-embedding .cell h2 { font-size: 0.9em; margin: 0; padding: 8px 12px; background: #3a3a3a; border-bottom: 1px solid var(--cv-panel-border); }
+crystal-viewer { display: block; width: 100%; height: 320px; }
+
+/* ---- CIF morphology layout ---- */
+.cv-cif-morph aside { width: 300px; padding: 18px; box-sizing: border-box; background: #2d3034; }
+.cv-cif-morph h1 { font-size: 1.2rem; margin: 0 0 8px; }
+.cv-cif-morph p { color: #aaa; font-size: .85rem; line-height: 1.45; }
+.cv-cif-morph input { width: 100%; margin: 12px 0; }
+.cv-cif-morph #status, .cv-cif-morph #info { white-space: pre-wrap; margin-top: 16px; padding: 9px; background: #24272a; font-size: .8rem; }
+.cv-cif-morph #info { line-height: 1.5; }
+.cv-cif-morph .ok { color: #9fdaaa; }
+.cv-cif-morph .error { color: #ffaaa8; }
+.cv-cif-morph main { flex: 1; min-width: 0; }
+
+/* ---- HDRI aside variant ---- */
+body.cv-hdri { margin: 0; height: 100vh; display: flex; background: #202326; color: var(--cv-text); font: 14px/1.4 var(--cv-font); }
+.cv-hdri aside { width: 360px; padding: 18px; overflow-y: auto; background: #30343a; border-right: 1px solid var(--cv-panel-border); }
+.cv-hdri h1 { margin: 0; font-size: 1.25rem; }
+.cv-hdri .subtitle, .cv-hdri .formula { color: var(--cv-text-muted); font-size: .82rem; }
+.cv-hdri h2 { margin: 18px 0 8px; padding-bottom: 3px; border-bottom: 1px solid var(--cv-panel-border); color: var(--cv-heading); font-size: .95rem; }
+.cv-hdri label { display: block; margin: 8px 0 3px; font-size: .82rem; }
+.cv-hdri select, .cv-hdri input[type="file"], .cv-hdri button { width: 100%; }
+.cv-hdri input[type="range"] { width: 100%; }
+.cv-hdri .row { display: flex; justify-content: space-between; gap: 10px; margin: 0; }
+.cv-hdri .check { display: flex; align-items: center; gap: 8px; margin-top: 10px; }
+.cv-hdri .check input { width: auto; }
+.cv-hdri .check label { margin: 0; }
+.cv-hdri main { position: relative; flex: 1; min-width: 0; }
+
+/* ---- Demo index page ---- */
+.cv-index h1 { font-size: 1.4em; }
+.cv-index ul { list-style: none; padding: 0; }
+.cv-index li { margin: 8px 0; }
+.cv-index a { color: var(--cv-accent); text-decoration: none; font-size: 1.05em; }
+.cv-index a:hover { text-decoration: underline; }
+.cv-index .desc { color: var(--cv-text-muted); font-size: 0.85em; }
+
+/* ---- Projection control topbar ---- */
+body.has-projection-control > header { padding-right: 210px; }
+.projection-topbar {
+  position: fixed; inset: 0 0 auto; z-index: 20;
+  display: flex; justify-content: flex-end; min-height: 44px; padding: 8px 18px;
+  pointer-events: none;
+  background: linear-gradient(to bottom, rgb(20 22 25 / 52%), transparent);
+}
+.projection-topbar label {
+  display: flex; align-items: center; gap: 8px;
+  color: #eee; font: 0.85rem var(--cv-font); pointer-events: auto;
+}
+.projection-topbar select {
+  min-width: 130px; padding: 4px 8px; color: #eee;
+  background: #30343a; border: 1px solid #777; border-radius: 4px; font: inherit;
+}
+
+/* ---- Responsive ---- */
+@media (max-width: 640px) {
+  body.has-projection-control > header { padding-right: 18px; padding-top: 56px; }
+}
+@media (max-width: 720px) {
+  .cv-main { grid-template-columns: 1fr; grid-template-rows: 1fr 1fr; }
+  .view + .view { border-left: 0; border-top: 1px solid #777; }
+}
+@media (max-width: 760px) {
+  body.cv-panel-right { grid-template-columns: 1fr; grid-template-rows: 60vh auto; }
+  .cv-panel-right main canvas { height: 60vh; }
+  aside.cv-aside { border-left: 0; border-top: 1px solid var(--cv-panel-border); }
+}
+@media (max-width: 860px) {
+  body.cv-grid-cols { grid-template-columns: 1fr; }
+  .cv-main { grid-template-columns: 1fr; grid-template-rows: 1fr 1fr; }
+  .view + .view { border-left: 0; border-top: 1px solid #777; }
+  aside.cv-aside { border-left: 0; border-top: 1px solid var(--cv-panel-border); max-height: 40vh; }
+}

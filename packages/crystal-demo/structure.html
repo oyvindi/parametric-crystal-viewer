@@ -1,44 +1,11 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-bs-theme="dark">
 <head>
 <meta charset="utf-8">
 <title>Atomic Structure — M6 Demo</title>
-<style>
-  body { margin: 0; font-family: system-ui, sans-serif; background: #2a2a2a; color: #ddd; display: flex; height: 100vh; }
-  #panel { width: 340px; padding: 16px; overflow-y: auto; background: #333; border-right: 1px solid #555; }
-  #panel h1 { font-size: 1.2em; margin: 0 0 4px; }
-  #panel .subtitle { color: #999; font-size: 0.82em; margin-bottom: 12px; }
-  #panel h2 { font-size: 0.95em; margin: 16px 0 6px; color: #ccc; border-bottom: 1px solid #555; padding-bottom: 2px; }
-  #panel select, #panel input[type="file"] { width: 100%; margin-bottom: 8px; box-sizing: border-box; }
-  #panel label { display: block; margin-bottom: 8px; font-size: 0.85em; }
-  #panel .checkbox-row { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
-  #panel .checkbox-row input { width: auto; }
-  #panel .radio-row { display: flex; gap: 16px; margin-bottom: 8px; font-size: 0.85em; }
-  #panel .rep-row { display: flex; gap: 6px; margin-bottom: 8px; }
-  #panel .rep-row input { width: 100%; }
-  #panel .info { font-size: 0.82em; line-height: 1.6; color: #bbb; }
-  #panel .info .row { display: flex; justify-content: space-between; }
-  #panel .info .row .k { color: #888; }
-  #panel .info .row .v { color: #9cf; }
-  #panel .diagnostics { margin-top: 8px; padding: 8px; background: #2a2a2a; border-radius: 4px; font-size: 0.78em; max-height: 120px; overflow-y: auto; }
-  #panel .diagnostics .warn { color: #dd8; }
-  #panel .diagnostics .err { color: #e88; }
-  #panel .diagnostics .ok { color: #8e8; }
-  button { margin-bottom: 8px; }
-  #canvas-container { flex: 1; position: relative; }
-  canvas { display: block; width: 100%; height: 100%; }
-  .hint { position: absolute; bottom: 8px; right: 12px; font-size: 0.75em; color: #888; }
-</style>
-<script type="importmap">
-{
-  "imports": {
-    "@crystal/viewer": "../crystal-viewer/bundle/index.mjs",
-    "@crystal/viewer/component": "../crystal-viewer/bundle/component.mjs"
-  }
-}
-</script>
+<link rel="stylesheet" href="./demo.css">
 </head>
-<body>
+<body class="cv-sidebar">
 <div id="panel">
   <h1>Atomic Structure</h1>
   <div class="subtitle">CIF import, symmetry expansion, periodic bonds, and lattice repetition (M6)</div>
@@ -81,7 +48,7 @@
   <button type="button" id="reset-camera">Reset camera</button>
 
   <h2>Structure info</h2>
-  <div class="info" id="structure-info">No structure loaded.</div>
+  <div class="info-block" id="structure-info">No structure loaded.</div>
 
   <h2>Import / loading diagnostics</h2>
   <div class="diagnostics" id="diagnostics"><span class="ok">Idle.</span></div>
