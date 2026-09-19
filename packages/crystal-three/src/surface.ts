@@ -162,12 +162,12 @@ float profileStripe(float coordinate, float frequency, float phase) {
 // SR9 values are curated visualization constants, not reported step measurements.
 float growthStepPhase(vec2 coordinate, float seed) {
     float phase = seed * 0.0000023;
-    return coordinate.x * 7.0 + 0.42 * sin(coordinate.y * 3.1 + phase);
+    return coordinate.x * 14.0 + 0.65 * sin(coordinate.y * 5.0 + phase);
 }
 float growthStepSlope(vec2 coordinate, float seed) {
     float phase = growthStepPhase(coordinate, seed);
     float wave = sin(phase);
-    return cos(phase) * pow(abs(wave), 6.0);
+    return cos(phase) * pow(abs(wave), 3.0);
 }
 float hasSurfaceProfile(float id) {
     return 1.0 - step(0.25, abs(vSurfaceProfile - id));
@@ -192,7 +192,7 @@ float fluoriteStepSlope = growthStepSlope(vSurfaceCoord, vSurfaceSeed);
 normal = normalize(normal
     + surfaceDetailStrength * quartzStriation * 0.012 * cos(vSurfaceCoord.x * 18.0 + vSurfaceSeed * 0.0000031) * tangent
     + surfaceDetailStrength * pyriteStriation * 0.010 * cos(vSurfaceCoord.y * 15.0 + vSurfaceSeed * 0.0000027) * bitangent
-    + surfaceDetailStrength * fluoriteGrowthSteps * 0.040 * fluoriteStepSlope * (tangent + 0.42 * bitangent)
+    + surfaceDetailStrength * fluoriteGrowthSteps * 0.120 * fluoriteStepSlope * (tangent + 0.42 * bitangent)
 );`)
             .replace("#include <roughnessmap_fragment>", `#include <roughnessmap_fragment>
 if (surfaceDetailStrength > 0.0) {
@@ -202,7 +202,7 @@ if (surfaceDetailStrength > 0.0) {
 roughnessFactor = clamp(roughnessFactor
     + surfaceDetailStrength * hasSurfaceProfile(1.0) * 0.10 * profileStripe(vSurfaceCoord.x, 18.0, vSurfaceSeed * 0.0000031)
     + surfaceDetailStrength * hasSurfaceProfile(3.0) * 0.08 * profileStripe(vSurfaceCoord.y, 15.0, vSurfaceSeed * 0.0000027)
-    + surfaceDetailStrength * hasSurfaceProfile(4.0) * 0.12 * abs(growthStepSlope(vSurfaceCoord, vSurfaceSeed)),
+    + surfaceDetailStrength * hasSurfaceProfile(4.0) * 0.24 * abs(growthStepSlope(vSurfaceCoord, vSurfaceSeed)),
     0.04, 1.0
 );`)
             .replace("#include <opaque_fragment>", `#include <opaque_fragment>
