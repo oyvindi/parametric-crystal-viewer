@@ -160,7 +160,7 @@ describe("environment presentation controls", () => {
         expect(() => viewer.setExposure(-0.1)).toThrow(ViewerOperationError);
         expect(() => viewer.setEnvironmentBackgroundZoom(0)).toThrow(ViewerOperationError);
         expect(() => viewer.setToneMapping("bogus" as never)).toThrow(ViewerOperationError);
-        expect(() => viewer.loadHdrEnvironment(new ArrayBuffer(0))).toThrow(ViewerOperationError);
+        await expect(viewer.loadHdrEnvironment(new ArrayBuffer(0))).rejects.toThrow(ViewerOperationError);
     });
 });
 

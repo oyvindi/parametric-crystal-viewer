@@ -1,6 +1,4 @@
 import { Scene, PerspectiveCamera, WebGLRenderer, MeshPhysicalMaterial, Mesh, MeshBasicMaterial, Color, DirectionalLight, AmbientLight, Group, DoubleSide, FrontSide, Raycaster, Vector2, Vector3, Sprite, SpriteMaterial, CanvasTexture, BufferGeometry, Float32BufferAttribute, LineSegments, LineBasicMaterial, PMREMGenerator, EquirectangularReflectionMapping, AgXToneMapping, ACESFilmicToneMapping, NoToneMapping, type Texture, type WebGLRenderTarget } from "three";
-import { HDRLoader } from "three/addons/loaders/HDRLoader.js";
-import { EXRLoader } from "three/addons/loaders/EXRLoader.js";
 import { createLattice, expandAtomicStructure, generateCrystal, generateCrystalFromFaces, inferBonds, validatePeriodicBonds, type Diagnostic, type GeometryResult, type CrystalGeometry, type CrystalFace, type ExpandedAtom, type Lattice, type PeriodicBond } from "@crystal/core";
 import { loadMineral as loadMineralData, createCrystalInput, resolveHabit, resolveCrystallography, importCif, getMineral, validateMineral, MineralDataError, type Mineral, type MineralCrystallography, type StructuralDefinition, type SurfaceProfile } from "@crystal/data";
 import { createFaceLocalGeometry, updateFaceLocalAttributes, createReviewedSurfaceRules, createAtomicStructure, atomicBounds, createCrystalMaterial, applyAppearance, applyTransmissionOptics, applySurfaceDetail, updateSurfaceDetailStrength, resolveAppearance, APPEARANCE_FIELDS, type AppearanceParams, type AppearanceField, type ResolvedAppearance, type LusterCategory, type FaceSurface, type OpticalBounds } from "@crystal/three";
@@ -238,7 +236,7 @@ export class CrystalViewer extends EventTarget {
      * RGBE (.hdr) panorama. Uploaded environments are presentation resources
      * and are deliberately not included in serialized viewer state.
      */
-    loadEnvironment(data: ArrayBuffer, format: ViewerEnvironmentFormat): void {
+    async loadEnvironment(data: ArrayBuffer, format: ViewerEnvironmentFormat): Promise<void> {
         this.assertNotDisposed();
         const anyRenderer = this.renderer as unknown as { getContext?: () => unknown };
         if (typeof anyRenderer.getContext !== "function") {
@@ -261,9 +259,13 @@ export class CrystalViewer extends EventTarget {
         let target: WebGLRenderTarget | null = null;
         let pmrem: PMREMGenerator | null = null;
         try {
-            source = format === "hdr"
-                ? new HDRLoader().createDataTexture(data)
-                : new EXRLoader().createDataTexture(data);
+            if (format === "hdr") {
+                const { HDRLoader } = await import("three/addons/loaders/HDRLoader.js");
+                source = new HDRLoader().createDataTexture(data);
+            } else {
+                const { EXRLoader } = await import("three/addons/loaders/EXRLoader.js");
+                source = new EXRLoader().createDataTexture(data);
+            }
             const image = source.image as { width?: number; height?: number } | undefined;
             if (!this.validEnvironmentDimensions(Number(image?.width), Number(image?.height))) {
                 throw new Error("Decoded dimensions exceed 32 megapixels.");
@@ -290,13 +292,13 @@ export class CrystalViewer extends EventTarget {
     }
 
     /** Backward-compatible convenience method for a Radiance RGBE environment. */
-    loadHdrEnvironment(data: ArrayBuffer): void {
-        this.loadEnvironment(data, "hdr");
+    loadHdrEnvironment(data: ArrayBuffer): Promise<void> {
+        return this.loadEnvironment(data, "hdr");
     }
 
     /** Convenience method for an OpenEXR environment. */
-    loadExrEnvironment(data: ArrayBuffer): void {
-        this.loadEnvironment(data, "exr");
+    loadExrEnvironment(data: ArrayBuffer): Promise<void> {
+        return this.loadEnvironment(data, "exr");
     }
 
     /** Restores the built-in studio gradient environment. */

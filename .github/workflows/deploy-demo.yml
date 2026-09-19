@@ -27,24 +27,15 @@ jobs:
           node-version: "22"
           cache: npm
       - run: npm install
-      - run: npm run build
+      - run: npm run build:demo
       - name: Stage static site
         run: |
           mkdir -p staging/packages/crystal-demo
-          mkdir -p staging/packages/crystal-core/dist
-          mkdir -p staging/packages/crystal-data/dist
-          mkdir -p staging/packages/crystal-three/dist
-          mkdir -p staging/packages/crystal-viewer/dist
+          mkdir -p staging/packages/crystal-viewer/bundle
           mkdir -p staging/packages/crystal-core/test-fixtures/m5
-          mkdir -p staging/node_modules/three/build
           cp packages/crystal-demo/*.html staging/packages/crystal-demo/
-          cp -r packages/crystal-core/dist/* staging/packages/crystal-core/dist/
-          cp -r packages/crystal-data/dist/* staging/packages/crystal-data/dist/
-          cp -r packages/crystal-three/dist/* staging/packages/crystal-three/dist/
-          cp -r packages/crystal-viewer/dist/* staging/packages/crystal-viewer/dist/
+          cp -r packages/crystal-viewer/bundle/* staging/packages/crystal-viewer/bundle/
           cp packages/crystal-core/test-fixtures/m5/*.cif staging/packages/crystal-core/test-fixtures/m5/
-          cp node_modules/three/build/three.module.js staging/node_modules/three/build/
-          cp node_modules/three/build/three.core.js staging/node_modules/three/build/
           # Root redirect to the demo index
           cat > staging/index.html <<'HTML'
           <!DOCTYPE html>

@@ -36,12 +36,8 @@
 <script type="importmap">
 {
   "imports": {
-    "three": "../../node_modules/three/build/three.module.js",
-    "three/addons/": "../../node_modules/three/examples/jsm/",
-    "@crystal/core": "../crystal-core/dist/index.js",
-    "@crystal/data": "../crystal-data/dist/index.js",
-    "@crystal/three": "../crystal-three/dist/index.js",
-    "@crystal/viewer": "../crystal-viewer/dist/index.js"
+    "@crystal/viewer": "../crystal-viewer/bundle/index.mjs",
+    "@crystal/viewer/component": "../crystal-viewer/bundle/component.mjs"
   }
 }
 </script>
@@ -190,7 +186,7 @@ $("hdri").addEventListener("change", async () => {
   $("status").className = "status";
   $("status").textContent = `Loading ${file.name}…`;
   try {
-    viewer.loadEnvironment(await file.arrayBuffer(), extension);
+    await viewer.loadEnvironment(await file.arrayBuffer(), extension);
     $("status").className = "status ok";
     $("status").textContent = `Lighting with ${file.name} (${(file.size / 1048576).toFixed(1)} MB).`;
   } catch (error) {

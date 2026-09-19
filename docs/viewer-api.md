@@ -135,8 +135,10 @@ The viewer provides renderer-level controls for image-based lighting without add
 environment data to mineral appearance or scientific geometry. `loadEnvironment`
 accepts an in-memory Radiance RGBE (`hdr`) or OpenEXR (`exr`) panorama, validates its
 decoded dimensions, converts it to a PMREM environment, and commits it only after
-decoding and conversion succeed. `loadHdrEnvironment` and `loadExrEnvironment` are
-format-specific conveniences.
+decoding and conversion succeed. It is async (`Promise<void>`): the HDR and EXR
+decoders are loaded on demand, so the first call fetches a small loader chunk before
+decoding. `loadHdrEnvironment` and `loadExrEnvironment` are
+format-specific conveniences that return the same promise.
 Replacing, resetting, or disposing the viewer releases the previous source texture
 and PMREM render target.
 
