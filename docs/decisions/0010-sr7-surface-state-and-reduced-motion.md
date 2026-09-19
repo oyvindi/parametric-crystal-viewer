@@ -7,8 +7,8 @@
 
   1. *Serialized state migration.* SR7 says to define a state migration before changing the
      serialized schema, and to bump `STATE_VERSION` if serialized surface fields are added or
-     renamed. The surface fields already in version-1 state are `surfaceDetail { enabled,
-     strength }`, added in SR4. Effective surface profile information is derived from the
+     renamed. `surfaceDetail { enabled, strength }` was added in SR4 and is retained unchanged
+     in the current version-2 state. Effective surface profile information is derived from the
      selected mineral and current generated faces and is deliberately not serialized
      ([viewer API](../viewer-api.md#generic-surface-detail)).
   2. *Accessibility behavior for motion and high-frequency effects.* The plan asks for
@@ -19,12 +19,13 @@
      ([architecture](../architecture.md#architectural-principles)).
 
 * **Decision:**
-  1. **No state migration is needed.** The version-1 `surfaceDetail` member is already the
-     complete serialized surface state: the only stable controls are enable/disable and
-     overall strength, both already serialized. Effective profile information is derived, not
-     persistent. `STATE_VERSION` remains `1`; no migration is introduced. Legacy version-1
-     states written before SR4 omit `surfaceDetail` and restore with detail off, as already
-     documented and tested.
+  1. **No surface-state migration is needed.** `surfaceDetail` is already the complete
+     serialized surface state: the only stable controls are enable/disable and overall
+     strength, both already serialized. Effective profile information is derived, not
+     persistent. `STATE_VERSION` is `2` because of the independent camera-projection change
+     in [ADR 0012](0012-orthographic-projection.md); that migration accepts version-1 states.
+     Legacy version-1 states written before SR4 omit `surfaceDetail` and restore with detail
+     off, as documented and tested.
   2. **Honor `prefers-reduced-motion: reduce` in `crystal-viewer`.** When the user setting is
      active, `start()` suppresses the continuous rotation increment, so the high-frequency
      surface detail does not sweep across the screen. The animation loop still runs (the host
@@ -37,9 +38,8 @@
      of browser APIs.
 
 * **Alternatives:**
-  * *Bump to state version 2 to re-serialize surface state* — no field is being added, renamed,
-    or removed; a version bump and migration would impose a compatibility break for no schema
-    change.
+  * *Bump the state version solely for surface state* — rejected: no surface field is being
+    added, renamed, or removed. The existing V2 camera migration is independent of SR7.
   * *Serialize effective profile ids* — rejected at SR5; profiles are derived from the
     selected mineral and current faces and would duplicate data already referenced by the
     mineral identity. Keeping them derived avoids a stale-serialization hazard.
@@ -50,8 +50,9 @@
   * *No-op `start()` entirely under reduced-motion* — would break hosts that rely on the
     running loop for their own rendering cadence. Keeping the loop without rotation preserves
     the contract.
-* **Consequences:** Existing version-1 states round-trip unchanged; no migration code or
-  compatibility window is introduced. The auto-rotation demo path stops spinning when the OS
+* **Consequences:** Existing version-1 states migrate to V2 while retaining their surface
+  detail behavior; no additional surface-state migration or compatibility window is needed.
+  The auto-rotation demo path stops spinning when the OS
   requests reduced motion, while the surface detail and all scientific geometry remain
   unchanged. Hosts that introduce their own animation remain responsible for honoring the
   preference for that motion. Numeric tests verify the rotation suppression and the

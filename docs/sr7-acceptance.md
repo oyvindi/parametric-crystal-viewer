@@ -12,16 +12,19 @@ recorded in [ADR 0010](decisions/0010-sr7-surface-state-and-reduced-motion.md).
 
 ## State migration decision
 
-No migration is needed, and `STATE_VERSION` remains `1`. The version-1 `surfaceDetail`
-member (`{ enabled, strength }`) is already the complete serialized surface state: the
-only stable controls are enable/disable and overall strength, both serialized in SR4.
+`surfaceDetail` needs no additional migration of its own. The member (`{ enabled,
+strength }`) is already the complete serialized surface state: the only stable controls
+are enable/disable and overall strength, both serialized in SR4. `STATE_VERSION` is now
+`2` because orthographic projection added a separate V2 camera migration; version-1
+states remain accepted and are normalized to V2 on restore.
 Effective surface profile information is derived from the selected mineral and current
 generated faces and is deliberately not serialized
 ([viewer API](viewer-api.md#generic-surface-detail)); serializing it would duplicate data
 already referenced by the mineral identity and create a stale-serialization hazard. Legacy
-version-1 states written before SR4 omit `surfaceDetail` and restore with detail off, as
+Version-1 states written before SR4 omit `surfaceDetail` and restore with detail off, as
 already documented and tested. SR7 neither adds, renames, nor removes a serialized surface
-field, so no version bump or migration is introduced.
+field. See [ADR 0012](decisions/0012-orthographic-projection.md) for the V1-to-V2 camera
+migration.
 
 ## Public API surface
 
@@ -74,8 +77,9 @@ by numeric tests independent of raster output.
 
 ## Automated evidence
 
-`npm run check`, `node scripts/check-docs.mjs`, and `git diff --check` pass. The full suite
-is 471 tests (461 prior + 10 new SR7 tests).
+`npm run check`, `node scripts/check-docs.mjs`, and `git diff --check` pass. At the SR7
+audit, the full suite was 471 tests (461 prior + 10 new SR7 tests); the current test count
+is reported by `npm run check`.
 
 New focused tests in `packages/crystal-viewer/src/sr7-acceptance.test.ts`:
 
@@ -85,8 +89,9 @@ New focused tests in `packages/crystal-viewer/src/sr7-acceptance.test.ts`:
 * All nine minerals load with surface detail and report reviewed profiles only where
   reviewed: quartz and pyrite have matched faces (`matchedFaceCount > 0`); calcite reports
   its reviewed `{0001}` profile with zero matches; the other six report no profiles.
-* State: `STATE_VERSION` is `1`; `surfaceDetail` round-trips through `setState`; a legacy
-  version-1 state omitting `surfaceDetail` restores detail off.
+* State: `STATE_VERSION` is `2`; `surfaceDetail` round-trips through `setState`; a genuine
+  legacy version-1 state omitting `surfaceDetail` restores detail off through the V1-to-V2
+  migration.
 * Geometry immutability: toggling surface detail on and off leaves the position and normal
   arrays byte-for-byte unchanged.
 * Reduced-motion: when `matchMedia` reports `prefers-reduced-motion: reduce`, `start()`

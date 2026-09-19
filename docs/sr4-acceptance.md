@@ -18,8 +18,9 @@ appearance, core-face index, and sorted contributor identity. All triangles with
 face use the same seed and coordinate frame. Time, camera, model transform, and triangle
 identity do not enter the procedural function.
 
-The optional version-1 `surfaceDetail` state member stores enabled and strength values.
-Older version-1 states restore off. Invalid settings reject transactionally. Material,
+The optional `surfaceDetail` state member stores enabled and strength values. Older
+version-1 states restore off through the V1-to-V2 migration. Invalid settings reject
+transactionally. Material,
 geometry, and per-face seed resources are replaced or disposed through the existing
 mesh lifecycle.
 

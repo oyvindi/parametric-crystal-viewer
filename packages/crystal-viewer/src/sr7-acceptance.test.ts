@@ -101,7 +101,7 @@ describe("SR7 all nine minerals load and report reviewed profiles", () => {
     });
 });
 
-describe("SR7 serialized surface state needs no migration", () => {
+describe("SR7 serialized surface state", () => {
     it("surfaceDetail round-trips through setState", async () => {
         expect(STATE_VERSION).toBe(2);
         const viewer = await loaded("quartz");
@@ -121,8 +121,10 @@ describe("SR7 serialized surface state needs no migration", () => {
         const viewer = await loaded("quartz");
         viewer.setSurfaceDetail(true, 0.9);
         const state = viewer.getState();
-        // Simulate a pre-SR4 V1 state that omits the optional surfaceDetail member.
-        const legacy = { ...state, surfaceDetail: undefined } as unknown as typeof state;
+        // Simulate a pre-SR4 V1 payload. V1 had no projection or orthographic
+        // framing fields, so this also exercises the V1-to-V2 migration path.
+        const { projection: _projection, frustumHeight: _frustumHeight, ...camera } = state.camera;
+        const legacy = { ...state, version: 1, camera, surfaceDetail: undefined };
         const fresh = new CrystalViewer(canvas());
         viewers.push(fresh);
         await fresh.loadMineral("quartz");

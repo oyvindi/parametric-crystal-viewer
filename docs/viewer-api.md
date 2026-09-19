@@ -68,7 +68,8 @@ geometry and must not be presented as a measured or mineral-specific feature. Ch
 emit `surface-detail-changed`.
 
 The enabled flag and strength are serialized as the optional `surfaceDetail` member of
-version-1 state. States written before SR4 omit the member and restore with detail off.
+viewer state. Legacy version-1 states written before SR4 omit the member and restore with
+detail off through the documented V1-to-V2 migration.
 The procedural realization is derived from stable mineral, habit, appearance, and face
 identifiers; camera and model motion do not reseed it.
 
