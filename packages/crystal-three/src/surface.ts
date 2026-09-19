@@ -159,6 +159,16 @@ vec2 surfaceWaveGradient(vec2 p, float seed) {
 float profileStripe(float coordinate, float frequency, float phase) {
     return sin(coordinate * frequency + phase);
 }
+// SR9 values are curated visualization constants, not reported step measurements.
+float growthStepPhase(vec2 coordinate, float seed) {
+    float phase = seed * 0.0000023;
+    return coordinate.x * 7.0 + 0.42 * sin(coordinate.y * 3.1 + phase);
+}
+float growthStepSlope(vec2 coordinate, float seed) {
+    float phase = growthStepPhase(coordinate, seed);
+    float wave = sin(phase);
+    return cos(phase) * pow(abs(wave), 6.0);
+}
 float hasSurfaceProfile(float id) {
     return 1.0 - step(0.25, abs(vSurfaceProfile - id));
 }`)
@@ -175,11 +185,14 @@ if (surfaceDetailStrength > 0.0) {
 }
 float quartzStriation = hasSurfaceProfile(1.0);
 float pyriteStriation = hasSurfaceProfile(3.0);
+float fluoriteGrowthSteps = hasSurfaceProfile(4.0);
 float quartzStripe = profileStripe(vSurfaceCoord.x, 18.0, vSurfaceSeed * 0.0000031);
 float pyriteStripe = profileStripe(vSurfaceCoord.y, 15.0, vSurfaceSeed * 0.0000027);
+float fluoriteStepSlope = growthStepSlope(vSurfaceCoord, vSurfaceSeed);
 normal = normalize(normal
     + quartzStriation * 0.012 * cos(vSurfaceCoord.x * 18.0 + vSurfaceSeed * 0.0000031) * tangent
     + pyriteStriation * 0.010 * cos(vSurfaceCoord.y * 15.0 + vSurfaceSeed * 0.0000027) * bitangent
+    + fluoriteGrowthSteps * 0.008 * fluoriteStepSlope * (tangent + 0.42 * bitangent)
 );`)
             .replace("#include <roughnessmap_fragment>", `#include <roughnessmap_fragment>
 if (surfaceDetailStrength > 0.0) {
@@ -188,7 +201,8 @@ if (surfaceDetailStrength > 0.0) {
 }
 roughnessFactor = clamp(roughnessFactor
     + hasSurfaceProfile(1.0) * 0.10 * profileStripe(vSurfaceCoord.x, 18.0, vSurfaceSeed * 0.0000031)
-    + hasSurfaceProfile(3.0) * 0.08 * profileStripe(vSurfaceCoord.y, 15.0, vSurfaceSeed * 0.0000027),
+    + hasSurfaceProfile(3.0) * 0.08 * profileStripe(vSurfaceCoord.y, 15.0, vSurfaceSeed * 0.0000027)
+    + hasSurfaceProfile(4.0) * 0.035 * abs(growthStepSlope(vSurfaceCoord, vSurfaceSeed)),
     0.04, 1.0
 );`)
             .replace("#include <opaque_fragment>", `#include <opaque_fragment>
@@ -201,7 +215,7 @@ float pearly = hasSurfaceProfile(2.0);
 float pearlyGrazing = pow(1.0 - clamp(abs(dot(normal, normalize(vViewPosition))), 0.0, 1.0), 2.5);
 outgoingLight += pearly * vec3(0.055, 0.052, 0.045) * pearlyGrazing;`);
     };
-    material.customProgramCacheKey = () => "crystal-surface-detail-sr5-v1";
+    material.customProgramCacheKey = () => "crystal-surface-detail-sr9-v1";
     material.needsUpdate = true;
 }
 

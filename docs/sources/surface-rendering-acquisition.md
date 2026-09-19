@@ -64,7 +64,7 @@ cite these IDs without treating procedural values as measurements.
 | `surface.calcite.cleavage-pearly` | accepted, renderer-ineligible 2026-09-19 | cleavage | Calcite cleavage surfaces may be pearly. This must not select ordinary generated growth faces. | `handbook-calcite-v1`, Physical and Optical Properties. |
 | `surface.pyrite.100-striation` | accepted 2026-09-19 | growth face / oscillatory combination | Pyrite cube `{100}` faces may be striated parallel to their intersection edges with pyritohedron `{210}`; directions on adjacent cube faces are perpendicular. | `eb1911-pyrites`, article text and source scan; corroborated at mineral level by `handbook-pyrite-v1`. |
 | `surface.anatase.pyramid-striation` | candidate 2026-09-19 | unresolved | Some Colorado anatase pyramidal faces show closely spaced striations parallel to basal-pinacoid edges. | `usgs-anatase-striations-1107b`; locality-specific; exact pyramid family and representative scope remain unresolved. |
-| `surface.fluorite.100-growth-steps` | candidate 2026-09-19 | growth face, pending review | Natural fluorite may grow through spreading and piling growth layers parallel to `{100}`. | `desai-fluorite-surfaces-1979`; keep separate from reported natural etch pits on `{100}` and `{111}`. |
+| `surface.fluorite.100-growth-steps` | accepted 2026-09-19 | growth face | Natural fluorite may grow through spreading and piling growth layers parallel to `{100}`. | `desai-fluorite-surfaces-1979`, publisher abstract; natural `{100}`/`{111}` microstructures are distinguished, with natural `{100}` growth layers separately described from natural dissolution pits. Renderer spacing, height, density, and phase remain curated. |
 | `surface.quartz.z-etching` | candidate 2026-09-19 | dissolution/etch | Natural quartz `z` faces can show ridge-and-valley texture through preferential etching of periodic defects. | `gia-quartz-iridescence-2017`; locality-specific and not a general quartz profile. |
 
 ### Stable references
@@ -126,8 +126,9 @@ seek a modern open source.
 The Handbook sheets establish a common starting point for all current minerals but do
 not finish the evidence work. Research proceeds in this order:
 
-1. Review `{100}` fluorite growth steps separately from `{100}`/`{111}` dissolution and
-   determine whether either can be represented without inventing scale.
+1. Review fluorite `{100}`/`{111}` natural dissolution pits separately from the accepted
+   `{100}` growth-step profile; do not infer a pit selector, scale, or density from the
+   growth-layer evidence.
 2. Resolve the Anatase pyramid striation family, local direction, and representative
    scope before any renderer profile is proposed.
 3. Classify natural quartz etching separately from synthetic/laboratory etching and

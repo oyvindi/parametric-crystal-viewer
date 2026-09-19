@@ -96,6 +96,8 @@ describe("SR5 reviewed surface profiles", () => {
         expect(shader.fragmentShader).toContain("hasSurfaceProfile(2.0)");
         expect(shader.fragmentShader).toContain("quartzStriation");
         expect(shader.fragmentShader).toContain("pyriteStriation");
+        expect(shader.fragmentShader).toContain("fluoriteGrowthSteps");
+        expect(shader.fragmentShader).toContain("growthStepSlope");
         const roughness = shader.fragmentShader.slice(shader.fragmentShader.indexOf("roughnessFactor = clamp(roughnessFactor"), shader.fragmentShader.indexOf("vec3 q0 = dFdx"));
         expect(roughness).toContain("profileStripe(vSurfaceCoord.x");
         expect(roughness).not.toContain("quartzStripe");

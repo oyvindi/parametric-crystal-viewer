@@ -6,7 +6,7 @@ export const FLUORITE = defineMineral({
   "id": "fluorite",
   "name": "Fluorite",
   "formula": "CaF₂",
-  "dataRevision": "sr8-2",
+  "dataRevision": "sr9-1",
   "crystallography": {
     "crystalSystem": "cubic",
     "pointGroup": "m-3m",
@@ -83,6 +83,16 @@ export const FLUORITE = defineMineral({
       "status": "reported"
     },
     {
+      "coverage": ["surfaceProfiles"],
+      "referenceIds": ["desai-fluorite-surfaces-1979"],
+      "status": "reported"
+    },
+    {
+      "coverage": ["surfaceProfiles.*.description"],
+      "status": "curated",
+      "derivation": "The profile identifies a documented natural growth-face observation, not a specimen measurement. Step spacing, height, phase, density, and irregularity are renderer-owned curated values."
+    },
+    {
       "coverage": [
         "appearance"
       ],
@@ -132,7 +142,10 @@ export const FLUORITE = defineMineral({
     {"id":"appearance.fluorite.color","property":"color","description":"Fluorite occurs colorless, white, purple, blue, green, yellow, orange, red, pink, brown, and bluish black; it is commonly zoned.","surfaceOrigin":"not-surface-specific","disposition":"descriptive-only","dispositionReason":"The colour range and zoning do not define measured renderer colours.","typicality":"general"},
     {"id":"appearance.fluorite.diaphaneity","property":"diaphaneity","description":"Fluorite is reported as transparent to translucent.","surfaceOrigin":"not-surface-specific","disposition":"descriptive-only","dispositionReason":"Diaphaneity does not directly determine the curated transmission value.","typicality":"general"},
     {"id":"appearance.fluorite.luster","property":"luster","description":"Fluorite has vitreous luster, becoming dull when massive.","surfaceOrigin":"not-surface-specific","disposition":"descriptive-only","dispositionReason":"The whole-mineral luster observation has no growth-face selector.","typicality":"general"},
-    {"id":"surface.fluorite.100-growth-steps","property":"growth-steps","description":"Natural fluorite may grow through spreading and piling growth layers parallel to {100} faces.","surfaceOrigin":"growth-face","disposition":"candidate","dispositionReason":"The source supports a {100} growth mechanism but not a renderer scale, density, or a claim that every fluorite specimen is terraced.","selector":{"family":{"notation":"miller","h":1,"k":0,"l":0}}}
+    {"id":"surface.fluorite.100-growth-steps","property":"growth-steps","description":"Natural fluorite may grow through spreading and piling growth layers parallel to {100} faces.","surfaceOrigin":"growth-face","disposition":"renderer-eligible","selector":{"formId":"a"}}
+  ],
+  "surfaceProfiles": [
+    {"id":"fluorite.100-growth-steps","kind":"growth-steps","claimId":"surface.fluorite.100-growth-steps","surfaceOrigin":"growth-face","selector":{"formId":"a"},"description":"Natural fluorite {100} growth faces may show two-dimensional growth layers; the renderer uses a curated typical presentation and is not specimen-measured."}
   ],
   "habits": [
     {
