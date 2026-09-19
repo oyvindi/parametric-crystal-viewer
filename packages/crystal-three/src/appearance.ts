@@ -101,12 +101,85 @@ export const DEFAULT_APPEARANCE: Readonly<ResolvedAppearance> = {
 
 /**
  * Maps an absorption density (a normalized, non-negative coefficient where 0 is
- * no absorption) to a Three.js `attenuationDistance`. Three.js models volumetric
- * absorption as the distance over which light is attenuated; a higher density
- * yields a shorter distance. A density of 0 disables absorption (Infinity).
+ * no absorption) to a Three.js `attenuationDistance`. This is the scale-free
+ * normalized form: combined with a geometry-derived `thickness` it yields the
+ * scale-invariant optical distance used by the viewer through
+ * `absorptionAttenuationDistance`. A density of 0 disables absorption (Infinity).
  */
 export function absorptionDistance(density: number): number {
     return density > 0 ? 1 / density : Infinity;
+}
+
+/**
+ * Scale-invariant Three.js `attenuationDistance` for volumetric absorption.
+ * Three.js applies Beer-Lambert with an optical path length proportional to the
+ * material `thickness` and a coefficient `-log(attenuationColor)/attenuationDistance`,
+ * so transmittance is `attenuationColor^(path/attenuationDistance)`. Because the
+ * path scales with `thickness`, setting `attenuationDistance = thickness / density`
+ * makes the exponent equal to `density` regardless of absolute model scale. The
+ * `absorptionDensity` field is therefore a normalized coefficient (density 1 yields
+ * roughly 37% transmittance at the attenuation color) rather than a per-ångström
+ * rate. Non-positive density or non-positive thickness disables absorption.
+ * Every value here is a curated renderer choice, not a measured optical constant.
+ */
+export function absorptionAttenuationDistance(density: number, thickness: number): number {
+    return density > 0 && thickness > 0 && Number.isFinite(density) && Number.isFinite(thickness)
+        ? thickness / density
+        : Infinity;
+}
+
+/** Renderer-neutral axis-aligned bounds; min and max corners in the same units as the buffers. */
+export type OpticalBounds = readonly [readonly [number, number, number], readonly [number, number, number]];
+
+/**
+ * Curated characteristic optical thickness estimate from geometry bounds, in the
+ * same world units as the vertex buffers. Three.js `thickness` scales both the
+ * refraction ray and the absorption path, so a representative linear extent keeps
+ * refraction proportional to the displayed crystal. The largest bounding-box
+ * extent is a small deterministic approximation, not a measured optical path.
+ */
+export function characteristicThickness(bounds: OpticalBounds): number {
+    const [min, max] = bounds;
+    return Math.max(max[0] - min[0], max[1] - min[1], max[2] - min[2]);
+}
+
+/**
+ * Resolves whether a material pays any transmission cost. Opaque surfaces
+ * (transmission <= 0) and fully metallic surfaces (metalness >= 1) never enter
+ * the Three.js transmission render pass, so they bypass thickness and absorption
+ * work. Three.js compiles the transmission chunk only when `transmission > 0`.
+ */
+export function isTransmissiveAppearance(appearance: ResolvedAppearance): boolean {
+    return appearance.transmission > 0 && appearance.metalness < 1;
+}
+
+/**
+ * Applies scale-invariant transmission optics to an existing material in place.
+ * Geometry is never touched. For transmissive surfaces the Three.js `thickness`
+ * is set to the characteristic thickness and `attenuationDistance` to the
+ * scale-invariant `thickness / density`; opaque and fully metallic surfaces get
+ * the transmission defaults (`transmission` 0, `thickness` 0,
+ * `attenuationDistance` Infinity, `transparent` false) so they never enter the
+ * transmission render pass. Three.js compiles the transmission chunk only when
+ * `transmission > 0`, so zeroing `transmission` makes the bypass exact rather
+ * than a no-op shader branch. Call after `applyAppearance`; the viewer re-applies
+ * this whenever appearance or geometry changes so absorption stays scale-invariant.
+ */
+export function applyTransmissionOptics(
+    material: MeshPhysicalMaterial,
+    appearance: ResolvedAppearance,
+    bounds: OpticalBounds,
+): void {
+    if (!isTransmissiveAppearance(appearance)) {
+        material.transmission = 0;
+        material.transparent = false;
+        material.thickness = 0;
+        material.attenuationDistance = Infinity;
+        return;
+    }
+    const thickness = characteristicThickness(bounds);
+    material.thickness = thickness > 0 && Number.isFinite(thickness) ? thickness : 1;
+    material.attenuationDistance = absorptionAttenuationDistance(appearance.absorptionDensity, material.thickness);
 }
 
 /**

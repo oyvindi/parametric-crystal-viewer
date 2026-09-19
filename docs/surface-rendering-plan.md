@@ -222,6 +222,9 @@ Acceptance:
 
 ### SR6 — Transmission and Optical Refinement
 
+**Status:** complete. See the [SR6 acceptance audit](sr6-acceptance.md) and
+[ADR 0009](decisions/0009-transmission-and-optical-refinement.md).
+
 Improve path-length-dependent absorption, exit-surface behavior, transmissive shadows,
 and thickness estimation for quartz, calcite, fluorite, beryl, gypsum, and forsterite
 reference scenes. Do not present a scalar IOR material as a simulation of calcite
@@ -233,6 +236,11 @@ Resolve before implementation:
 * whether screen-space transmission limitations require a documented fallback;
 * whether dispersion is worth its cost; and
 * whether birefringence belongs in a later specialized optical milestone.
+
+The chosen approximation is scale-invariant `attenuationDistance = thickness / density`
+on the existing single physical material; dispersion is excluded, calcite birefringence
+is not simulated, and screen-space transmission limits (no caustics, no transmissive
+shadows, no nested-transparent handling) are documented as the known fallback boundary.
 
 Acceptance:
 

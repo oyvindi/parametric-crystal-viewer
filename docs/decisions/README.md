@@ -23,3 +23,4 @@ Decision records explain why a choice was made. Update the owning contract when 
 * [0006 — Face-Local Surface Selection and GPU Encoding](0006-face-local-surface-encoding.md) — accepted.
 * [0007 — Generic Surface Microvariation and Deterministic State](0007-generic-surface-microvariation.md) — accepted.
 * [0008 — Reviewed Surface Profile Data and Renderer Mapping](0008-reviewed-surface-profiles.md) — accepted.
+* [0009 — Transmission and Optical Refinement](0009-transmission-and-optical-refinement.md) — accepted.

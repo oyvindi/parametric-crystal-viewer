@@ -44,6 +44,14 @@ Each preset may carry a categorical `luster` classification (`vitreous`, `pearly
 
 The API exposes `getAppearances`, `getAppearanceId`, `getAppearance`, `setAppearance`, and `setAppearanceField`. State serialization covers the selected appearance and user overrides under [Persistent State Coverage](#persistent-state-coverage). Changes emit `appearance-changed` so host controls stay synchronized, including after programmatic changes and state restoration.
 
+Volumetric absorption is scale-invariant: the renderer derives `attenuationDistance`
+from the geometry `thickness` so the Beer-Lambert exponent depends only on
+`absorptionDensity`, not on absolute model scale. Opaque and metallic surfaces bypass
+the transmission pass entirely. The renderer uses a scalar IOR and screen-space
+transmission; it does not simulate dispersion or calcite birefringence. The
+transmission approximation and limitations are recorded in
+[ADR 0009](decisions/0009-transmission-and-optical-refinement.md).
+
 `getSurfaceProfiles` reports each reviewed, documented-typical surface profile, its
 claim ID and description, plus the number of currently matched faces. A match indicates
 an eligible typical rendering treatment, not a measurement of the displayed specimen.

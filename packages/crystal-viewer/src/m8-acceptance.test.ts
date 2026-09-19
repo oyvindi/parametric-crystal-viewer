@@ -50,7 +50,8 @@ describe("M8 appearance parameter mapping", () => {
         expect(material.transmission).toBe(preset.transmission);
         expect(material.ior).toBe(preset.ior);
         expect(material.attenuationColor.getHexString()).toBe(preset.absorptionColor!.replace("#", ""));
-        expect(material.attenuationDistance).toBeCloseTo(1 / preset.absorptionDensity!);
+        // SR6: attenuationDistance is scale-invariant (thickness / density), not 1 / density.
+        expect(material.attenuationDistance).toBeCloseTo(material.thickness / preset.absorptionDensity!);
         expect(material.transparent).toBe(true); // transmission > 0
         expect(material.thickness).toBeGreaterThan(0); // derived from geometry bounds
     });

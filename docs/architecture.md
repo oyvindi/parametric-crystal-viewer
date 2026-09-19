@@ -212,6 +212,18 @@ Unknown or unmatched profiles route to profile zero. The mapping must not infer 
 profile from a mineral name, camera, world coordinate, or an unreviewed face; see
 [ADR 0008](decisions/0008-reviewed-surface-profiles.md).
 
+SR6 transmission and optical refinement is a scale-invariant approximation on the same
+single physical material, not a new shader. `crystal-three` derives a characteristic
+`thickness` from the geometry bounds and a scale-invariant `attenuationDistance` of
+`thickness / density`, so volumetric absorption (Three.js Beer-Lambert) does not change
+with absolute model scale. Opaque (`transmission <= 0`) and fully metallic
+(`metalness >= 1`) surfaces bypass the transmission render pass entirely. The renderer
+limits are documented, not fixed: transmission is screen-space (no real exit-surface
+Fresnel, caustics, or nested-transparent handling), there are no transmissive shadows,
+dispersion is excluded, and calcite is rendered with a scalar IOR only — never as
+birefringence. The approximation, budget, and limitations are recorded in
+[ADR 0009](decisions/0009-transmission-and-optical-refinement.md).
+
 ```ts
 function createThreeGeometry(
     crystal: CrystalGeometry

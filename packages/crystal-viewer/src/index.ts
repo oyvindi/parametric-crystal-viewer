@@ -3,7 +3,7 @@ import { HDRLoader } from "three/addons/loaders/HDRLoader.js";
 import { EXRLoader } from "three/addons/loaders/EXRLoader.js";
 import { createLattice, expandAtomicStructure, generateCrystal, generateCrystalFromFaces, inferBonds, validatePeriodicBonds, type Diagnostic, type GeometryResult, type CrystalGeometry, type CrystalFace, type ExpandedAtom, type Lattice, type PeriodicBond } from "@crystal/core";
 import { loadMineral as loadMineralData, createCrystalInput, resolveHabit, resolveCrystallography, importCif, getMineral, validateMineral, MineralDataError, type Mineral, type MineralCrystallography, type StructuralDefinition, type SurfaceProfile } from "@crystal/data";
-import { createFaceLocalGeometry, updateFaceLocalAttributes, createReviewedSurfaceRules, createAtomicStructure, atomicBounds, createCrystalMaterial, applyAppearance, applySurfaceDetail, updateSurfaceDetailStrength, resolveAppearance, APPEARANCE_FIELDS, type AppearanceParams, type AppearanceField, type ResolvedAppearance, type LusterCategory, type FaceSurface } from "@crystal/three";
+import { createFaceLocalGeometry, updateFaceLocalAttributes, createReviewedSurfaceRules, createAtomicStructure, atomicBounds, createCrystalMaterial, applyAppearance, applyTransmissionOptics, applySurfaceDetail, updateSurfaceDetailStrength, resolveAppearance, APPEARANCE_FIELDS, type AppearanceParams, type AppearanceField, type ResolvedAppearance, type LusterCategory, type FaceSurface, type OpticalBounds } from "@crystal/three";
 import { cameraBasis } from "./camera.js";
 import { STATE_VERSION, validateStateShape, type ViewerState, type ViewMode, type FormState, type MineralRefState, type AppearanceState, type AppearanceOverride, type SurfaceDetailState } from "./state.js";
 
@@ -620,7 +620,16 @@ export class CrystalViewer extends EventTarget {
 
     private applyAppearanceToMesh(): void {
         if (this.mesh) {
+            const appearance = resolveAppearance(this.effectiveAppearance());
             applyAppearance(this.mesh.material, this.effectiveAppearance());
+            // Re-apply scale-invariant transmission optics so density or transmission
+            // overrides keep absorption independent of absolute model scale. When the
+            // current geometry is invalid the last valid mesh is retained with a stale
+            // status; use its bounds so an appearance edit does not revert absorption
+            // to the non-scale-invariant 1 / density form.
+            const bounds = this.currentGeometry?.bounds
+                ?? (this.lastValidGeometry && this.lastValidGeometry.status === "valid" ? this.lastValidGeometry.geometry.bounds : undefined);
+            if (bounds) applyTransmissionOptics(this.mesh.material, appearance, [bounds.min, bounds.max] as OpticalBounds);
             if (this.currentGeometry) this.faceSurfaces = updateFaceLocalAttributes(this.mesh.geometry, this.currentGeometry, this.surfaceRules(), [1, 0, 0], this.surfaceSeedKey());
             this.renderOnce();
         }
@@ -1433,9 +1442,12 @@ export class CrystalViewer extends EventTarget {
             wireframe: this.showWireframe,
         });
         applySurfaceDetail(material, { strength: this.surfaceDetail.enabled ? this.surfaceDetail.strength : 0 });
-        // Volumetric absorption scales with the displayed crystal depth.
+        // Scale-invariant volumetric absorption and refraction thickness. Opaque and
+        // metallic surfaces bypass transmission work; transmissive surfaces derive
+        // attenuationDistance from the characteristic thickness so absorption does
+        // not change with absolute model scale.
         const { min, max } = result.geometry.bounds;
-        material.thickness = Math.max(max[0] - min[0], max[1] - min[1], max[2] - min[2]) || 1;
+        applyTransmissionOptics(material, resolveAppearance(this.effectiveAppearance()), [min, max] as OpticalBounds);
         this.mesh = new Mesh(buffer, material);
         this.crystalGroup.add(this.mesh);
         if (this.showLabels) this.createLabels(result.geometry);
