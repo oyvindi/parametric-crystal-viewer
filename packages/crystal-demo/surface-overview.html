@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Surface Rendering Overview — SR7</title>
+<style>
+  * { box-sizing: border-box; }
+  body { margin: 0; min-height: 100vh; font-family: system-ui, sans-serif; background: #25282c; color: #eee; display: grid; grid-template-columns: minmax(0, 1fr) 320px; grid-template-rows: auto 1fr; }
+  header { grid-column: 1 / -1; display: flex; flex-wrap: wrap; align-items: center; gap: 18px; padding: 12px 18px; background: #30343a; border-bottom: 1px solid #555; }
+  h1 { margin: 0 auto 0 0; font-size: 1.05rem; }
+  label { display: flex; align-items: center; gap: 8px; font-size: .85rem; }
+  select { min-width: 130px; }
+  input[type="range"] { width: 150px; }
+  output { min-width: 2.5em; color: #9dd5ff; font-variant-numeric: tabular-nums; }
+  button { padding: 4px 10px; }
+  main { min-width: 0; min-height: 0; display: grid; grid-template-columns: 1fr 1fr; }
+  .view { position: relative; min-width: 0; overflow: hidden; }
+  .view + .view { border-left: 1px solid #777; }
+  canvas { display: block; width: 100%; height: 100%; touch-action: none; }
+  .badge { position: absolute; z-index: 1; top: 14px; left: 14px; padding: 8px 11px; background: rgb(20 22 25 / 78%); border-radius: 4px; pointer-events: none; }
+  .badge strong { display: block; }
+  .badge span { color: #c4c9cf; font-size: .76rem; }
+  aside { padding: 18px 20px; background: #30343a; border-left: 1px solid #555; overflow: auto; }
+  aside h2 { margin: 0 0 12px; font-size: .95rem; }
+  .profile { margin: 12px 0; padding: 12px; border-radius: 5px; background: #24272c; border: 1px solid #4b5159; }
+  .profile strong { display: block; font-size: .9rem; }
+  .profile code { color: #9dd5ff; font-size: .75rem; }
+  .profile p { margin: 8px 0 0; color: #c4c9cf; font-size: .8rem; line-height: 1.4; }
+  .match { color: #9fe0aa; font-size: .8rem; margin-top: 8px; }
+  .inactive { color: #f0c978; }
+  .none { color: #aeb6c0; font-size: .82rem; line-height: 1.45; }
+  .focus { margin: 16px 0 8px; padding: 10px 12px; border-radius: 5px; background: #2c3530; border: 1px solid #4d6b58; font-size: .8rem; line-height: 1.4; }
+  .focus strong { color: #9fe0aa; }
+  .note { margin-top: 16px; color: #aeb6c0; font-size: .76rem; line-height: 1.45; }
+  .hint { position: fixed; left: 50%; bottom: 12px; translate: -50%; z-index: 2; padding: 5px 9px; border-radius: 4px; background: rgb(20 22 25 / 74%); color: #c4c9cf; font-size: .75rem; pointer-events: none; }
+  @media (max-width: 860px) { body { grid-template-columns: 1fr; } main { grid-template-columns: 1fr; grid-template-rows: 1fr 1fr; } .view + .view { border-left: 0; border-top: 1px solid #777; } aside { border-left: 0; border-top: 1px solid #555; max-height: 40vh; } }
+</style>
+<script type="importmap">
+{
+  "imports": {
+    "three": "../../node_modules/three/build/three.module.js",
+    "three/addons/": "../../node_modules/three/examples/jsm/",
+    "@crystal/core": "../crystal-core/dist/index.js",
+    "@crystal/data": "../crystal-data/dist/index.js",
+    "@crystal/three": "../crystal-three/dist/index.js",
+    "@crystal/viewer": "../crystal-viewer/dist/index.js"
+  }
+}
+</script>
+</head>
+<body>
+<header>
+  <h1>SR7 Surface Rendering Overview</h1>
+  <label>Mineral <select id="mineral"></select></label>
+  <label><input id="enabled" type="checkbox"> Surface detail</label>
+  <label>Strength <input id="strength" type="range" min="0" max="1" step="0.01" value="0.35"><output id="strength-value">0.35</output></label>
+  <button id="reset" type="button">Reset shared view</button>
+</header>
+<main>
+  <section class="view" id="off-view">
+    <div class="badge"><strong>Detail off</strong><span>Unmodified physical material</span></div>
+    <canvas id="off-canvas"></canvas>
+  </section>
+  <section class="view" id="on-view">
+    <div class="badge"><strong>Detail enabled</strong><span id="on-description">Generic strength 0.35</span></div>
+    <canvas id="on-canvas"></canvas>
+  </section>
+</main>
+<aside>
+  <h2>Effective surface profiles</h2>
+  <div id="profiles"></div>
+  <p class="note">Only stable controls are exposed: enable/disable, overall strength, and effective profile information (id, kind, claim, description, matched faces). No seeds, frequencies, amplitudes, or shader uniforms are presented as measurements. Profiles describe documented-typical growth-face features, not measurements of this displayed specimen.</p>
+</aside>
+<div class="hint">Drag either crystal — rotation is mirrored on both sides</div>
+
+<script type="module">
+import { CrystalViewer, getMineral, listMinerals } from "@crystal/viewer";
+
+const offCanvas = document.getElementById("off-canvas");
+const onCanvas = document.getElementById("on-canvas");
+const offViewer = new CrystalViewer(offCanvas);
+const onViewer = new CrystalViewer(onCanvas);
+const mineralSelect = document.getElementById("mineral");
+const enabledInput = document.getElementById("enabled");
+const strengthInput = document.getElementById("strength");
+const strengthValue = document.getElementById("strength-value");
+const onDescription = document.getElementById("on-description");
+const profilesEl = document.getElementById("profiles");
+
+const REVIEWED = new Map([
+  ["quartz", { id: "quartz.m-prism-striations", label: "Quartz — prism striations", focus: "Striations appear on prism m faces only, perpendicular to c, and stay crystal-local under rotation. Compare off vs enabled." }],
+  ["calcite", { id: "calcite.0001-pearly", label: "Calcite — basal pearly luster", focus: "The panel reports the reviewed {0001} profile, but no shipped habit has a basal growth face, so no pearly treatment is inferred from cleavage." }],
+  ["pyrite", { id: "pyrite.100-cube-striations", label: "Pyrite — cube striations", focus: "Striations are confined to cube faces and follow edge-relative directions that change per adjacent face, not a world or camera axis." }],
+]);
+
+for (const id of listMinerals()) {
+  const option = document.createElement("option");
+  option.value = id;
+  option.textContent = getMineral(id).name;
+  mineralSelect.appendChild(option);
+}
+
+function strength() { return Number(strengthInput.value); }
+function enabled() { return enabledInput.checked; }
+
+function renderProfiles(id) {
+  profilesEl.replaceChildren();
+  const reviewed = REVIEWED.get(id);
+  if (reviewed) {
+    const focus = document.createElement("div");
+    focus.className = "focus";
+    focus.innerHTML = `<strong>Focused comparison — ${reviewed.label}</strong><br>${reviewed.focus}`;
+    profilesEl.append(focus);
+  }
+  const list = onViewer.getSurfaceProfiles();
+  if (!list.length) {
+    const note = document.createElement("p");
+    note.className = "none";
+    note.textContent = "No reviewed form-specific profile for this mineral. Surface detail applies only generic low-amplitude microvariation — an artistic naturalization layer, not a measured or mineral-specific feature.";
+    profilesEl.append(note);
+    return;
+  }
+  for (const profile of list) {
+    const card = document.createElement("section");
+    card.className = "profile";
+    const title = document.createElement("strong");
+    title.textContent = profile.kind === "pearly-luster" ? "Pearly growth-face luster" : "Directional growth-face striations";
+    const claim = document.createElement("code");
+    claim.textContent = profile.claimId;
+    const description = document.createElement("p");
+    description.textContent = profile.description;
+    const match = document.createElement("div");
+    match.className = `match${profile.matchedFaceCount ? "" : " inactive"}`;
+    match.textContent = profile.matchedFaceCount ? `Active on ${profile.matchedFaceCount} generated face${profile.matchedFaceCount === 1 ? "" : "s"}.` : "No matching generated growth face in this shipped habit.";
+    card.append(title, claim, description, match);
+    profilesEl.append(card);
+  }
+}
+
+async function load(id) {
+  await Promise.all([offViewer.loadMineral(id), onViewer.loadMineral(id)]);
+  offViewer.setSurfaceDetail(false, strength());
+  onViewer.setSurfaceDetail(enabled(), strength());
+  offViewer.resetCamera();
+  onViewer.resetCamera();
+  renderProfiles(id);
+}
+
+function applyDetail() {
+  const value = strength();
+  strengthValue.value = value.toFixed(2);
+  const on = enabled();
+  onDescription.textContent = on ? `Generic strength ${value.toFixed(2)}` : "Detail disabled";
+  offViewer.setSurfaceDetail(false, value);
+  onViewer.setSurfaceDetail(on, value);
+}
+
+// Mirror pointer rotation across both views so the off/enabled comparison stays aligned.
+function mirrorPointer(sourceCanvas, peerViewer) {
+  let dragging = false, lastX = 0, lastY = 0;
+  sourceCanvas.addEventListener("pointerdown", (event) => { dragging = true; lastX = event.clientX; lastY = event.clientY; });
+  sourceCanvas.addEventListener("pointermove", (event) => {
+    if (!dragging) return;
+    const dx = event.clientX - lastX, dy = event.clientY - lastY;
+    lastX = event.clientX; lastY = event.clientY;
+    peerViewer.rotateModel(dy * 0.01, dx * 0.01);
+  });
+  const stop = () => { dragging = false; };
+  sourceCanvas.addEventListener("pointerup", stop);
+  sourceCanvas.addEventListener("pointercancel", stop);
+  sourceCanvas.addEventListener("pointerleave", stop);
+}
+
+mirrorPointer(offCanvas, onViewer);
+mirrorPointer(onCanvas, offViewer);
+
+// Keep the comparison about material response; suppress single-sided face tinting.
+for (const canvas of [offCanvas, onCanvas]) {
+  canvas.addEventListener("click", (event) => event.stopImmediatePropagation(), { capture: true });
+}
+
+function resize() {
+  for (const [element, viewer] of [[document.getElementById("off-view"), offViewer], [document.getElementById("on-view"), onViewer]]) {
+    viewer.resize(element.clientWidth, element.clientHeight);
+  }
+}
+
+mineralSelect.addEventListener("change", () => load(mineralSelect.value));
+enabledInput.addEventListener("change", applyDetail);
+strengthInput.addEventListener("input", applyDetail);
+document.getElementById("reset").addEventListener("click", () => { offViewer.resetCamera(); onViewer.resetCamera(); });
+window.addEventListener("resize", resize);
+
+mineralSelect.value = "quartz";
+enabledInput.checked = true;
+resize();
+await load(mineralSelect.value);
+await new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve)));
+offViewer.render();
+onViewer.render();
+document.documentElement.dataset.demoReady = "true";
+</script>
+</body>
+</html>

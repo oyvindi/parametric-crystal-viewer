@@ -76,6 +76,17 @@ Face selection uses a translucent front-side tint that does not write depth. The
 highlight preserves the underlying material's depth cues—particularly for transmissive
 crystals—and never changes the camera, projection, geometry, or picked contributor.
 
+### Reduced-Motion and High-Frequency Effects
+
+The viewer honors the `prefers-reduced-motion: reduce` user setting. The only continuous
+motion the viewer produces is the optional `start()` auto-rotation; when reduced-motion is
+active that rotation is suppressed, so high-frequency surface detail such as striations
+does not sweep across the screen. The static surface detail itself remains visible: it is
+reviewed typical information, not motion, and on-demand interaction still renders through
+`renderOnce`. The detection reads `matchMedia` once and is safe outside a browser (returns
+inactive). Hosts that drive their own animation are responsible for honoring the same
+preference for motion they introduce.
+
 ---
 
 ## Viewer API

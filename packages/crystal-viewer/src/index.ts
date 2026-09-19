@@ -159,6 +159,7 @@ export class CrystalViewer extends EventTarget {
     private animationHandle: number | null = null;
     private rotationY = 0;
     private readonly rotationSpeed = 0.005;
+    private reducedMotionQuery: MediaQueryList | null | undefined;
     private isDragging = false;
     private lastMouseX = 0;
     private lastMouseY = 0;
@@ -1226,13 +1227,30 @@ export class CrystalViewer extends EventTarget {
         if (this.disconnected || this.animationHandle !== null) return;
         const loop = () => {
             if (this.disposed || this.disconnected) return;
-            this.rotationY += this.rotationSpeed;
-            this.crystalGroup.rotation.y = this.rotationY;
-            this.labelGroup.rotation.y = this.rotationY;
+            // Honors prefers-reduced-motion: the only continuous motion is the
+            // auto-rotation. Suppressing it keeps high-frequency surface detail
+            // (striations) from sweeping across the screen. The static surface
+            // detail itself remains visible — it is reviewed typical information,
+            // not motion — and on-demand interaction still renders via renderOnce.
+            if (!this.prefersReducedMotion()) {
+                this.rotationY += this.rotationSpeed;
+                this.crystalGroup.rotation.y = this.rotationY;
+                this.labelGroup.rotation.y = this.rotationY;
+            }
             this.renderFrame();
             this.animationHandle = requestAnimationFrame(loop);
         };
         this.animationHandle = requestAnimationFrame(loop);
+    }
+
+    /** Cached prefers-reduced-motion query; safe outside a browser (returns false). */
+    private prefersReducedMotion(): boolean {
+        if (this.reducedMotionQuery === undefined) {
+            this.reducedMotionQuery = typeof globalThis !== "undefined" && typeof globalThis.matchMedia === "function"
+                ? globalThis.matchMedia("(prefers-reduced-motion: reduce)")
+                : null;
+        }
+        return this.reducedMotionQuery?.matches === true;
     }
 
     stop(): void {
