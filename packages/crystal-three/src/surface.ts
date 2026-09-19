@@ -23,7 +23,7 @@ export interface SurfaceRule {
 /** Structural input accepted from data without making this renderer depend on crystal-data. */
 export interface ReviewedSurfaceProfileInput {
     readonly id: string;
-    readonly kind: "directional-striations" | "pearly-luster";
+    readonly kind: "directional-striations" | "pearly-luster" | "growth-steps";
     readonly selector: SurfaceSelector;
 }
 
@@ -32,6 +32,7 @@ export const REVIEWED_SURFACE_PROFILE_IDS = {
     "quartz.m-prism-striations": 1,
     "calcite.0001-pearly": 2,
     "pyrite.100-cube-striations": 3,
+    "fluorite.100-growth-steps": 4,
 } as const;
 
 export interface FaceSurface {
@@ -83,6 +84,11 @@ export function createReviewedSurfaceRules(
         }
         if (profile.id === "pyrite.100-cube-striations" && profile.kind === "directional-striations") {
             return [{ id: profile.id, profileId, selector: profile.selector, referenceDirection: (face) => pyriteCubeIntersectionEdge(face.normal) }];
+        }
+        if (profile.id === "fluorite.100-growth-steps" && profile.kind === "growth-steps") {
+            // The reviewed claim identifies the face family, not a step direction.
+            // Tangent fallback remains deterministic but does not assert a documented direction.
+            return [{ id: profile.id, profileId, selector: profile.selector }];
         }
         return [];
     });

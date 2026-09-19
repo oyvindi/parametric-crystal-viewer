@@ -23,6 +23,14 @@
   least-aligned positive crystal Cartesian axis. A single diagnostic shader material
   validates profile routing; production remains a single physical material until SR4
   and SR5 define actual effects.
+
+  A normalized unoriented Miller-family selector currently normalizes only an index
+  and its opposite; it does not apply point-group operations or equate axis
+  permutations. A fluorite `{100}` surface rule must therefore select the curated
+  cube form ID `a` to address all symmetry-equivalent cube faces. This is an explicit
+  limitation of the current selector contract, not an inference made by a renderer
+  profile. Any symmetry-family-aware selector requires a new decision, including its
+  crystallographic basis and tied-contributor behavior.
 * **Alternatives:**
   * *One material per face* — simple, but creates avoidable draw calls and disposal
     complexity as habits change.

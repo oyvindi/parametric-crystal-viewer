@@ -543,11 +543,13 @@ relationship. It does not contain frequency, amplitude, phase, seed, or a claim 
 the displayed specimen was measured. Those are curated renderer choices owned by
 `crystal-three`.
 
-The initial records are quartz prism `m {10-10}` striations perpendicular to c,
-calcite `{0001}` growth-face pearly luster, and pyrite cube `{100}` striations along
-the cube/pyritohedron `{210}` intersection edge. Calcite's separate pearly cleavage
-claim is renderer-ineligible and is intentionally absent. An unmatched, absent,
-ambiguous, or unknown profile falls back to no face-local treatment.
+The current active records are quartz prism `m {10-10}` striations perpendicular to
+c, calcite `{0001}` growth-face pearly luster, and pyrite cube `{100}` striations
+along the cube/pyritohedron `{210}` intersection edge. The vocabulary also reserves
+`growth-steps` for a later reviewed growth-face record; a candidate claim alone does
+not activate it. Calcite's separate pearly cleavage claim is renderer-ineligible and
+is intentionally absent. An unmatched, absent, ambiguous, or unknown profile falls
+back to no face-local treatment.
 
 Profile selectors and renderer mapping do not alter mineral forms, generated vertices,
 face normals, contributors, bounds, exports, or scientific inspection. The separation

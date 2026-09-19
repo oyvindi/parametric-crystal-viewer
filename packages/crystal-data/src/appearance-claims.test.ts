@@ -29,6 +29,12 @@ describe("descriptive appearance claims", () => {
         expect(result.diagnostics.some((diagnostic) => diagnostic.path === "/appearanceClaims/1/surfaceOrigin")).toBe(true);
     });
 
+    it("keeps the fluorite {100} growth-step candidate out of renderer-active profiles", () => {
+        const claim = FLUORITE.appearanceClaims?.find((item) => item.id === "surface.fluorite.100-growth-steps");
+        expect(claim?.disposition).toBe("candidate");
+        expect(FLUORITE.surfaceProfiles?.some((profile) => profile.claimId === claim?.id)).not.toBe(true);
+    });
+
     it("requires a reason when an observation is not renderer-eligible", () => {
         const candidate = structuredClone(CALCITE) as unknown as { appearanceClaims: Array<Record<string, unknown>> };
         delete candidate.appearanceClaims[1].dispositionReason;

@@ -10,6 +10,7 @@ import { MeshPhysicalMaterial } from "three";
 
 const quartzCell = { a: 4.913, b: 4.913, c: 5.405, alpha: 90, beta: 90, gamma: 120 };
 const pyriteCell = { a: 5.4166, b: 5.4166, c: 5.4166, alpha: 90, beta: 90, gamma: 90 };
+const fluoriteCell = { a: 5.463, b: 5.463, c: 5.463, alpha: 90, beta: 90, gamma: 90 };
 
 function valid(result: ReturnType<typeof generateCrystal>): CrystalGeometry {
     if (result.status !== "valid") throw new Error("Expected valid geometry");
@@ -52,6 +53,30 @@ describe("SR5 reviewed surface profiles", () => {
         const positiveX = local.faces.find((face) => geometry.faces[face.faceIndex]!.normal[0] > 0.99)!;
         const positiveY = local.faces.find((face) => geometry.faces[face.faceIndex]!.normal[1] > 0.99)!;
         expect(Math.abs(positiveX.tangent[0] * positiveY.tangent[0] + positiveX.tangent[1] * positiveY.tangent[1] + positiveX.tangent[2] * positiveY.tangent[2])).toBeLessThan(1e-10);
+        local.buffer.dispose();
+    });
+
+    it("routes a reviewed fluorite growth-step profile only to {100} faces", () => {
+        const geometry = valid(generateCrystal(
+            { crystalSystem: "cubic", unitCell: fluoriteCell, pointGroup: "m-3m", setting: "cubic-standard" },
+            { forms: [
+                { id: "a", indices: { notation: "miller", h: 1, k: 0, l: 0 }, development: 1 },
+                { id: "o", indices: { notation: "miller", h: 1, k: 1, l: 1 }, development: 0.8 },
+            ] },
+        ));
+        const rules = createReviewedSurfaceRules([{
+            id: "fluorite.100-growth-steps",
+            kind: "growth-steps",
+            selector: { formId: "a" },
+        }], fluoriteCell);
+        const local = createFaceLocalGeometry(geometry, rules);
+        const stepProfile = REVIEWED_SURFACE_PROFILE_IDS["fluorite.100-growth-steps"];
+        expect(local.faces.some((face) => face.profileId === stepProfile)).toBe(true);
+        for (const face of local.faces) {
+            const normal = geometry.faces[face.faceIndex]!.normal;
+            const isCubeFace = Math.max(...normal.map(Math.abs)) > 0.999999;
+            expect(face.profileId === stepProfile).toBe(isCubeFace);
+        }
         local.buffer.dispose();
     });
 

@@ -108,7 +108,7 @@ export type SurfaceDirection =
  */
 export interface SurfaceProfile {
     readonly id: string;
-    readonly kind: "directional-striations" | "pearly-luster";
+    readonly kind: "directional-striations" | "pearly-luster" | "growth-steps";
     readonly claimId: string;
     readonly surfaceOrigin: "growth-face";
     readonly selector: SurfaceSelector;
