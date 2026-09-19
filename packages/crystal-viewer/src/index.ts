@@ -3,7 +3,7 @@ import { HDRLoader } from "three/addons/loaders/HDRLoader.js";
 import { EXRLoader } from "three/addons/loaders/EXRLoader.js";
 import { createLattice, expandAtomicStructure, generateCrystal, generateCrystalFromFaces, inferBonds, validatePeriodicBonds, type Diagnostic, type GeometryResult, type CrystalGeometry, type CrystalFace, type ExpandedAtom, type Lattice, type PeriodicBond } from "@crystal/core";
 import { loadMineral as loadMineralData, createCrystalInput, resolveHabit, resolveCrystallography, importCif, getMineral, validateMineral, MineralDataError, type Mineral, type MineralCrystallography, type StructuralDefinition } from "@crystal/data";
-import { createThreeGeometryWithPicking, createAtomicStructure, atomicBounds, createCrystalMaterial, applyAppearance, resolveAppearance, APPEARANCE_FIELDS, type AppearanceParams, type AppearanceField, type ResolvedAppearance, type LusterCategory } from "@crystal/three";
+import { createFaceLocalGeometry, createAtomicStructure, atomicBounds, createCrystalMaterial, applyAppearance, resolveAppearance, APPEARANCE_FIELDS, type AppearanceParams, type AppearanceField, type ResolvedAppearance, type LusterCategory } from "@crystal/three";
 import { cameraBasis } from "./camera.js";
 import { STATE_VERSION, validateStateShape, type ViewerState, type ViewMode, type FormState, type MineralRefState, type AppearanceState, type AppearanceOverride } from "./state.js";
 
@@ -1371,7 +1371,7 @@ export class CrystalViewer extends EventTarget {
     private updateMesh(result: Extract<GeometryResult, { status: "valid" }>): void {
         this.clearMesh();
         this.clearLabels();
-        const { buffer, triangleFaces } = createThreeGeometryWithPicking(result.geometry);
+        const { buffer, triangleFaces } = createFaceLocalGeometry(result.geometry);
         this.triangleFaces = triangleFaces;
         buffer.center();
         const material = createCrystalMaterial(this.effectiveAppearance(), {

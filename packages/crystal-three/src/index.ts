@@ -3,6 +3,7 @@ import { BufferGeometry, Float32BufferAttribute, Uint32BufferAttribute } from "t
 
 export * from "./atomic.js";
 export * from "./appearance.js";
+export * from "./surface.js";
 
 /** Deterministic convex-polygon triangulation; triangleFaces resolves core provenance. */
 export function triangulateCrystal(geometry: CrystalGeometry): {

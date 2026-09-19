@@ -190,6 +190,14 @@ Core geometry remains double precision under the [numeric policy](scientific-mod
 
 Core faces are ordered convex polygon loops. `crystal-three` triangulates them deterministically for rendering and records the originating core face index for every triangle so picking recovers the complete crystallographic contributor metadata.
 
+For face-local surface rendering, `crystal-three` expands those triangles into render-only
+vertices and carries a profile ID, crystal-local tangent, and centered face-local
+coordinates as GPU attributes. This does not alter core vertices, normals, bounds, or
+contributors. Profile zero is the unmatched fallback, including for imported measured
+faces without a reviewed rule. Selector precedence, tangent fallback, attribute limits,
+and the single-material choice are recorded in
+[ADR 0006](decisions/0006-face-local-surface-encoding.md).
+
 ```ts
 function createThreeGeometry(
     crystal: CrystalGeometry

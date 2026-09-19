@@ -143,6 +143,8 @@ Acceptance:
 
 ### SR3 — Face-Local Material Infrastructure
 
+**Status:** complete. See the [SR3 acceptance audit](sr3-acceptance.md).
+
 Use the existing triangle-to-core-face mapping and face contributors to carry a stable
 surface selector into rendering. Establish a local tangent frame per face from its
 normal and a crystallographic reference direction. Handle the degenerate case where
