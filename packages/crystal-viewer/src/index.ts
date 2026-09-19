@@ -184,6 +184,8 @@ export class CrystalViewer extends EventTarget {
         this.canvas = canvas;
         this.renderer = new WebGLRenderer({ canvas, antialias: true });
         this.renderer.setSize(canvas.clientWidth || 400, canvas.clientHeight || 300);
+        this.renderer.toneMapping = AgXToneMapping;
+        this.renderer.toneMappingExposure = 1.15;
         this.scene = new Scene();
         this.backgroundScene = new Scene();
         this.backgroundScene.background = new Color(0x2a2e33); // neutral fallback; replaced by a gradient when WebGL is available
@@ -196,17 +198,17 @@ export class CrystalViewer extends EventTarget {
         this.labelGroup = new Group();
         this.labelGroup.visible = false;
         this.scene.add(this.labelGroup);
-        this.scene.add(new AmbientLight(0xffffff, 0.5));
-        const dir = new DirectionalLight(0xffffff, 0.8);
+        this.scene.add(new AmbientLight(0xffffff, 0.65));
+        const dir = new DirectionalLight(0xfff7ed, 0.9);
         dir.position.set(5, 10, 7);
         this.scene.add(dir);
-        const fill = new DirectionalLight(0xffffff, 0.3);
+        const fill = new DirectionalLight(0xddeaff, 0.45);
         fill.position.set(-5, -3, -5);
         this.scene.add(fill);
         // Frontal key light near the camera so camera-facing polygons receive a
         // specular highlight even on metals (which derive color from reflections,
         // not diffuse). Without this, front faces reflect only the dark floor.
-        const key = new DirectionalLight(0xffffff, 0.6);
+        const key = new DirectionalLight(0xffffff, 0.35);
         key.position.set(6, 5, 8);
         this.scene.add(key);
         this.onPointerDownBound = this.onPointerDown.bind(this);
@@ -1286,29 +1288,43 @@ export class CrystalViewer extends EventTarget {
     }
 
     /**
-     * Builds a studio-style gradient used as both the scene background and the
-     * reflection environment. A varied backdrop gives transmissive materials
-     * something to refract (so they do not look flat against a dark field) while
-     * keeping opaque minerals readable. The gradient is drawn with the Canvas 2D
-     * API for smooth interpolation (a low-res DataTexture shows blocky artifacts
-     * as a full-screen background). PMREMGenerator needs a real WebGL context, so
-     * this is skipped in non-WebGL (Node test) environments where the renderer is
-     * stubbed.
+     * Builds the project-owned neutral studio environment used as both backdrop
+     * and image-based lighting. Broad key, fill and rim shapes make curved or
+     * faceted reflections legible across dielectric, metallic and transmissive
+     * materials without a remote runtime asset. PMREM generation is skipped in
+     * non-WebGL tests, where the renderer is stubbed.
      */
     private setupEnvironment(): void {
         const anyRenderer = this.renderer as unknown as { getContext?: () => unknown };
         if (typeof anyRenderer.getContext !== "function") return;
         const canvas = document.createElement("canvas");
-        canvas.width = 16; // narrow: every column is identical (vertical gradient only)
-        canvas.height = 256; // tall enough for smooth vertical interpolation
+        canvas.width = 512;
+        canvas.height = 256;
         const ctx = canvas.getContext("2d")!;
         const grad = ctx.createLinearGradient(0, 0, 0, canvas.height);
-        grad.addColorStop(0.0, "#4a5566"); // cool sky (top)
-        grad.addColorStop(0.45, "#8a9098"); // neutral horizon
-        grad.addColorStop(0.55, "#9a8a78"); // warm band
-        grad.addColorStop(1.0, "#3a3a3e"); // dark floor (bottom)
+        grad.addColorStop(0, "#9da8b5");
+        grad.addColorStop(0.42, "#c8cbd0");
+        grad.addColorStop(0.58, "#b7afa5");
+        grad.addColorStop(1, "#555a63");
         ctx.fillStyle = grad;
         ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+        const softbox = (x: number, y: number, radius: number, scaleX: number, color: string, strength: number): void => {
+            ctx.save();
+            ctx.translate(x, y);
+            ctx.scale(scaleX, 1);
+            const light = ctx.createRadialGradient(0, 0, 0, 0, 0, radius);
+            light.addColorStop(0, `rgb(${color} / ${strength})`);
+            light.addColorStop(0.62, `rgb(${color} / ${strength * 0.72})`);
+            light.addColorStop(1, `rgb(${color} / 0)`);
+            ctx.fillStyle = light;
+            ctx.fillRect(-radius, -radius, radius * 2, radius * 2);
+            ctx.restore();
+        };
+        softbox(350, 72, 68, 1.8, "255 248 235", 0.92); // broad warm key
+        softbox(105, 104, 76, 1.35, "220 235 255", 0.62); // cool opposing fill
+        softbox(475, 124, 48, 0.34, "255 255 255", 0.72); // narrow rim strip
+
         const tex = new CanvasTexture(canvas);
         tex.mapping = EquirectangularReflectionMapping;
         tex.needsUpdate = true;

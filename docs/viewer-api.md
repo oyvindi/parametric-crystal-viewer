@@ -95,6 +95,14 @@ format-specific conveniences.
 Replacing, resetting, or disposing the viewer releases the previous source texture
 and PMREM render target.
 
+The built-in default is a project-owned, procedurally generated neutral studio
+panorama with broad warm key, cool fill, and narrow rim reflection shapes. It has no
+runtime download or third-party asset terms. The default presentation uses environment
+intensity `1`, identity rotation, visible background at zoom `1`, AgX tone mapping,
+and exposure `1.15`. `resetEnvironment` restores the generated panorama without
+overwriting the host's separately selected intensity, rotation, background, tone
+mapping, or exposure controls.
+
 Hosts may control environment intensity and yaw/pitch/roll rotation, background visibility, tone
 mapping (`none`, `agx`, or `aces-filmic`), and exposure. Environment lighting and the
 visible background remain independent so a neutral background can be retained for

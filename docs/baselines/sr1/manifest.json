@@ -1,0 +1,113 @@
+{
+  "schemaVersion": 1,
+  "capturedAt": "2026-09-19T12:05:12.594Z",
+  "viewport": {
+    "width": 960,
+    "height": 720,
+    "deviceScaleFactor": 1
+  },
+  "presentation": {
+    "environment": "project-owned procedural studio gradient",
+    "environmentIntensity": 1,
+    "environmentRotation": [
+      0,
+      0,
+      0
+    ],
+    "backgroundZoom": 1,
+    "toneMapping": "agx",
+    "exposure": 1
+  },
+  "timing": {
+    "method": "requestAnimationFrame intervals in a fixed one-second window after one warm-up frame",
+    "note": "Hardware- and browser-dependent; compare only on the recorded platform."
+  },
+  "platform": {
+    "chrome": "Google Chrome 152.0.7977.82",
+    "node": "v26.8.1",
+    "os": "linux x64"
+  },
+  "scenes": [
+    {
+      "mineralId": "albite",
+      "habitId": "tabular",
+      "appearanceId": "white",
+      "frames": 1,
+      "meanFrameMs": 1399.938,
+      "medianFrameMs": 1399.938,
+      "p95FrameMs": 1399.938
+    },
+    {
+      "mineralId": "anatase",
+      "habitId": "dipyramidal",
+      "appearanceId": null,
+      "frames": 719,
+      "meanFrameMs": 19.216,
+      "medianFrameMs": 16.7,
+      "p95FrameMs": 33.3
+    },
+    {
+      "mineralId": "beryl",
+      "habitId": "prismatic",
+      "appearanceId": "emerald",
+      "frames": 1,
+      "meanFrameMs": 1400,
+      "medianFrameMs": 1400,
+      "p95FrameMs": 1400
+    },
+    {
+      "mineralId": "calcite",
+      "habitId": "rhombohedral",
+      "appearanceId": null,
+      "frames": 712,
+      "meanFrameMs": 22.12,
+      "medianFrameMs": 16.7,
+      "p95FrameMs": 33.4
+    },
+    {
+      "mineralId": "fluorite",
+      "habitId": "cube",
+      "appearanceId": "violet",
+      "frames": 1,
+      "meanFrameMs": 1716.572,
+      "medianFrameMs": 1716.572,
+      "p95FrameMs": 1716.572
+    },
+    {
+      "mineralId": "forsterite",
+      "habitId": "tabular",
+      "appearanceId": "olive",
+      "frames": 1,
+      "meanFrameMs": 1483.172,
+      "medianFrameMs": 1483.172,
+      "p95FrameMs": 1483.172
+    },
+    {
+      "mineralId": "gypsum",
+      "habitId": "tabular",
+      "appearanceId": "colorless",
+      "frames": 1,
+      "meanFrameMs": 1366.5,
+      "medianFrameMs": 1366.5,
+      "p95FrameMs": 1366.5
+    },
+    {
+      "mineralId": "pyrite",
+      "habitId": "cubic",
+      "appearanceId": "brass",
+      "frames": 474,
+      "meanFrameMs": 43.81,
+      "medianFrameMs": 49.9,
+      "p95FrameMs": 50.1
+    },
+    {
+      "mineralId": "quartz",
+      "habitId": "prismatic",
+      "appearanceId": "rock-crystal",
+      "frames": 1,
+      "meanFrameMs": 1349.9,
+      "medianFrameMs": 1349.9,
+      "p95FrameMs": 1349.9
+    }
+  ]
+}

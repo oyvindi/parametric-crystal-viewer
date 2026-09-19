@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Surface baseline</title>
+<style>
+  html, body { width: 100%; height: 100%; margin: 0; overflow: hidden; background: #2a2e33; }
+  body { font-family: system-ui, sans-serif; color: #f2f2f2; }
+  canvas { display: block; width: 100%; height: 100%; }
+  #caption { position: fixed; left: 24px; top: 20px; padding: 10px 14px; border-radius: 4px;
+    background: rgb(20 22 25 / 72%); letter-spacing: .02em; }
+  #caption strong { display: block; font-size: 18px; }
+  #caption span { color: #c4c9cf; font-size: 13px; }
+</style>
+<script type="importmap">
+{
+  "imports": {
+    "three": "../../node_modules/three/build/three.module.js",
+    "three/addons/": "../../node_modules/three/examples/jsm/",
+    "@crystal/core": "../crystal-core/dist/index.js",
+    "@crystal/data": "../crystal-data/dist/index.js",
+    "@crystal/three": "../crystal-three/dist/index.js",
+    "@crystal/viewer": "../crystal-viewer/dist/index.js"
+  }
+}
+</script>
+</head>
+<body>
+<canvas id="canvas" width="960" height="720"></canvas>
+<div id="caption"><strong id="name">Loading…</strong><span id="details"></span></div>
+<output id="surface-baseline-result" hidden></output>
+<script type="module">
+import { CrystalViewer, getMineral, listMinerals } from "@crystal/viewer";
+
+const params = new URLSearchParams(location.search);
+const mineralId = params.get("mineral") ?? "quartz";
+if (!listMinerals().includes(mineralId)) throw new Error(`Unknown mineral: ${mineralId}`);
+
+const canvas = document.getElementById("canvas");
+const viewer = new CrystalViewer(canvas);
+viewer.resize(960, 720);
+viewer.setEnvironmentIntensity(1);
+viewer.setEnvironmentRotation(0, 0, 0);
+viewer.setEnvironmentBackgroundVisible(true);
+viewer.setEnvironmentBackgroundZoom(1);
+viewer.setToneMapping("agx");
+viewer.setExposure(1);
+await viewer.loadMineral(mineralId);
+viewer.resetCamera();
+viewer.start();
+
+const mineral = getMineral(mineralId);
+document.getElementById("name").textContent = mineral.name;
+document.getElementById("details").textContent =
+  `${viewer.getHabitId()} · ${viewer.getAppearanceId() ?? "default material"}`;
+
+const samples = [];
+let sampling = true;
+let previous;
+function sample(now) {
+  if (!sampling) return;
+  if (previous !== undefined) samples.push(now - previous);
+  previous = now;
+  requestAnimationFrame(sample);
+}
+requestAnimationFrame(sample);
+await new Promise(resolve => setTimeout(resolve, 1000));
+sampling = false;
+viewer.stop();
+samples.sort((a, b) => a - b);
+const mean = samples.reduce((sum, value) => sum + value, 0) / samples.length;
+const result = {
+  mineralId,
+  habitId: viewer.getHabitId(),
+  appearanceId: viewer.getAppearanceId(),
+  frames: samples.length,
+  meanFrameMs: Number(mean.toFixed(3)),
+  medianFrameMs: Number(samples[Math.floor(samples.length / 2)].toFixed(3)),
+  p95FrameMs: Number(samples[Math.floor(samples.length * 0.95)].toFixed(3)),
+};
+document.getElementById("surface-baseline-result").textContent = JSON.stringify(result);
+document.documentElement.dataset.baselineReady = "true";
+</script>
+</body>
+</html>

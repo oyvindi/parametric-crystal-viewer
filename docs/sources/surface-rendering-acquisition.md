@@ -5,7 +5,8 @@ This record identifies where to obtain evidence for the
 project's [acquisition and licensing](../data-model.md#acquisition-and-licensing) and
 [provenance](../data-model.md#scientific-confidence--provenance) requirements.
 
-**Status:** initial source queue; claims are candidates until SR0 review accepts them.
+**Status:** SR0 review complete for the quartz, calcite, and pyrite delivery cases.
+The remaining-mineral queue is still candidate research.
 
 ## Use Policy
 
@@ -48,6 +49,26 @@ All URLs were accessible without authentication on 2026-09-19.
 
 ## Source Decisions by Delivery Case
 
+The stable claim IDs below are evidence records, not renderer profiles. They state the
+reported observation and its scope; later renderer parameters remain curated and must
+cite these IDs without treating procedural values as measurements.
+
+| Claim ID | Review | Surface origin | Selector and reported claim | Evidence |
+|---|---|---|---|---|
+| `surface.quartz.m-striation` | accepted 2026-09-19 | growth face | Quartz prism `m {10−10}` is commonly striated perpendicular to `[0001]` (the c-axis). It is typical, not universal. | `handbook-quartz-v1.2`, Crystal Data; visual PDF review confirmed the perpendicular symbol and barred index. |
+| `surface.calcite.0001-pearly` | accepted 2026-09-19 | growth face | Calcite basal `{0001}` faces may be pearly. No shipped calcite habit currently contains this form, so the accepted claim does not yet match a rendered face. | `handbook-calcite-v1`, Crystal Data and Optical Properties; visual PDF review confirmed `{0001}` and barred crystallographic notation. |
+| `surface.calcite.cleavage-pearly` | accepted, renderer-ineligible 2026-09-19 | cleavage | Calcite cleavage surfaces may be pearly. This must not select ordinary generated growth faces. | `handbook-calcite-v1`, Physical and Optical Properties. |
+| `surface.pyrite.100-striation` | accepted 2026-09-19 | growth face / oscillatory combination | Pyrite cube `{100}` faces may be striated parallel to their intersection edges with pyritohedron `{210}`; directions on adjacent cube faces are perpendicular. | `eb1911-pyrites`, article text and source scan; corroborated at mineral level by `handbook-pyrite-v1`. |
+
+### Stable references
+
+| Reference ID | Bibliographic and access record | Rights / use decision |
+|---|---|---|
+| `handbook-quartz-v1.2` | Mineral Data Publishing (2001), *Quartz*, version 1.2, [PDF](https://www.handbookofmineralogy.org/pdfs/quartz.pdf), accessed 2026-09-19. | Publicly readable, all rights reserved; facts paraphrased, no source artifact distributed. |
+| `handbook-calcite-v1` | Mineral Data Publishing (2001–2005), *Calcite*, version 1, [PDF](https://www.handbookofmineralogy.org/pdfs/calcite.pdf), accessed 2026-09-19. | Publicly readable, all rights reserved; facts paraphrased, no source artifact distributed. |
+| `handbook-pyrite-v1` | Mineral Data Publishing (2001–2005), *Pyrite*, version 1, [PDF](https://www.handbookofmineralogy.org/pdfs/pyrite.pdf), accessed 2026-09-19. | Publicly readable, all rights reserved; facts paraphrased, no source artifact distributed. |
+| `eb1911-pyrites` | L. J. Spencer (1911), “Pyrites,” *Encyclopædia Britannica*, vol. 22, pp. 696–697, [transcription and scan link](https://en.wikisource.org/wiki/1911_Encyclop%C3%A6dia_Britannica/Pyrites), accessed 2026-09-19. | Original is public domain. No prose or figure is copied into distributable data. |
+
 ### Quartz prism striations
 
 The Handbook sheet is the initial freely readable evidence source. Its extracted text
@@ -56,7 +77,7 @@ The Quartz Page may corroborate the form and direction after its authorship and 
 are recorded. The Nature paper is useful context but must remain supplementary unless
 an authorized open full text is found.
 
-SR0 can accept the factual rule only after confirming:
+SR0 accepted the factual rule after confirming:
 
 * the affected shipped form is the `m` prism `{10-10}` in the declared setting;
 * the source direction is perpendicular to `[0001]` / the c-axis; and
@@ -69,17 +90,17 @@ on `{0001}` and on cleavage surfaces. SR0 must create separate claims for the ba
 growth face and cleavage. Only the basal growth-face claim is eligible for the current
 morphology renderer.
 
-Before acceptance, visually verify the PDF's barred point/space-group and Miller
-notation. These values are not needed for the luster rule, but their text-extraction
-failure is evidence that the page cannot be normalized without visual review.
+The PDF's barred point/space-group and Miller notation were visually reviewed rather
+than inferred from its corrupt extracted text. These values are not part of the
+luster claim, but the check prevents a transcription error from entering its selector.
 
 ### Pyrite cube striations
 
 Use the Handbook sheet for mineral-level occurrence and metallic luster. Use the
 public-domain Britannica article for the more precise geometric relationship between
-cube and pyritohedron faces. SR0 must translate that edge relationship into each
-oriented cube face's local tangent frame and test the alternating direction across
-adjacent faces.
+cube and pyritohedron faces. SR0 records that edge relationship for later translation
+into each oriented cube face's local tangent frame. SR3/SR5 must test the alternating
+direction across adjacent faces.
 
 Do not reduce the rule to a world-axis pattern or apply it to every pyrite form. If the
 historical notation or scan cannot be normalized unambiguously, defer this profile and

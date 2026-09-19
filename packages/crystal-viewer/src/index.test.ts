@@ -114,9 +114,20 @@ describe("M3 camera lifecycle through the viewer", () => {
 });
 
 describe("environment presentation controls", () => {
+    it("starts with the SR1 neutral presentation defaults", async () => {
+        const { viewer } = await setup();
+        const internals = viewer as unknown as { scene: Scene; renderer: { toneMapping: number; toneMappingExposure: number } };
+        expect(internals.scene.children.filter(child => child.type === "AmbientLight")).toHaveLength(1);
+        expect(internals.scene.children.filter(child => child.type === "DirectionalLight")).toHaveLength(3);
+        expect(internals.renderer.toneMapping).not.toBe(0);
+        expect(internals.renderer.toneMappingExposure).toBe(1.15);
+    });
+
     it("applies validated environment settings without changing serialized state", async () => {
         const { viewer } = await setup();
         const before = viewer.getState();
+        const facesBefore = structuredClone(viewer.getAllFaces());
+        const trianglesBefore = Array.from((viewer as unknown as { triangleFaces: Uint32Array }).triangleFaces);
         const internals = viewer as unknown as { scene: Scene; backgroundScene: Scene; environmentBackgroundZoom: number };
         const scene = internals.scene;
         const renderer = (viewer as unknown as { renderer: { toneMapping: number; toneMappingExposure: number } }).renderer;
@@ -138,6 +149,8 @@ describe("environment presentation controls", () => {
         expect(renderer.toneMappingExposure).toBe(0.8);
         expect(renderer.toneMapping).not.toBe(0);
         expect(viewer.getState()).toEqual(before);
+        expect(viewer.getAllFaces()).toEqual(facesBefore);
+        expect(Array.from((viewer as unknown as { triangleFaces: Uint32Array }).triangleFaces)).toEqual(trianglesBefore);
     });
 
     it("rejects invalid environment settings with typed diagnostics", async () => {

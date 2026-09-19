@@ -72,6 +72,8 @@ enabled as an explicitly artistic naturalization layer.
 
 ### SR0 — Evidence and Reference-Scene Baseline
 
+**Status:** complete. See the [SR0 acceptance audit](sr0-acceptance.md).
+
 Before shader work:
 
 * capture deterministic reference scenes for all nine minerals under the same neutral
@@ -98,6 +100,8 @@ Acceptance:
 * baseline screenshots and frame timings are reproducible.
 
 ### SR1 — Lighting and Presentation Defaults
+
+**Status:** complete. See the [SR1 acceptance audit](sr1-acceptance.md).
 
 Improve the neutral reference environment, environment intensity, exposure, tone
 mapping, and reflected light shapes. Provide a useful built-in or project-owned default
