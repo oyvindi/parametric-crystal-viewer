@@ -61,6 +61,25 @@ Other future capabilities are described below; they are not additions to the V1 
 
 An expanded mineral catalog and any database, indexing, or search infrastructure needed to support it are also later scope. V1 ships the small curated set in the [Initial Minerals](#initial-minerals) section as version-controlled project data.
 
+## Implemented Additions Beyond V1
+
+The following capabilities were added after completion of the V1 checklist. They do
+not retroactively change M1–M8 acceptance:
+
+* import measured external faces from the CIF `_exptl_crystal_face_*` category and
+  generate morphology from their Miller indices and perpendicular distances;
+* when those measurements are absent, show a bounded, explicitly identified
+  simplified BFDH-style morphology based on low-index planes and interplanar spacing;
+* load local Radiance `.hdr` and OpenEXR `.exr` panoramas for image-based lighting;
+* control environment intensity, three-axis orientation, tone mapping, exposure,
+  background visibility, and background-only zoom; and
+* rotate the crystal around all three axes through pointer and host-owned keyboard
+  controls.
+
+The scientific contracts and limitations for measured and theoretical CIF morphology
+are defined in [CIF-Derived Morphology](scientific-model.md#cif-derived-morphology).
+Environment behavior is defined in [Environment Lighting](viewer-api.md#environment-lighting).
+
 ---
 
 ## Supported Crystal Systems
@@ -209,7 +228,17 @@ This is a reference/testing interface, not a permanent framework choice.
 
 ## Important Scientific Limitation
 
-A CIF or unit-cell definition determines crystallographic data (system, unit cell, symmetry, atomic structure, valid planes, interfacial angles) but does not determine external morphology (which forms are present, relative development, named habit, growth asymmetry, impurity effects, imperfections). This distinction is stated in [Morphology Data Model](data-model.md#morphology-data-model), [CIF Support](data-model.md#cif-support), and [Pressure and Temperature](scientific-model.md#pressure-and-temperature) and must remain explicit throughout the project.
+A unit-cell or structural CIF definition determines crystallographic data (system,
+unit cell, symmetry, atomic structure, valid planes, and interfacial angles), but does
+not by itself determine external morphology (which forms are present, relative
+development, named habit, growth asymmetry, impurity effects, or imperfections). A CIF
+defines reported external morphology only when it explicitly contains the supported
+experimental crystal-face measurements. The BFDH-style fallback derived from cell and
+symmetry data is a theoretical geometric approximation, not reported habit data. This
+distinction is stated in [Morphology Data Model](data-model.md#morphology-data-model),
+[CIF Support](data-model.md#cif-support), and
+[CIF-Derived Morphology](scientific-model.md#cif-derived-morphology) and must remain
+explicit throughout the project.
 
 ---
 

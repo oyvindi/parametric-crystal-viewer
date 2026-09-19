@@ -26,6 +26,13 @@ of structural definitions is provided by `importCif` (see the [V1 import boundar
 state-format and compatibility decisions remain
 in M7. A revision identifies the record contents; it is not a state-format version.
 
+Post-V1 CIF import also preserves supported `_exptl_crystal_face_*` loops as
+`StructuralDefinition.crystalFaces`. Each row contains three-index Miller indices,
+a perpendicular distance, and optional name/description metadata. These reported
+faces are separate from atomic sites and curated habits; `crystal-viewer` chooses
+whether to render them or explicitly report its simplified BFDH-style fallback when
+the loop is absent.
+
 Validation checks record shapes, unique IDs within collections, reference resolution,
 provenance origins and coverage, and preferred-view vectors. Scientific validation
 delegates to core lattice/symmetry and morphology validation without generating a

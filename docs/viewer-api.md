@@ -84,6 +84,49 @@ The viewer must not create application UI controls automatically.
 
 The [reference demos](spec.md#reference-viewer) own their HTML controls. They initialize those controls from current viewer state and keep them synchronized through API results and events, including after programmatic changes and state restoration.
 
+### Environment Lighting
+
+The viewer provides renderer-level controls for image-based lighting without adding
+environment data to mineral appearance or scientific geometry. `loadEnvironment`
+accepts an in-memory Radiance RGBE (`hdr`) or OpenEXR (`exr`) panorama, validates its
+decoded dimensions, converts it to a PMREM environment, and commits it only after
+decoding and conversion succeed. `loadHdrEnvironment` and `loadExrEnvironment` are
+format-specific conveniences.
+Replacing, resetting, or disposing the viewer releases the previous source texture
+and PMREM render target.
+
+Hosts may control environment intensity and yaw/pitch/roll rotation, background visibility, tone
+mapping (`none`, `agx`, or `aces-filmic`), and exposure. Environment lighting and the
+visible background remain independent so a neutral background can be retained for
+scientific readability.
+
+`setEnvironmentBackgroundZoom` changes only the visible panorama composition. A
+value of `1` is the identity projection; values above `1` magnify the background and
+values below `1` widen it. The implementation renders the background with a separate
+camera field of view, leaving the crystal camera, picking, and image-based lighting
+unchanged. Background zoom is session-only presentation state.
+
+The environment's identity orientation is yaw `0`, pitch `0`, roll `0`. Equirectangular
+HDR and EXR files standardize the projection but do not provide a universal semantic
+"front of room" direction; hosts therefore expose yaw for choosing the front and
+pitch/roll for correcting a tilted source panorama. The same rotation is applied to
+lighting and to the background when it is visible.
+
+`rotateModel` applies relative rotation about the viewer's X, Y, and Z axes. Pointer
+dragging covers X and Y; host applications may map keyboard or other controls to all
+three axes. The HDRI demo uses arrow keys for X/Y, Q/E for roll, Shift for fine steps,
+and Home to restore the preferred view. Keyboard handling remains host-owned and is
+active only while the canvas has focus.
+
+Uploaded HDR bytes and presentation controls are intentionally session-only and are
+not part of serialized viewer state. A future serializable environment contract must
+use a resolvable packaged asset identity rather than embedding a local upload.
+
+The [M5 HDRI demo variant](../packages/crystal-demo/minerals-hdri.html) demonstrates
+bounded local `.hdr` and `.exr` uploads (128 MB encoded-file limit and 32-megapixel
+decoded-image limit) and the renderer controls while preserving the original M5
+acceptance demo.
+
 ---
 
 ## Viewer Lifecycle
@@ -252,6 +295,27 @@ Display:
 * cell angles
 
 The unit cell should remain correctly oriented relative to the external crystal.
+
+---
+
+## CIF Morphology
+
+`loadCifMorphology(text, options?)` imports a selected CIF block and switches the
+viewer to morphology mode. When the definition contains experimental crystal-face
+measurements, the viewer calls the explicit-face core generator; the reported oriented
+planes and perpendicular distances are used without symmetry expansion.
+
+When measurements are absent, the viewer generates the documented
+[simplified BFDH-style fallback](scientific-model.md#simplified-bfdh-style-fallback)
+from the cell and resolved point symmetry. Successful fallback returns and emits the
+warning `viewer.morphology.bfdh-fallback`. Hosts must display that warning so users can
+distinguish a theoretical approximation from measured faces. Invalid or non-enclosing
+plane sets emit `geometry-invalid` and do not commit geometry.
+
+The dedicated [CIF morphology demo](../packages/crystal-demo/cif-morphology.html)
+accepts a local CIF, reports diagnostics and preserved publication metadata, and does
+not render atoms. The imported definition remains available for inspection, while the
+displayed mode is morphology.
 
 ---
 

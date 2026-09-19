@@ -13,8 +13,20 @@ build. `generateCrystalGeometry` accepts an already constructed lattice;
 The public generator positions morphology at the geometric unit-cell center in
 Ångström. Forms have stable unique IDs; omitted `enabled` means true. Disabled
 and zero-development forms are omitted, while their scientific inputs are still
-validated. M1 geometry accepts three-index Miller notation; setting-aware
-Miller–Bravais expansion remains M3 work.
+validated. Geometry accepts three-index Miller notation and setting-aware
+Miller–Bravais notation for compatible trigonal and hexagonal settings.
+
+`generateCrystalFromFaces(crystallography, faces)` is the explicit measured-face
+path. Each input supplies an oriented three-index Miller plane and positive
+perpendicular distance. The function does not add symmetry equivalents: it sends
+the complete supplied constraint set to the same bounded half-space intersection
+used by curated morphology. This supports CIF `_exptl_crystal_face_*` measurements
+without turning them into named habit records.
+
+The viewer's post-V1 BFDH-style fallback is assembled above this package boundary
+from reciprocal-lattice `d(hkl)` values and generic form settings. Core remains
+mineral- and UI-independent. The fallback is deliberately limited to geometric
+spacing and point symmetry; it is not a full Donnay–Harker systematic-absence model.
 
 The supported lookup is point group `m-3m`, setting `cubic-standard`, crystal
 system `cubic`. Explicit point or space operations use the supplied cell basis;
@@ -36,6 +48,7 @@ point-group identifiers are errors even when explicit operations accompany them.
 | `core.input.invalid-half-space` | A half-space normal or distance is invalid. |
 | `core.input.invalid-form` | Form ID or enabled flag is invalid. |
 | `core.input.invalid-crystallography` | Crystal system is unknown. |
+| `core.input.invalid-crystal-face` | A measured face has zero/non-integral indices, a non-positive distance, or an invalid reciprocal normal. |
 | `core.symmetry.empty-operations` | Explicit operation set is empty. |
 | `core.symmetry.invalid-operation` | IDs, matrices, or translations are invalid. |
 | `core.symmetry.metric-incompatible` | Operation does not preserve the cell metric. |
@@ -46,6 +59,7 @@ point-group identifiers are errors even when explicit operations accompany them.
 | `core.symmetry.conflicting-descriptions` | Supplied descriptions disagree. |
 | `core.symmetry.unsupported-registry` | Identifier or setting is unsupported/ambiguous. |
 | `core.geometry.no-active-forms` | No form has positive development. |
+| `core.geometry.no-faces` | Explicit-face generation received no measured faces. |
 | `core.geometry.unbounded` | Normals admit a non-zero recession direction. |
 | `core.geometry.degenerate` | Constraints enclose zero usable three-dimensional volume. |
 | `core.geometry.numerical-failure` | Reliable finite geometry or topology could not be computed. |

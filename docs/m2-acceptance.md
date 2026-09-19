@@ -6,7 +6,7 @@ M2 is complete. This audit covers the [delivery list and acceptance criteria](pl
 
 | Requirement | Implemented evidence |
 |---|---|
-| Fluorite mineral record | [fluorite.ts](../packages/crystal-data/src/minerals/fluorite.ts): cubic, Fm-3m (225), m-3m, a = 5.463 Å. Registered in the [catalog](../packages/crystal-data/src/catalog.ts) with stable ID `fluorite` and data revision `m2-1`. |
+| Fluorite mineral record | [fluorite.json](../packages/crystal-data/src/minerals/fluorite.json): cubic, Fm-3m (225), m-3m, a = 5.463 Å. Registered in the [catalog](../packages/crystal-data/src/catalog.ts) with stable ID `fluorite` and data revision `m2-1`. |
 | Cube, octahedron, and other common forms | Three shipped habits: cube {100}, octahedron {111}, cubo-octahedron (cube + octahedron). The dodecahedron {110} form is available and exercisable through form overrides. All forms use the generic [CrystalFormSetting](../packages/crystal-data/src/types.ts) contract. |
 | Form-distance transitions | [Acceptance tests](../packages/crystal-data/src/acceptance.test.ts) verify that relative development changes produce correct transitions: pure cube (6 faces), pure octahedron (8 faces), cubo-octahedron (both forms contributing), dodecahedron (12 faces), and all-three-form combinations. Increasing octahedron development transitions cube → cubo-octahedron; increasing cube development transitions octahedron → cubo-octahedron. |
 | Generic core input contract | [createCrystalInput](../packages/crystal-data/src/convert.ts) converts the mineral record and morphology request into core `generateCrystal` inputs. No mineral-specific generator logic exists; the core receives generic data through `generateCrystal(crystallography, morphology)`. |

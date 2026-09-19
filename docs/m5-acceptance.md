@@ -9,9 +9,9 @@ audit consolidates the delivery, provenance, fixture, and demo evidence.
 
 | Shipped mineral | Records and habits | Crystallography | Provenance |
 |---|---|---|---|
-| Calcite | [record](../packages/crystal-data/src/minerals/calcite.ts), `m5-1`; rhombohedral and scalenohedral habits | Trigonal, `R-3c`, point group `-3m`, hexagonal axes; COD 9000095 | Reported crystallography (COD CC0); reported morphology forms (CC-BY); curated development |
-| Pyrite | [record](../packages/crystal-data/src/minerals/pyrite.ts), `m5-1`; cubic and pyritohedral habits | Cubic, `Pa-3`, point group `m-3`; COD 9000594 | Reported crystallography; reported morphology forms (CC-BY); curated development |
-| Anatase | [record](../packages/crystal-data/src/minerals/anatase.ts), `m5-1`; dipyramidal and tabular habits | Tetragonal, `I41/amd`, point group `4/mmm`; COD 9015929 | Reported crystallography; reported morphology forms; curated development |
+| Calcite | [record](../packages/crystal-data/src/minerals/calcite.json), `m5-1`; rhombohedral and scalenohedral habits | Trigonal, `R-3c`, point group `-3m`, hexagonal axes; COD 9000095 | Reported crystallography (COD CC0); reported morphology forms (CC-BY); curated development |
+| Pyrite | [record](../packages/crystal-data/src/minerals/pyrite.json), `m5-1`; cubic and pyritohedral habits | Cubic, `Pa-3`, point group `m-3`; COD 9000594 | Reported crystallography; reported morphology forms (CC-BY); curated development |
+| Anatase | [record](../packages/crystal-data/src/minerals/anatase.json), `m5-1`; dipyramidal and tabular habits | Tetragonal, `I41/amd`, point group `4/mmm`; COD 9015929 | Reported crystallography; reported morphology forms; curated development |
 
 The three records use `defineMineral` and the permanent [M4 validation path](m4-acceptance.md);
 no mineral-specific generator logic was added to `crystal-core`. Each record carries
@@ -78,6 +78,13 @@ information. Variant selection (left/right quartz), synchronized form sliders wi
 numeric readouts, face labels, face inspection, camera reset, and geometry status
 are all present. Controls update when the selected record, variant, or habit changes.
 The earlier fluorite and quartz demos remain runnable.
+
+An optional [HDRI variant](../packages/crystal-demo/minerals-hdri.html) reuses the M5
+multi-mineral workflow to evaluate image-based lighting from Radiance `.hdr` and
+OpenEXR `.exr` panoramas, tone mapping, exposure, three-axis model and environment
+orientation, background visibility, background-only zoom, and mineral appearance. It
+is supplementary rendering evidence and does not change the completed M5 acceptance
+scope or its scientific contracts.
 
 ## Verification
 

@@ -396,6 +396,66 @@ Verify that selected appearance and user overrides survive state restoration und
 
 ---
 
+## Completed Post-V1 Additions
+
+These additions extend the completed product without changing the authoritative
+[V1 checklist](spec.md#v1-checklist) or the acceptance status of M1–M8.
+
+### A1 — CIF-Derived Morphology
+
+**Status: complete.**
+
+Add a renderer-neutral `generateCrystalFromFaces` path for explicit Miller planes and
+positive perpendicular distances. Extend CIF import to preserve the standard
+`_exptl_crystal_face_index_h/k/l`, `_exptl_crystal_face_perp_dist`, optional name, and
+optional description fields. The viewer exposes `loadCifMorphology`, renders measured
+faces without adding symmetry equivalents, and provides a dedicated CIF morphology
+demo.
+
+When a valid structural CIF has no measured face loop, the demo uses a simplified
+BFDH-style fallback: enumerate primitive Miller triplets within `[-2, 2]`, calculate
+interplanar spacing from the reciprocal lattice, use relative inverse spacing as the
+central-distance/growth-rate proxy, and expand by the resolved point symmetry. Emit
+`viewer.morphology.bfdh-fallback` so hosts cannot mistake the theoretical fallback for
+reported morphology. This implementation does not yet apply Donnay–Harker systematic
+absence corrections from screw axes or glide planes and is not a habit prediction.
+
+Acceptance evidence:
+
+* measured CIF face rows and metadata survive import;
+* invalid indices or distances produce typed core diagnostics;
+* explicit faces pass directly to half-space intersection and must enclose a bounded
+  non-degenerate volume;
+* absence of measured faces is visibly reported as a theoretical fallback; and
+* atomic structure and morphology remain separate viewer modes.
+
+### A2 — HDR Environment and Orientation Controls
+
+**Status: complete.**
+
+Add local Radiance `.hdr` and OpenEXR `.exr` environment loading with transactional
+PMREM replacement and disposal. The reference demo limits encoded uploads to 128 MB;
+the viewer rejects decoded panoramas above 32 megapixels. Add environment intensity,
+yaw/pitch/roll, AgX and ACES Filmic tone mapping, exposure, background visibility,
+and background-only zoom. Use a separate background render pass so zoom does not
+alter image-based lighting, crystal framing, or picking.
+
+Expand model interaction to X/Y pointer rotation and host-owned keyboard control of
+X/Y/Z rotation. Preserve all three model angles through the existing camera-state
+contract. Uploaded environment bytes and renderer presentation controls remain
+session-only and are not serialized.
+
+Acceptance evidence:
+
+* invalid formats, dimensions, rotations, exposure, intensity, and zoom are rejected
+  through typed viewer diagnostics;
+* replacing, resetting, and disposing environments release owned GPU resources;
+* environment and model rotations remain independent; and
+* the original M5 demo remains runnable while the HDRI variant demonstrates the
+  additions through the public viewer boundary.
+
+---
+
 ## Later Milestones
 
 ### M9 — Twinning

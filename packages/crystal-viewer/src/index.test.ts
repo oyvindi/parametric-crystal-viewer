@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { Group, Mesh, PerspectiveCamera, Scene } from "three";
+import { Color, Group, Mesh, PerspectiveCamera, Scene } from "three";
 import { FLUORITE, QUARTZ } from "@crystal/data";
 import { CrystalViewer, ViewerOperationError } from "./index.js";
 
@@ -59,6 +59,23 @@ describe("M3 camera lifecycle through the viewer", () => {
         expect(group.rotation.y).toBe(0);
     });
 
+    it("rotates the model around all three axes and persists that orientation", async () => {
+        const { viewer, group, canvas } = await setup();
+        canvas.dispatchEvent(Object.assign(new Event("pointerdown"), { clientX: 10, clientY: 20 }));
+        canvas.dispatchEvent(Object.assign(new Event("pointermove"), { clientX: 30, clientY: 50 }));
+        canvas.dispatchEvent(new Event("pointerup"));
+        expect(group.rotation.x).toBeCloseTo(0.3);
+        expect(group.rotation.y).toBeCloseTo(0.2);
+
+        viewer.rotateModel(0.1, -0.05, 0.25);
+        expect(viewer.getState().camera.groupRotation).toEqual([
+            group.rotation.x,
+            group.rotation.y,
+            group.rotation.z,
+        ]);
+        expect(group.rotation.z).toBeCloseTo(0.25);
+    });
+
     it("frames the first valid geometry after an initially disabled record", async () => {
         const source: any = structuredClone(FLUORITE);
         source.habits[0].forms.forEach((form: any) => { form.enabled = false; });
@@ -93,6 +110,44 @@ describe("M3 camera lifecycle through the viewer", () => {
         } finally {
             vi.unstubAllGlobals();
         }
+    });
+});
+
+describe("environment presentation controls", () => {
+    it("applies validated environment settings without changing serialized state", async () => {
+        const { viewer } = await setup();
+        const before = viewer.getState();
+        const internals = viewer as unknown as { scene: Scene; backgroundScene: Scene; environmentBackgroundZoom: number };
+        const scene = internals.scene;
+        const renderer = (viewer as unknown as { renderer: { toneMapping: number; toneMappingExposure: number } }).renderer;
+
+        viewer.setEnvironmentIntensity(1.75);
+        viewer.setEnvironmentRotation(Math.PI / 3, Math.PI / 5, -Math.PI / 7);
+        viewer.setEnvironmentBackgroundVisible(false);
+        viewer.setEnvironmentBackgroundZoom(1.6);
+        viewer.setToneMapping("agx");
+        viewer.setExposure(0.8);
+
+        expect(scene.environmentIntensity).toBe(1.75);
+        expect(scene.environmentRotation.y).toBeCloseTo(Math.PI / 3);
+        expect(scene.environmentRotation.x).toBeCloseTo(Math.PI / 5);
+        expect(scene.environmentRotation.z).toBeCloseTo(-Math.PI / 7);
+        expect(internals.backgroundScene.backgroundRotation.equals(scene.environmentRotation)).toBe(true);
+        expect(internals.backgroundScene.background).toBeInstanceOf(Color);
+        expect(internals.environmentBackgroundZoom).toBe(1.6);
+        expect(renderer.toneMappingExposure).toBe(0.8);
+        expect(renderer.toneMapping).not.toBe(0);
+        expect(viewer.getState()).toEqual(before);
+    });
+
+    it("rejects invalid environment settings with typed diagnostics", async () => {
+        const { viewer } = await setup();
+        expect(() => viewer.setEnvironmentIntensity(-1)).toThrow(ViewerOperationError);
+        expect(() => viewer.setEnvironmentRotation(Number.NaN)).toThrow(ViewerOperationError);
+        expect(() => viewer.setExposure(-0.1)).toThrow(ViewerOperationError);
+        expect(() => viewer.setEnvironmentBackgroundZoom(0)).toThrow(ViewerOperationError);
+        expect(() => viewer.setToneMapping("bogus" as never)).toThrow(ViewerOperationError);
+        expect(() => viewer.loadHdrEnvironment(new ArrayBuffer(0))).toThrow(ViewerOperationError);
     });
 });
 

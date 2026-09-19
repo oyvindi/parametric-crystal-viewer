@@ -14,7 +14,7 @@ pyrite reference scenes.
 | V1 appearance fields | `baseColor`, `roughness`, `metalness`, `transmission`, `ior`, `absorptionColor`, `absorptionDensity`. `opacity` remains deferred. |
 | Material mapping | [`appearance.ts`](../packages/crystal-three/src/appearance.ts) — `createCrystalMaterial`/`applyAppearance` map the fields to a Three.js `MeshPhysicalMaterial` (`absorptionDensity → attenuationDistance = 1/density`; `0 → Infinity`). Geometry is never touched. |
 | Data model | [`types.ts`](../packages/crystal-data/src/types.ts) defines `MineralAppearance`; [`validate.ts`](../packages/crystal-data/src/validate.ts) validates ranges (`roughness`/`metalness`/`transmission ∈ [0,1]`, `ior > 0`, `absorptionDensity ≥ 0`), rejects the deferred `opacity`, and requires provenance coverage. |
-| Reference records | [Quartz](../packages/crystal-data/src/minerals/quartz.ts) (rock crystal, amethyst, smoky, citrine, rose), [fluorite](../packages/crystal-data/src/minerals/fluorite.ts) (violet, green, colorless), and [pyrite](../packages/crystal-data/src/minerals/pyrite.ts) (brass, tarnished) ship curated appearance presets with provenance. Revisions bumped to `m8-1`. |
+| Reference records | [Quartz](../packages/crystal-data/src/minerals/quartz.json) (rock crystal, amethyst, smoky, citrine, rose), [fluorite](../packages/crystal-data/src/minerals/fluorite.json) (violet, green, colorless), and [pyrite](../packages/crystal-data/src/minerals/pyrite.json) (brass, tarnished) ship curated appearance presets with provenance. Revisions bumped to `m8-1`. |
 | Viewer API | [`CrystalViewer`](../packages/crystal-viewer/src/index.ts) exposes `getAppearances`/`getAppearanceId`/`getAppearance`/`setAppearance`/`setAppearanceField` and the `appearance-changed` event. The first preset is auto-selected on load. |
 | State serialization | [`state.ts`](../packages/crystal-viewer/src/state.ts) adds `AppearanceState` (selected `id` + `overrides`); `getState`/`setState` round-trip appearance and user overrides transactionally. The M7 appearance-state placeholder is now a passing test. |
 | Rendering | The viewer builds the material from the effective appearance, sets volumetric `thickness` from the crystal bounds, and uses a studio-style gradient as both the scene background and the reflection environment so metallic and transmissive surfaces read with reflections and transmission has contrast (not a flat dark field). |
@@ -95,11 +95,12 @@ documentation links/anchors/code fences.
 
 * `opacity` remains deferred beyond V1; it is rejected in both the data schema and the
   viewer field API. `transmission` is the only mineral-transparency control in V1.
-* The environment map is a simple PMREM-processed studio gradient (warm floor, bright
-  horizon, cool sky), generated only when a real WebGL context is available (skipped in
-  the stubbed-WebGL Node test environment). It serves as both the scene background and the
-  reflection environment, giving metals and transmissive surfaces readable reflections and
-  giving transmission contrast so transparent crystals do not look flat against a dark field.
+* The M8 acceptance baseline uses a simple PMREM-processed studio gradient (warm floor,
+  bright horizon, cool sky), generated only when a real WebGL context is available
+  (skipped in the stubbed-WebGL Node test environment). Post-V1 environment controls
+  additionally accept HDR/EXR uploads and separate the visible background pass so it
+  can be hidden, oriented, or zoomed without changing image-based lighting. These
+  additions do not alter the completed M8 material-field contract.
 * `scripts/check-workspace.mjs` still fails under Node 26 on the pre-existing
   `node:fs` external-import assertion (M5 fixture reader), unrelated to M8. The
   TypeScript build, all tests, and the documentation check pass.

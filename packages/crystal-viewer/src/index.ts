@@ -1,4 +1,6 @@
-import { Scene, PerspectiveCamera, WebGLRenderer, MeshPhysicalMaterial, Mesh, MeshBasicMaterial, Color, DirectionalLight, AmbientLight, Group, DoubleSide, Raycaster, Vector2, Vector3, Sprite, SpriteMaterial, CanvasTexture, BufferGeometry, Float32BufferAttribute, LineSegments, LineBasicMaterial, PMREMGenerator, EquirectangularReflectionMapping } from "three";
+import { Scene, PerspectiveCamera, WebGLRenderer, MeshPhysicalMaterial, Mesh, MeshBasicMaterial, Color, DirectionalLight, AmbientLight, Group, DoubleSide, Raycaster, Vector2, Vector3, Sprite, SpriteMaterial, CanvasTexture, BufferGeometry, Float32BufferAttribute, LineSegments, LineBasicMaterial, PMREMGenerator, EquirectangularReflectionMapping, AgXToneMapping, ACESFilmicToneMapping, NoToneMapping, type Texture, type WebGLRenderTarget } from "three";
+import { HDRLoader } from "three/addons/loaders/HDRLoader.js";
+import { EXRLoader } from "three/addons/loaders/EXRLoader.js";
 import { createLattice, expandAtomicStructure, generateCrystal, generateCrystalFromFaces, inferBonds, validatePeriodicBonds, type Diagnostic, type GeometryResult, type CrystalGeometry, type CrystalFace, type ExpandedAtom, type Lattice, type PeriodicBond } from "@crystal/core";
 import { loadMineral as loadMineralData, createCrystalInput, resolveHabit, resolveCrystallography, importCif, getMineral, validateMineral, MineralDataError, type Mineral, type MineralCrystallography, type StructuralDefinition } from "@crystal/data";
 import { createThreeGeometryWithPicking, createAtomicStructure, atomicBounds, createCrystalMaterial, applyAppearance, resolveAppearance, APPEARANCE_FIELDS, type AppearanceParams, type AppearanceField } from "@crystal/three";
@@ -53,6 +55,10 @@ export interface AppearanceInfo {
 }
 
 export interface AppearanceValues extends Required<AppearanceParams> {}
+
+/** Display transform used for high-dynamic-range environment lighting. */
+export type ViewerToneMapping = "none" | "agx" | "aces-filmic";
+export type ViewerEnvironmentFormat = "hdr" | "exr";
 
 export interface FaceContributorInfo {
     readonly formId: string;
@@ -113,6 +119,8 @@ function bfdhForms(crystallography: MineralCrystallography): readonly { id: stri
 export class CrystalViewer extends EventTarget {
     private readonly renderer: WebGLRenderer;
     private readonly scene: Scene;
+    private readonly backgroundScene: Scene;
+    private readonly backgroundCamera: PerspectiveCamera;
     private readonly camera: PerspectiveCamera;
     private readonly cameraTarget = new Vector3(0, 0, 0);
     private readonly crystalGroup: Group;
@@ -141,6 +149,7 @@ export class CrystalViewer extends EventTarget {
     private readonly rotationSpeed = 0.005;
     private isDragging = false;
     private lastMouseX = 0;
+    private lastMouseY = 0;
     private showLabels = false;
     private selectedFaceIndex: number | null = null;
     private viewMode: ViewMode = "morphology";
@@ -159,6 +168,10 @@ export class CrystalViewer extends EventTarget {
     private appearanceOverrides: Partial<AppearanceParams> = {};
     private importDiagnostics: readonly Diagnostic[] = [];
     private explicitFaceGeometry = false;
+    private environmentSource: Texture | null = null;
+    private environmentTarget: WebGLRenderTarget | null = null;
+    private environmentBackgroundVisible = true;
+    private environmentBackgroundZoom = 1;
     private readonly raycaster = new Raycaster();
     private readonly canvas: HTMLCanvasElement;
     private readonly onPointerDownBound: (e: PointerEvent) => void;
@@ -172,8 +185,10 @@ export class CrystalViewer extends EventTarget {
         this.renderer = new WebGLRenderer({ canvas, antialias: true });
         this.renderer.setSize(canvas.clientWidth || 400, canvas.clientHeight || 300);
         this.scene = new Scene();
-        this.scene.background = new Color(0x2a2e33); // neutral fallback; replaced by a gradient when WebGL is available
+        this.backgroundScene = new Scene();
+        this.backgroundScene.background = new Color(0x2a2e33); // neutral fallback; replaced by a gradient when WebGL is available
         this.camera = new PerspectiveCamera(45, 1, 0.01, 1000);
+        this.backgroundCamera = new PerspectiveCamera(45, 1, 0.01, 1000);
         this.camera.position.set(8, 6, 8);
         this.camera.lookAt(this.cameraTarget);
         this.crystalGroup = new Group();
@@ -200,6 +215,137 @@ export class CrystalViewer extends EventTarget {
         this.onClickBound = this.onCanvasClick.bind(this);
         this.attachCanvasListeners();
         this.setupEnvironment();
+    }
+
+    /**
+     * Replaces the procedural studio environment with an in-memory Radiance
+     * RGBE (.hdr) panorama. Uploaded environments are presentation resources
+     * and are deliberately not included in serialized viewer state.
+     */
+    loadEnvironment(data: ArrayBuffer, format: ViewerEnvironmentFormat): void {
+        this.assertNotDisposed();
+        const anyRenderer = this.renderer as unknown as { getContext?: () => unknown };
+        if (typeof anyRenderer.getContext !== "function") {
+            throw new ViewerOperationError([{ code: "viewer.environment.unavailable", severity: "error", message: "HDR environments require an active WebGL renderer." }]);
+        }
+        if (format !== "hdr" && format !== "exr") {
+            throw new ViewerOperationError([{ code: "viewer.environment.unsupported-format", severity: "error", message: `Unsupported environment format "${format}".` }]);
+        }
+        if (format === "hdr") {
+            const header = new TextDecoder("ascii").decode(new Uint8Array(data, 0, Math.min(data.byteLength, 16_384)));
+            const dimensions = header.match(/(?:^|\n)-Y\s+(\d+)\s+\+X\s+(\d+)(?:\r?\n|$)/);
+            const height = Number(dimensions?.[1]);
+            const width = Number(dimensions?.[2]);
+            if (!dimensions || !this.validEnvironmentDimensions(width, height)) {
+                throw new ViewerOperationError([{ code: "viewer.environment.invalid-hdr", severity: "error", message: "The HDR panorama header is invalid or its decoded dimensions exceed 32 megapixels." }]);
+            }
+        }
+
+        let source: Texture | null = null;
+        let target: WebGLRenderTarget | null = null;
+        let pmrem: PMREMGenerator | null = null;
+        try {
+            source = format === "hdr"
+                ? new HDRLoader().createDataTexture(data)
+                : new EXRLoader().createDataTexture(data);
+            const image = source.image as { width?: number; height?: number } | undefined;
+            if (!this.validEnvironmentDimensions(Number(image?.width), Number(image?.height))) {
+                throw new Error("Decoded dimensions exceed 32 megapixels.");
+            }
+            source.mapping = EquirectangularReflectionMapping;
+            pmrem = new PMREMGenerator(this.renderer);
+            target = pmrem.fromEquirectangular(source);
+        } catch (error) {
+            source?.dispose();
+            target?.dispose();
+            throw new ViewerOperationError([{
+                code: `viewer.environment.invalid-${format}`,
+                severity: "error",
+                message: error instanceof Error ? `Could not decode ${format.toUpperCase()} environment: ${error.message}` : `Could not decode ${format.toUpperCase()} environment.`,
+            }]);
+        } finally { pmrem?.dispose(); }
+
+        this.disposeEnvironment();
+        this.environmentSource = source;
+        this.environmentTarget = target;
+        this.scene.environment = target.texture;
+        this.updateEnvironmentBackground();
+        this.renderOnce();
+    }
+
+    /** Backward-compatible convenience method for a Radiance RGBE environment. */
+    loadHdrEnvironment(data: ArrayBuffer): void {
+        this.loadEnvironment(data, "hdr");
+    }
+
+    /** Convenience method for an OpenEXR environment. */
+    loadExrEnvironment(data: ArrayBuffer): void {
+        this.loadEnvironment(data, "exr");
+    }
+
+    /** Restores the built-in studio gradient environment. */
+    resetEnvironment(): void {
+        this.assertNotDisposed();
+        this.setupEnvironment();
+        this.renderOnce();
+    }
+
+    setEnvironmentIntensity(intensity: number): void {
+        this.assertNotDisposed();
+        if (!Number.isFinite(intensity) || intensity < 0) throw new ViewerOperationError([{ code: "viewer.environment.invalid-intensity", severity: "error", message: "Environment intensity must be a finite non-negative number." }]);
+        this.scene.environmentIntensity = intensity;
+        this.renderOnce();
+    }
+
+    /** Rotates environment lighting and its visible background using yaw, pitch, and roll. */
+    setEnvironmentRotation(yaw: number, pitch = 0, roll = 0): void {
+        this.assertNotDisposed();
+        if (![yaw, pitch, roll].every(Number.isFinite)) throw new ViewerOperationError([{ code: "viewer.environment.invalid-rotation", severity: "error", message: "Environment rotation must contain finite yaw, pitch, and roll values." }]);
+        this.scene.environmentRotation.set(pitch, yaw, roll);
+        this.backgroundScene.backgroundRotation.set(pitch, yaw, roll);
+        this.renderOnce();
+    }
+
+    /** Applies a relative model rotation around the viewer's X, Y, and Z axes. */
+    rotateModel(deltaX: number, deltaY: number, deltaZ = 0): void {
+        this.assertNotDisposed();
+        if (![deltaX, deltaY, deltaZ].every(Number.isFinite)) throw new ViewerOperationError([{ code: "viewer.camera.invalid-rotation", severity: "error", message: "Model rotation deltas must be finite." }]);
+        this.crystalGroup.rotation.x += deltaX;
+        this.crystalGroup.rotation.y += deltaY;
+        this.crystalGroup.rotation.z += deltaZ;
+        this.labelGroup.rotation.copy(this.crystalGroup.rotation);
+        this.rotationY = this.crystalGroup.rotation.y;
+        this.renderOnce();
+    }
+
+    setEnvironmentBackgroundVisible(visible: boolean): void {
+        this.assertNotDisposed();
+        this.environmentBackgroundVisible = visible;
+        this.updateEnvironmentBackground();
+        this.renderOnce();
+    }
+
+    /** Magnifies only the visible environment; image-based lighting is unchanged. */
+    setEnvironmentBackgroundZoom(zoom: number): void {
+        this.assertNotDisposed();
+        if (!Number.isFinite(zoom) || zoom <= 0) throw new ViewerOperationError([{ code: "viewer.environment.invalid-background-zoom", severity: "error", message: "Environment background zoom must be a positive finite number." }]);
+        this.environmentBackgroundZoom = zoom;
+        this.renderOnce();
+    }
+
+    setToneMapping(mode: ViewerToneMapping): void {
+        this.assertNotDisposed();
+        const mappings = { none: NoToneMapping, agx: AgXToneMapping, "aces-filmic": ACESFilmicToneMapping } as const;
+        if (!(mode in mappings)) throw new ViewerOperationError([{ code: "viewer.environment.invalid-tone-mapping", severity: "error", message: `Unknown tone mapping mode "${mode}".` }]);
+        this.renderer.toneMapping = mappings[mode];
+        this.renderOnce();
+    }
+
+    setExposure(exposure: number): void {
+        this.assertNotDisposed();
+        if (!Number.isFinite(exposure) || exposure < 0) throw new ViewerOperationError([{ code: "viewer.environment.invalid-exposure", severity: "error", message: "Exposure must be a finite non-negative number." }]);
+        this.renderer.toneMappingExposure = exposure;
+        this.renderOnce();
     }
 
     private attachCanvasListeners(): void {
@@ -986,6 +1132,8 @@ export class CrystalViewer extends EventTarget {
         this.renderer.setSize(width, height);
         this.camera.aspect = width / height;
         this.camera.updateProjectionMatrix();
+        this.backgroundCamera.aspect = width / height;
+        this.backgroundCamera.updateProjectionMatrix();
     }
 
     render(): void {
@@ -1015,7 +1163,7 @@ export class CrystalViewer extends EventTarget {
             this.rotationY += this.rotationSpeed;
             this.crystalGroup.rotation.y = this.rotationY;
             this.labelGroup.rotation.y = this.rotationY;
-            this.renderer.render(this.scene, this.camera);
+            this.renderFrame();
             this.animationHandle = requestAnimationFrame(loop);
         };
         this.animationHandle = requestAnimationFrame(loop);
@@ -1076,10 +1224,7 @@ export class CrystalViewer extends EventTarget {
         this.clearLabels();
         this.clearAtomic();
         if (this.cellOverlay) { this.crystalGroup.remove(this.cellOverlay); this.cellOverlay = null; }
-        (this.scene.environment as { dispose?: () => void } | null)?.dispose?.();
-        this.scene.environment = null;
-        (this.scene.background as { dispose?: () => void } | null)?.dispose?.();
-        this.scene.background = null;
+        this.disposeEnvironment();
         this.renderer.dispose();
     }
 
@@ -1115,7 +1260,29 @@ export class CrystalViewer extends EventTarget {
 
     /** Renders a single frame unless the loop is running or the viewer is disconnected. */
     private renderOnce(): void {
-        if (!this.disconnected && this.animationHandle === null) this.renderer.render(this.scene, this.camera);
+        if (!this.disconnected && this.animationHandle === null) this.renderFrame();
+    }
+
+    private renderFrame(): void {
+        const renderer = this.renderer as WebGLRenderer & { clearDepth?: () => void };
+        if (typeof renderer.clearDepth !== "function") {
+            renderer.render(this.scene, this.camera);
+            return;
+        }
+
+        this.backgroundCamera.position.copy(this.camera.position);
+        this.backgroundCamera.quaternion.copy(this.camera.quaternion);
+        this.backgroundCamera.up.copy(this.camera.up);
+        this.backgroundCamera.aspect = this.camera.aspect;
+        this.backgroundCamera.fov = 2 * Math.atan(Math.tan(this.camera.fov * Math.PI / 360) / this.environmentBackgroundZoom) * 180 / Math.PI;
+        this.backgroundCamera.updateProjectionMatrix();
+
+        renderer.autoClear = true;
+        renderer.render(this.backgroundScene, this.backgroundCamera);
+        renderer.autoClear = false;
+        renderer.clearDepth();
+        renderer.render(this.scene, this.camera);
+        renderer.autoClear = true;
     }
 
     /**
@@ -1146,11 +1313,39 @@ export class CrystalViewer extends EventTarget {
         tex.mapping = EquirectangularReflectionMapping;
         tex.needsUpdate = true;
         const pmrem = new PMREMGenerator(this.renderer);
+        const target = pmrem.fromEquirectangular(tex);
+        this.disposeEnvironment();
+        this.environmentSource = tex;
+        this.environmentTarget = target;
         // The same gradient serves as the visible backdrop (so transmission has
         // contrast) and as the PMREM-processed reflection environment.
-        this.scene.background = tex;
-        this.scene.environment = pmrem.fromEquirectangular(tex).texture;
+        this.scene.environment = target.texture;
+        this.updateEnvironmentBackground();
         pmrem.dispose();
+    }
+
+    private updateEnvironmentBackground(): void {
+        this.scene.background = null;
+        this.backgroundScene.background = this.environmentBackgroundVisible && this.environmentSource
+            ? this.environmentSource
+            : new Color(0x2a2e33);
+    }
+
+    private validEnvironmentDimensions(width: number, height: number): boolean {
+        return Number.isInteger(width) && Number.isInteger(height)
+            && width > 0 && height > 0
+            && width <= 16_384 && height <= 16_384
+            && width * height <= 33_554_432;
+    }
+
+    private disposeEnvironment(): void {
+        this.scene.environment = null;
+        this.scene.background = null;
+        this.backgroundScene.background = null;
+        this.environmentTarget?.dispose();
+        this.environmentSource?.dispose();
+        this.environmentTarget = null;
+        this.environmentSource = null;
     }
 
     private updateMesh(result: Extract<GeometryResult, { status: "valid" }>): void {
@@ -1403,16 +1598,21 @@ export class CrystalViewer extends EventTarget {
     private onPointerDown(e: PointerEvent): void {
         this.isDragging = true;
         this.lastMouseX = e.clientX;
+        this.lastMouseY = e.clientY ?? 0;
         this.stop();
     }
 
     private onPointerMove(e: PointerEvent): void {
         if (!this.isDragging) return;
         const dx = e.clientX - this.lastMouseX;
+        const dy = (e.clientY ?? 0) - this.lastMouseY;
         this.lastMouseX = e.clientX;
+        this.lastMouseY = e.clientY ?? 0;
+        this.crystalGroup.rotation.x += dy * 0.01;
         this.crystalGroup.rotation.y += dx * 0.01;
-        this.labelGroup.rotation.y = this.crystalGroup.rotation.y;
-        this.renderer.render(this.scene, this.camera);
+        this.labelGroup.rotation.copy(this.crystalGroup.rotation);
+        this.rotationY = this.crystalGroup.rotation.y;
+        this.renderFrame();
     }
 
     private onPointerUp(): void {
@@ -1442,7 +1642,7 @@ export class CrystalViewer extends EventTarget {
             this.dispatchEvent(new CustomEvent("face-selected", { detail: { faceIndex, ...info } }));
         }
         if (this.animationHandle === null) {
-            this.renderer.render(this.scene, this.camera);
+            this.renderFrame();
         }
     }
 

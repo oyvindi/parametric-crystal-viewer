@@ -209,6 +209,26 @@ face outlines
 selection highlighting
 ```
 
+The viewer may additionally provide image-based environment lighting as presentation
+state. HDR decoding, PMREM generation, tone mapping, exposure, and GPU-resource
+lifecycle remain in `crystal-viewer`; mineral appearance values and scientific
+geometry remain independent of the chosen environment. Local environment uploads are
+not mineral data and are not serialized.
+
+Environment orientation uses a three-axis Euler rotation with identity at zero yaw,
+pitch, and roll. This presentation transform does not change crystallographic axes or
+the model rotation stored with camera state.
+
+Background-only environment zoom uses a separate background scene and perspective
+camera. The viewer renders that pass first, clears depth, and then renders scientific
+content with the normal camera. This keeps panorama composition independent from
+image-based lighting, crystal framing, picking, and serialized camera state.
+
+Explicit measured-face geometry and the BFDH-style fallback remain renderer-neutral:
+`crystal-data` parses CIF face rows, `crystal-core` owns plane construction and
+half-space intersection, `crystal-viewer` chooses and reports the import path, and
+`crystal-demo` owns file controls and diagnostic presentation.
+
 ---
 
 ## Testing

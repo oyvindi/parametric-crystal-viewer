@@ -19,8 +19,13 @@ all scientific calculations live in a renderer-neutral core.
 * Morphology sliders and face inspection (picking, equivalent-face highlighting)
 * Serializable and restorable viewer state
 * Atomic structure visualization (CIF import, symmetry expansion, periodic bonds)
+* CIF morphology from measured `_exptl_crystal_face_*` planes, with a simplified
+  d-spacing-based BFDH fallback when measurements are absent
 * Mineral appearance — physically based rendering with transmission, IOR, and
   colored absorption
+* HDR image-based lighting from Radiance `.hdr` and OpenEXR `.exr` panoramas,
+  including three-axis orientation, intensity, exposure, tone mapping, and
+  background-only zoom
 * Scientific references and data provenance for all curated data
 * Framework-independent core and a framework-agnostic Web Component
 * Three.js used only for rendering, with no manually modeled crystal meshes
@@ -57,7 +62,9 @@ straight to a demo:
 * [Fluorite](packages/crystal-demo/fluorite.html) — morphology sliders and habit selection
 * [Quartz](packages/crystal-demo/quartz.html) — handedness, face inspection, Miller-Bravais
 * [Minerals](packages/crystal-demo/minerals.html) — multi-mineral catalog
+* [Minerals with HDRI](packages/crystal-demo/minerals-hdri.html) — local HDR/EXR environment lighting and presentation controls
 * [Atomic Structure](packages/crystal-demo/structure.html) — CIF import, bonds, lattice repetition
+* [CIF Morphology](packages/crystal-demo/cif-morphology.html) — measured face distances or theoretical BFDH-style fallback
 * [Appearance](packages/crystal-demo/appearance.html) — PBR material controls
 * [Controls & Events](packages/crystal-demo/controls.html) — programmatic API and state save/restore
 
@@ -75,10 +82,10 @@ crystal-demo   → crystal-viewer
 
 | Package | Owns |
 |---|---|
-| `crystal-core` | Renderer-neutral crystallographic calculations: lattice, symmetry, Miller indices, half-space intersection, geometry output, atomic expansion, periodic bonds. No runtime dependencies. |
-| `crystal-data` | Mineral and habit schemas, curated records, provenance, CIF 1.1 import, and conversion into core inputs. |
+| `crystal-core` | Renderer-neutral crystallographic calculations: lattice, symmetry, Miller indices, form and explicit-face half-space geometry, atomic expansion, periodic bonds. No runtime dependencies. |
+| `crystal-data` | Mineral and habit schemas, curated records, provenance, CIF 1.1 structure and experimental-face import, and conversion into core inputs. |
 | `crystal-three` | Conversion of core geometry into Three.js `BufferGeometry`, PBR materials, atomic rendering, and unit-cell overlays. |
-| `crystal-viewer` | `CrystalViewer` class, `<crystal-viewer>` Web Component, camera, picking, lifecycle, and state serialization. |
+| `crystal-viewer` | `CrystalViewer` class, `<crystal-viewer>` Web Component, CIF morphology orchestration, HDR environments, camera, picking, lifecycle, and state serialization. |
 | `crystal-demo` | Plain-HTML reference demos using only the exported viewer boundary. |
 
 ## API
@@ -90,12 +97,13 @@ emitted `dist/*.d.ts`; behavioral contracts are in [viewer-api.md](docs/viewer-a
 
 | Group | Methods |
 |---|---|
-| Loading | `loadMineral(source)`, `loadCif(text, options?)`, `loadStructure(definition)` |
-| Morphology | `setHabit(id)`, `setVariant(id)`, `setFormDevelopment(formId, value)`, `setFormEnabled(formId, enabled)`, `setMorphologyScale(scale)` |
+| Loading | `loadMineral(source)`, `loadCif(text, options?)`, `loadCifMorphology(text, options?)`, `loadStructure(definition)` |
+| Morphology | `setHabit(id)`, `setVariant(id)`, `setFormDevelopment(formId, value)`, `setFormEnabled(formId, enabled)`, `setMorphologyScale(scale)`, `rotateModel(dx, dy, dz)` |
 | Inspection | `selectFace(index)`, `clearSelection()`, `highlightEquivalentFaces(index)`, `getSelectedFace()`, `getAllFaces()`, `getEquivalentFaces(index)`, `showFaceLabels(show)` |
 | Display | `setShowAxes(show)`, `setShowUnitCell(show)`, `setShowBonds(show)`, `setShowWireframe(show)` |
 | Atomic | `setViewMode(mode)`, `setLatticeRepetition(na, nb, nc)`, `getStructureInfo()` |
 | Appearance | `setAppearance(id)`, `setAppearanceField(field, value)` |
+| Environment | `loadEnvironment(data, format)`, `loadHdrEnvironment(data)`, `loadExrEnvironment(data)`, `resetEnvironment()`, `setEnvironmentIntensity(value)`, `setEnvironmentRotation(yaw, pitch, roll)`, `setEnvironmentBackgroundVisible(show)`, `setEnvironmentBackgroundZoom(zoom)`, `setToneMapping(mode)`, `setExposure(value)` |
 | State | `getState()`, `setState(state)` |
 | Lifecycle | `start()`, `stop()`, `disconnect()`, `reconnect()`, `dispose()`, `resetCamera()`, `resize(w, h)`, `render()` |
 | Catalog | `listMinerals()`, `getMineral(id)` (re-exported from `@crystal/data`) |
@@ -141,7 +149,9 @@ Multiple independent instances on one page are supported.
 validates the unit cell, resolves symmetry (explicit operations or registry), and
 generates convex crystal geometry via half-space intersection. `validateCrystallography`
 checks inputs before generation. `expandAtomicStructure` and `inferBonds` support
-atomic structure visualization. See the [package README](packages/crystal-core/README.md)
+atomic structure visualization. `generateCrystalFromFaces` builds a convex morphology
+from explicit measured Miller planes and perpendicular distances without symmetry
+expansion. See the [package README](packages/crystal-core/README.md)
 for the diagnostic code set.
 
 ### crystal-data
@@ -149,7 +159,8 @@ for the diagnostic code set.
 `createMineralCatalog()`, `listMinerals()`, and `getMineral(id)` provide the
 curated catalog. `importCif(text, options?)` parses CIF 1.1 into a structural
 definition. `validateMineral()` enforces the schema and provenance contract. See
-the [package README](packages/crystal-data/README.md).
+the [package README](packages/crystal-data/README.md). CIF imports preserve supported
+experimental crystal-face measurements for morphology rendering.
 
 ### crystal-three
 
@@ -175,5 +186,7 @@ unit-cell wireframes.
 ## Status
 
 V1 (milestones M1–M8) is complete: geometry engine, nine minerals, atomic
-structure, stabilized viewer API, and appearance. Twinning (M9) and
-pressure/temperature effects (M10) are later scope.
+structure, stabilized viewer API, and appearance. Implemented post-V1 additions
+include CIF measured-face morphology, a simplified BFDH-style fallback, HDR/EXR
+environment lighting, and expanded model/environment orientation controls. Twinning
+(M9) and pressure/temperature effects (M10) remain later scope.

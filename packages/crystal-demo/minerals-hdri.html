@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Minerals with HDRI — M5 Demo Variant</title>
+<style>
+  :root { color-scheme: dark; }
+  * { box-sizing: border-box; }
+  [hidden] { display: none !important; }
+  body { margin: 0; height: 100vh; display: flex; background: #202326; color: #ddd; font: 14px/1.4 system-ui, sans-serif; }
+  aside { width: 360px; padding: 18px; overflow-y: auto; background: #30343a; border-right: 1px solid #555; }
+  h1 { margin: 0; font-size: 1.25rem; }
+  .subtitle, .formula { color: #999; font-size: .82rem; }
+  h2 { margin: 18px 0 8px; padding-bottom: 3px; border-bottom: 1px solid #555; color: #ccc; font-size: .95rem; }
+  label { display: block; margin: 8px 0 3px; font-size: .82rem; }
+  select, input[type="file"], button { width: 100%; }
+  input[type="range"] { width: 100%; }
+  .row { display: flex; justify-content: space-between; gap: 10px; }
+  .info { margin-top: 10px; color: #aaa; font-size: .82rem; }
+  .info .value { color: #9cf; text-align: right; }
+  .control-value { float: right; color: #8cf; font-variant-numeric: tabular-nums; }
+  .form-row { margin: 8px 0; }
+  .form-label { display: flex; justify-content: space-between; font-size: .82rem; }
+  .check { display: flex; align-items: center; gap: 8px; margin-top: 10px; }
+  .check input { width: auto; }
+  .check label { margin: 0; }
+  .status { margin-top: 12px; padding: 8px; border-radius: 4px; background: #282b2f; color: #aaa; font-size: .8rem; overflow-wrap: anywhere; }
+  .status.ok { background: #29432f; color: #9eebad; }
+  .status.error { background: #4b2929; color: #ffaaaa; }
+  main { position: relative; flex: 1; min-width: 0; }
+  canvas { display: block; width: 100%; height: 100%; }
+  canvas:focus-visible { outline: 2px solid #8cf; outline-offset: -2px; }
+  .hint { position: absolute; right: 12px; bottom: 8px; color: #aaa; font-size: .75rem; text-shadow: 0 1px 2px #000; }
+</style>
+<script type="importmap">
+{
+  "imports": {
+    "three": "../../node_modules/three/build/three.module.js",
+    "three/addons/": "../../node_modules/three/examples/jsm/",
+    "@crystal/core": "../crystal-core/dist/index.js",
+    "@crystal/data": "../crystal-data/dist/index.js",
+    "@crystal/three": "../crystal-three/dist/index.js",
+    "@crystal/viewer": "../crystal-viewer/dist/index.js"
+  }
+}
+</script>
+</head>
+<body>
+<aside>
+  <h1 id="name">Minerals with HDRI</h1>
+  <div class="formula" id="formula"></div>
+  <div class="subtitle">M5 multi-mineral viewer with image-based lighting</div>
+
+  <h2>Crystal</h2>
+  <label for="mineral">Mineral</label><select id="mineral"></select>
+  <label for="variant">Variant</label><select id="variant"></select>
+  <label for="habit">Habit</label><select id="habit"></select>
+  <label for="appearance">Appearance</label><select id="appearance"></select>
+  <div class="info" id="crystal-info"></div>
+
+  <h2>Forms</h2>
+  <div id="forms"></div>
+
+  <h2>HDR environment</h2>
+  <label for="hdri">HDR panorama (.hdr or .exr, maximum 128 MB)</label>
+  <input id="hdri" type="file" accept=".hdr,.exr,image/vnd.radiance,image/x-exr">
+  <label for="intensity">Lighting intensity <span class="control-value" id="intensity-value">1.00</span></label>
+  <input id="intensity" type="range" min="0" max="4" step="0.05" value="1">
+  <label for="yaw">Yaw <span class="control-value" id="yaw-value">0°</span></label>
+  <input id="yaw" type="range" min="-180" max="180" step="1" value="0">
+  <label for="pitch">Pitch <span class="control-value" id="pitch-value">0°</span></label>
+  <input id="pitch" type="range" min="-180" max="180" step="1" value="0">
+  <label for="roll">Roll <span class="control-value" id="roll-value">0°</span></label>
+  <input id="roll" type="range" min="-180" max="180" step="1" value="0">
+  <label for="background-zoom">Background zoom <span class="control-value" id="background-zoom-value">1.00×</span></label>
+  <input id="background-zoom" type="range" min="0.5" max="3" step="0.05" value="1">
+  <label for="exposure">Exposure <span class="control-value" id="exposure-value">1.00</span></label>
+  <input id="exposure" type="range" min="0" max="3" step="0.05" value="1">
+  <label for="tone-mapping">Tone mapping</label>
+  <select id="tone-mapping">
+    <option value="agx">AgX</option>
+    <option value="aces-filmic">ACES Filmic</option>
+    <option value="none">None</option>
+  </select>
+  <div class="check"><input id="background" type="checkbox" checked><label for="background">Show environment as background</label></div>
+  <button id="reset-environment" type="button">Restore studio environment</button>
+  <button id="reset-camera" type="button">Reset camera</button>
+  <div id="status" class="status ok">Using the built-in studio environment.</div>
+</aside>
+<main id="viewport">
+  <canvas id="canvas" tabindex="0" aria-label="Interactive crystal view"></canvas>
+  <span class="hint">Drag in two axes · Arrow keys rotate · Q/E roll · Home resets</span>
+</main>
+
+<script type="module">
+import { CrystalViewer, listMinerals, getMineral } from "@crystal/viewer";
+
+const $ = (id) => document.getElementById(id);
+const viewer = new CrystalViewer($("canvas"));
+viewer.setToneMapping("agx");
+viewer.start();
+
+function options(select, values, selected) {
+  select.replaceChildren(...values.map(({ id, name }) => {
+    const option = document.createElement("option");
+    option.value = id;
+    option.textContent = name;
+    option.selected = id === selected;
+    return option;
+  }));
+  select.hidden = values.length === 0;
+  select.previousElementSibling.hidden = values.length === 0;
+}
+
+function syncMineralDetails() {
+  const mineral = getMineral(viewer.getMineralId());
+  $("name").textContent = mineral.name;
+  $("formula").textContent = mineral.formula;
+  const c = mineral.crystallography;
+  const rows = [
+    ["Crystal system", c.crystalSystem],
+    ["Point group", c.pointGroup ?? "—"],
+    ["Setting", c.setting ?? "—"],
+    ["Space group", c.spaceGroup ?? "—"],
+  ];
+  $("crystal-info").innerHTML = rows.map(([key, value]) => `<div class="row"><span>${key}</span><span class="value">${value}</span></div>`).join("");
+  options($("variant"), viewer.getVariants(), viewer.getVariantId());
+  options($("habit"), viewer.getHabits(), viewer.getHabitId());
+  options($("appearance"), viewer.getAppearances(), viewer.getAppearanceId());
+  syncForms();
+}
+
+function syncForms() {
+  $("forms").replaceChildren(...viewer.getForms().map((form) => {
+    const row = document.createElement("div");
+    row.className = "form-row";
+    const label = document.createElement("div");
+    label.className = "form-label";
+    const name = document.createElement("span");
+    name.textContent = form.label;
+    const value = document.createElement("span");
+    value.className = "control-value";
+    value.textContent = form.development.toFixed(2);
+    label.append(name, value);
+    const slider = document.createElement("input");
+    slider.type = "range";
+    slider.min = "0";
+    slider.max = "1";
+    slider.step = "0.01";
+    slider.value = String(form.development);
+    slider.disabled = !form.enabled;
+    slider.addEventListener("input", () => {
+      viewer.setFormDevelopment(form.id, Number(slider.value));
+      value.textContent = Number(slider.value).toFixed(2);
+    });
+    row.append(label, slider);
+    return row;
+  }));
+}
+
+for (const id of listMinerals()) {
+  const option = document.createElement("option");
+  option.value = id;
+  option.textContent = getMineral(id).name;
+  $("mineral").append(option);
+}
+
+async function loadMineral(id) {
+  await viewer.loadMineral(id);
+  syncMineralDetails();
+}
+
+$("mineral").addEventListener("change", () => loadMineral($("mineral").value));
+$("variant").addEventListener("change", () => { viewer.setVariant($("variant").value); syncMineralDetails(); });
+$("habit").addEventListener("change", () => { viewer.setHabit($("habit").value); syncMineralDetails(); });
+$("appearance").addEventListener("change", () => viewer.setAppearance($("appearance").value));
+
+const MAX_ENVIRONMENT_BYTES = 128 * 1024 * 1024;
+$("hdri").addEventListener("change", async () => {
+  const file = $("hdri").files[0];
+  if (!file) return;
+  const extension = file.name.toLowerCase().split(".").pop();
+  if (!["hdr", "exr"].includes(extension) || file.size > MAX_ENVIRONMENT_BYTES) {
+    $("status").className = "status error";
+    $("status").textContent = file.size > MAX_ENVIRONMENT_BYTES ? "The environment file exceeds 128 MB." : "Please select a Radiance .hdr or OpenEXR .exr file.";
+    $("hdri").value = "";
+    return;
+  }
+  $("status").className = "status";
+  $("status").textContent = `Loading ${file.name}…`;
+  try {
+    viewer.loadEnvironment(await file.arrayBuffer(), extension);
+    $("status").className = "status ok";
+    $("status").textContent = `Lighting with ${file.name} (${(file.size / 1048576).toFixed(1)} MB).`;
+  } catch (error) {
+    $("status").className = "status error";
+    $("status").textContent = error?.diagnostics?.[0]?.message ?? String(error);
+  }
+});
+
+$("intensity").addEventListener("input", () => {
+  const value = Number($("intensity").value);
+  viewer.setEnvironmentIntensity(value);
+  $("intensity-value").textContent = value.toFixed(2);
+});
+function applyEnvironmentRotation() {
+  const yaw = Number($("yaw").value);
+  const pitch = Number($("pitch").value);
+  const roll = Number($("roll").value);
+  viewer.setEnvironmentRotation(yaw * Math.PI / 180, pitch * Math.PI / 180, roll * Math.PI / 180);
+  $("yaw-value").textContent = `${yaw}°`;
+  $("pitch-value").textContent = `${pitch}°`;
+  $("roll-value").textContent = `${roll}°`;
+}
+for (const id of ["yaw", "pitch", "roll"]) $(id).addEventListener("input", applyEnvironmentRotation);
+$("background-zoom").addEventListener("input", () => {
+  const value = Number($("background-zoom").value);
+  viewer.setEnvironmentBackgroundZoom(value);
+  $("background-zoom-value").textContent = `${value.toFixed(2)}×`;
+});
+$("exposure").addEventListener("input", () => {
+  const value = Number($("exposure").value);
+  viewer.setExposure(value);
+  $("exposure-value").textContent = value.toFixed(2);
+});
+$("tone-mapping").addEventListener("change", () => viewer.setToneMapping($("tone-mapping").value));
+$("background").addEventListener("change", () => viewer.setEnvironmentBackgroundVisible($("background").checked));
+$("reset-environment").addEventListener("click", () => {
+  viewer.resetEnvironment();
+  $("hdri").value = "";
+  $("status").className = "status ok";
+  $("status").textContent = "Using the built-in studio environment.";
+});
+$("reset-camera").addEventListener("click", () => viewer.resetCamera());
+
+$("canvas").addEventListener("pointerdown", () => $("canvas").focus());
+$("canvas").addEventListener("keydown", (event) => {
+  const step = (event.shiftKey ? 2 : 8) * Math.PI / 180;
+  const rotations = {
+    ArrowUp: [-step, 0, 0],
+    ArrowDown: [step, 0, 0],
+    ArrowLeft: [0, -step, 0],
+    ArrowRight: [0, step, 0],
+    q: [0, 0, -step], Q: [0, 0, -step],
+    e: [0, 0, step], E: [0, 0, step],
+  };
+  if (event.key === "Home") {
+    event.preventDefault();
+    viewer.stop();
+    viewer.resetCamera();
+  } else if (rotations[event.key]) {
+    event.preventDefault();
+    viewer.stop();
+    viewer.rotateModel(...rotations[event.key]);
+  }
+});
+
+await loadMineral(listMinerals()[0]);
+function resize() { viewer.resize($("viewport").clientWidth, $("viewport").clientHeight); }
+window.addEventListener("resize", resize);
+resize();
+</script>
+</body>
+</html>

@@ -322,7 +322,9 @@ V1; supply fractional coordinates or transform first. Measurement temperature
 (`_cell_measurement_temperature`) and publication metadata are preserved in source
 metadata when present but are not required.
 
-Unsupported constructs produce a diagnostic and do not commit:
+Unsupported constructs produce a diagnostic and do not commit. The post-V1
+experimental crystal-face category documented below is the one supported
+non-structural loop exception to this V1 list:
 
 * CIF 2.0 syntax (the `version` block or CIF 2.0 delimiters);
 * save frames, global blocks, or non-structural loop categories;
@@ -410,7 +412,37 @@ The importer must establish whether sites are symmetry-independent or already de
 
 When importing bonds, resolve symmetry references and cell translations into periodic endpoints in the expanded reference cell. Preserve source information and distinguish imported bonds from inferred bonds.
 
-CIF import does not automatically define external morphology.
+A CIF without the supported experimental crystal-face category does not define
+reported external morphology. Unit-cell and symmetry data alone may support an
+explicitly identified theoretical fallback, but not an observed habit.
+
+### Experimental Crystal Faces
+
+Post-V1 CIF import additionally preserves the standard experimental crystal-face loop:
+
+```text
+_exptl_crystal_face_index_h
+_exptl_crystal_face_index_k
+_exptl_crystal_face_index_l
+_exptl_crystal_face_perp_dist
+_exptl_crystal_face_name          (optional)
+_exptl_crystal_face_description   (optional)
+```
+
+The four required columns must occur in the same loop. Each row becomes a
+`CifCrystalFace` containing three-index Miller indices and a positive perpendicular
+distance. Optional name and description values are preserved when present. Malformed
+or incomplete rows produce import diagnostics rather than partial face geometry.
+
+These rows are observed/reported external-morphology data and remain separate from
+atomic sites and curated `HabitPreset` records. They form a complete oriented-plane
+set: rendering must not add symmetry-equivalent faces. Geometry and validation are
+defined in [CIF-Derived Morphology](scientific-model.md#cif-derived-morphology).
+
+If this category is absent, the imported structural definition still contains no
+reported external morphology. A host may explicitly request the viewer's theoretical
+BFDH-style fallback, but must expose its warning and must not store or present the
+result as measured or curated habit data.
 
 ---
 

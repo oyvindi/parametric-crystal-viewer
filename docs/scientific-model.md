@@ -192,6 +192,62 @@ The resulting geometry must not depend on Three.js.
 
 ---
 
+## CIF-Derived Morphology
+
+Two renderer-neutral paths may construct external morphology from a CIF-derived
+crystallographic definition. Neither path infers observed habit from atomic positions.
+
+### Measured crystal faces
+
+`generateCrystalFromFaces` accepts explicit oriented Miller planes `(h k l)` and a
+positive perpendicular distance from the morphology origin for each plane. It converts
+indices through the reciprocal lattice to Cartesian unit normals and passes those
+half-spaces directly to the standard intersection algorithm. Unlike a crystallographic
+form, an explicit measured face is not expanded by point symmetry: the supplied list
+is the complete constraint set, so asymmetric reported morphology is preserved.
+
+Indices must be finite non-zero integers and distances must be finite and positive.
+The planes must enclose a bounded, non-degenerate three-dimensional volume. Face
+contributors retain the supplied face ID and oriented Miller indices; their operation
+ID list is empty because no symmetry operation generated them.
+
+### Simplified BFDH-style fallback
+
+When a valid CIF supplies cell and symmetry data but no measured crystal-face loop,
+the viewer can construct a theoretical visual fallback from interplanar spacing. For
+each primitive low-index candidate `(h k l)`, calculate
+
+```text
+d(hkl) = 1 / |B* h|
+```
+
+where `B*` is the reciprocal-lattice basis and `h` is the Miller-index column. The
+current bounded candidate search uses components in `[-2, 2]`, includes both oriented
+signs, removes common integer factors, normalizes `d(hkl)` by the largest candidate
+spacing, and applies the existing form/symmetry/half-space pipeline. Because the form
+pipeline maps development to `1 / development`, the resulting central-distance proxy
+is proportional to `1 / d(hkl)` (with a minimum normalized development of `0.05` for
+the finite search envelope).
+
+This is a simplified geometrical Bravais–Friedel/BFDH-style approximation, useful as
+a visual starting shape rather than an observed habit or equilibrium morphology. The
+implemented fallback uses point symmetry and geometric spacing only. It does **not**
+yet apply the full Donnay–Harker corrections for systematic absences caused by screw
+axes and glide planes, rank faces from surface chemistry or attachment energy, account
+for growth conditions, or establish that the generated faces occur experimentally.
+The viewer emits `viewer.morphology.bfdh-fallback` whenever it selects this path.
+
+The distinction follows the original Donnay–Harker extension of the Bravais law
+([Donnay & Harker, 1937](https://rruff.geo.arizona.edu/doclib/am/vol22/AM22_446.pdf))
+and a modern discussion of BFDH growth-rate assumptions and limitations
+([IUCr, 2026](https://journals.iucr.org/b/issues/2026/01/00/bal5003/)).
+
+Measured-face morphology, the fallback, curated named habits, atomic structure, and
+surface appearance are distinct sources and must remain distinguishable in APIs and
+user interfaces.
+
+---
+
 ## Geometry Output
 
 The core generator must return an explicit, renderer-neutral result. Geometry is available only for a valid, bounded three-dimensional intersection.
