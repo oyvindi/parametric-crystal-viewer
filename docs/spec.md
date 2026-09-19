@@ -14,6 +14,12 @@ Start here for product scope, capabilities, and non-goals. Detailed contracts ha
 | [Implementation plan](plan.md) | Milestones, dependencies, and acceptance criteria |
 | [Decision records](decisions/README.md) | Significant technical choices and their rationale |
 
+Design work beyond the completed V1 milestones is tracked in the
+[surface-rendering implementation plan](surface-rendering-plan.md). A possible future,
+separate-repository ingestion system is described in the non-binding
+[surface-data automation draft](surface-data-automation-draft.md). These documents do
+not expand the V1 checklist or override the owning contracts above.
+
 ## Reading and Status
 
 The V1 checklist below controls release scope. The other documents define behavior within that scope; the plan sequences its delivery. Interfaces and API examples remain illustrative pseudocode, not final signatures or package ownership. Once implemented, exact signatures belong in code and generated API documentation.

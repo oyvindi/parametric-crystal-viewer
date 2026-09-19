@@ -555,4 +555,8 @@ The development milestones define the implementation order; see the milestone se
 
 Do not implement advanced visual features before the generic crystallographic generator is validated.
 
-This version deliberately excludes the separate AI/data-extraction roadmap.
+Post-V1 surface work is sequenced in the
+[surface-rendering implementation plan](surface-rendering-plan.md). The possible
+AI-assisted source-ingestion system remains a separate, non-binding
+[automation draft](surface-data-automation-draft.md) and is not a dependency of the
+viewer plan.
