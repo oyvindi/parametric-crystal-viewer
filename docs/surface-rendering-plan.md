@@ -9,6 +9,9 @@ the scientific geometry contracts. The [product specification](spec.md),
 The separate [surface-data automation draft](surface-data-automation-draft.md)
 describes a possible future source-ingestion system. That system is not required for
 this plan: the first surface records are small enough to curate and review directly.
+Exact source locations, access constraints, candidate claims, and acquisition status
+are tracked in the
+[surface-rendering acquisition record](sources/surface-rendering-acquisition.md).
 
 ## Outcome
 
@@ -78,6 +81,10 @@ Before shader work:
 * record whether each claim describes a growth face, cleavage surface, fracture, or
   manufactured/polished surface; and
 * choose the comparison scenes and performance hardware for later acceptance.
+
+Begin with the source queue and restrictions in the
+[acquisition record](sources/surface-rendering-acquisition.md). New sources must be
+added there before their claims enter mineral data.
 
 Do not copy source prose or figures into distributable data unless their license permits
 it. Store concise factual claims, citations, derivation notes, and only the minimum

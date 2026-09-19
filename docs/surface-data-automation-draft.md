@@ -272,6 +272,12 @@ preferable to publishing an incorrect face rule.
 ## Initial Pilot
 
 Use a small, rights-reviewed corpus for the nine minerals currently in the viewer.
+Use the viewer repository's
+[surface-rendering acquisition record](sources/surface-rendering-acquisition.md) as the
+initial source queue and as a human-readable precursor to the proposed source manifest.
+Its entries must still be normalized into the future repository's versioned manifest;
+the Markdown table is not the production interchange format.
+
 Seed the evaluation with the PDF failure modes found in the calcite and callaghanite
 species sheets. Limit the first pass to categorical luster, growth-face/cleavage
 distinction, explicit striation presence, affected form, and direction.
