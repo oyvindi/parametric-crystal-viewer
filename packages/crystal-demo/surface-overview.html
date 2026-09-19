@@ -72,11 +72,13 @@
 
 <script type="module">
 import { CrystalViewer, getMineral, listMinerals } from "@crystal/viewer";
+import { installProjectionControl } from "./projection-control.js";
 
 const offCanvas = document.getElementById("off-canvas");
 const onCanvas = document.getElementById("on-canvas");
 const offViewer = new CrystalViewer(offCanvas);
 const onViewer = new CrystalViewer(onCanvas);
+installProjectionControl([offViewer, onViewer]);
 const mineralSelect = document.getElementById("mineral");
 const enabledInput = document.getElementById("enabled");
 const strengthInput = document.getElementById("strength");

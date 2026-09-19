@@ -308,6 +308,7 @@ describe("M7 state serialization", () => {
 
     it("restores the saved camera orientation in a fresh viewer", async () => {
         const viewer = await loaded("quartz");
+        viewer.setProjection("perspective");
         const originalCamera = viewer as unknown as { camera: PerspectiveCamera; cameraTarget: { set(x: number, y: number, z: number): void } };
         originalCamera.camera.position.set(12, 7, 5);
         originalCamera.camera.zoom = 1.6;
@@ -387,14 +388,15 @@ describe("M7 state serialization", () => {
         const bad: unknown[] = [
             "not-an-object",
             {},
-            { ...before, version: 2 },
+            { ...before, version: 3 },
             { ...before, mineral: { id: "nope", dataRevision: "x" } },
             { ...before, mineral: { id: "quartz", dataRevision: "wrong" } },
             { ...before, forms: { ...before.forms, noform: { development: 0.5, enabled: true } } },
             { ...before, camera: { ...before.camera, position: [1, 2] } },
-            { ...before, camera: { ...before.camera, projection: "orthographic" } },
+            { ...before, camera: { ...before.camera, projection: "isometric" } },
             { ...before, camera: { ...before.camera, target: [1, 2] } },
             { ...before, camera: { ...before.camera, zoom: 0 } },
+            { ...before, camera: { ...before.camera, frustumHeight: 0 } },
             { ...before, structure: { definition: {} } },
         ];
         for (const state of bad) {

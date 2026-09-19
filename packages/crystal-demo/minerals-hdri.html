@@ -91,9 +91,11 @@
 
 <script type="module">
 import { CrystalViewer, listMinerals, getMineral } from "@crystal/viewer";
+import { installProjectionControl } from "./projection-control.js";
 
 const $ = (id) => document.getElementById(id);
 const viewer = new CrystalViewer($("canvas"));
+installProjectionControl([viewer]);
 viewer.setToneMapping("agx");
 viewer.start();
 

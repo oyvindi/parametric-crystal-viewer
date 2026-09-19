@@ -47,9 +47,11 @@
 </aside>
 <script type="module">
 import { CrystalViewer } from "@crystal/viewer";
+import { installProjectionControl } from "./projection-control.js";
 
 const canvas = document.getElementById("canvas");
 const viewer = new CrystalViewer(canvas);
+installProjectionControl([viewer]);
 const select = document.getElementById("mineral");
 const profiles = document.getElementById("profiles");
 const requestedMineral = new URL(window.location.href).searchParams.get("mineral");

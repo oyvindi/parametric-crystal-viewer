@@ -1,11 +1,11 @@
-import { Scene, PerspectiveCamera, WebGLRenderer, MeshPhysicalMaterial, Mesh, MeshBasicMaterial, Color, DirectionalLight, AmbientLight, Group, DoubleSide, FrontSide, Raycaster, Vector2, Vector3, Sprite, SpriteMaterial, CanvasTexture, BufferGeometry, Float32BufferAttribute, LineSegments, LineBasicMaterial, PMREMGenerator, EquirectangularReflectionMapping, AgXToneMapping, ACESFilmicToneMapping, NoToneMapping, type Texture, type WebGLRenderTarget } from "three";
+import { Scene, PerspectiveCamera, OrthographicCamera, WebGLRenderer, MeshPhysicalMaterial, Mesh, MeshBasicMaterial, Color, DirectionalLight, AmbientLight, Group, DoubleSide, FrontSide, Raycaster, Vector2, Vector3, Sprite, SpriteMaterial, CanvasTexture, BufferGeometry, Float32BufferAttribute, LineSegments, LineBasicMaterial, PMREMGenerator, EquirectangularReflectionMapping, AgXToneMapping, ACESFilmicToneMapping, NoToneMapping, type Texture, type WebGLRenderTarget } from "three";
 import { createLattice, expandAtomicStructure, generateCrystal, generateCrystalFromFaces, inferBonds, validatePeriodicBonds, type Diagnostic, type GeometryResult, type CrystalGeometry, type CrystalFace, type ExpandedAtom, type Lattice, type PeriodicBond } from "@crystal/core";
 import { loadMineral as loadMineralData, createCrystalInput, resolveHabit, resolveCrystallography, importCif, getMineral, validateMineral, MineralDataError, type Mineral, type MineralCrystallography, type StructuralDefinition, type SurfaceProfile } from "@crystal/data";
 import { createFaceLocalGeometry, updateFaceLocalAttributes, createReviewedSurfaceRules, createAtomicStructure, atomicBounds, createCrystalMaterial, applyAppearance, applyTransmissionOptics, applySurfaceDetail, updateSurfaceDetailStrength, resolveAppearance, APPEARANCE_FIELDS, type AppearanceParams, type AppearanceField, type ResolvedAppearance, type LusterCategory, type FaceSurface, type OpticalBounds } from "@crystal/three";
 import { cameraBasis } from "./camera.js";
-import { STATE_VERSION, validateStateShape, type ViewerState, type ViewMode, type FormState, type MineralRefState, type AppearanceState, type AppearanceOverride, type SurfaceDetailState } from "./state.js";
+import { STATE_VERSION, validateStateShape, type ViewerState, type ViewMode, type FormState, type MineralRefState, type AppearanceState, type AppearanceOverride, type SurfaceDetailState, type CameraProjection } from "./state.js";
 
-export type { ViewerState, ViewMode, AppearanceState, AppearanceOverride, SurfaceDetailState } from "./state.js";
+export type { ViewerState, ViewMode, AppearanceState, AppearanceOverride, SurfaceDetailState, CameraProjection } from "./state.js";
 export { STATE_VERSION } from "./state.js";
 export { listMinerals, getMineral } from "@crystal/data";
 export type { Mineral } from "@crystal/data";
@@ -131,6 +131,8 @@ export class CrystalViewer extends EventTarget {
     private readonly backgroundScene: Scene;
     private readonly backgroundCamera: PerspectiveCamera;
     private readonly camera: PerspectiveCamera;
+    private readonly orthoCamera: OrthographicCamera;
+    private projection: CameraProjection = "perspective";
     private readonly cameraTarget = new Vector3(0, 0, 0);
     private readonly crystalGroup: Group;
     private readonly labelGroup: Group;
@@ -195,16 +197,22 @@ export class CrystalViewer extends EventTarget {
         super();
         this.canvas = canvas;
         this.renderer = new WebGLRenderer({ canvas, antialias: true });
-        this.renderer.setSize(canvas.clientWidth || 400, canvas.clientHeight || 300);
+        const initialWidth = canvas.clientWidth || 400;
+        const initialHeight = canvas.clientHeight || 300;
+        const initialAspect = initialWidth / initialHeight;
+        this.renderer.setSize(initialWidth, initialHeight);
         this.renderer.toneMapping = AgXToneMapping;
         this.renderer.toneMappingExposure = 1.15;
         this.scene = new Scene();
         this.backgroundScene = new Scene();
         this.backgroundScene.background = new Color(0x2a2e33); // neutral fallback; replaced by a gradient when WebGL is available
-        this.camera = new PerspectiveCamera(45, 1, 0.01, 1000);
-        this.backgroundCamera = new PerspectiveCamera(45, 1, 0.01, 1000);
+        this.camera = new PerspectiveCamera(45, initialAspect, 0.01, 1000);
+        this.backgroundCamera = new PerspectiveCamera(45, initialAspect, 0.01, 1000);
+        this.orthoCamera = new OrthographicCamera(-5 * initialAspect, 5 * initialAspect, 5, -5, 0.01, 1000);
         this.camera.position.set(8, 6, 8);
         this.camera.lookAt(this.cameraTarget);
+        this.orthoCamera.position.copy(this.camera.position);
+        this.orthoCamera.lookAt(this.cameraTarget);
         this.crystalGroup = new Group();
         this.scene.add(this.crystalGroup);
         this.labelGroup = new Group();
@@ -334,6 +342,49 @@ export class CrystalViewer extends EventTarget {
         this.labelGroup.rotation.copy(this.crystalGroup.rotation);
         this.rotationY = this.crystalGroup.rotation.y;
         this.renderOnce();
+    }
+
+    /** Returns the active camera based on the current projection mode. */
+    private getActiveCamera(): PerspectiveCamera | OrthographicCamera {
+        return this.projection === "orthographic" ? this.orthoCamera : this.camera;
+    }
+
+    /** Sets the camera projection. Synchronizes the inactive camera so toggling back preserves the view. */
+    setProjection(projection: CameraProjection): void {
+        this.assertNotDisposed();
+        if (projection !== "perspective" && projection !== "orthographic") {
+            throw new ViewerOperationError([{ code: "viewer.camera.invalid-projection", severity: "error", message: `Unsupported projection "${String(projection)}"; use "perspective" or "orthographic".` }]);
+        }
+        if (projection === this.projection) return;
+        this.syncInactiveCamera();
+        this.projection = projection;
+        this.renderOnce();
+    }
+
+    /** Returns the current camera projection. */
+    getProjection(): CameraProjection {
+        this.assertNotDisposed();
+        return this.projection;
+    }
+
+    /** Copies position, orientation, zoom, and clipping from the active camera to the inactive one. */
+    private syncInactiveCamera(): void {
+        const active = this.getActiveCamera();
+        const inactive = this.projection === "orthographic" ? this.camera : this.orthoCamera;
+        inactive.position.copy(active.position);
+        if (active instanceof PerspectiveCamera) {
+            (inactive as PerspectiveCamera).up.copy(active.up);
+            (inactive as PerspectiveCamera).zoom = active.zoom;
+            (inactive as PerspectiveCamera).near = active.near;
+            (inactive as PerspectiveCamera).far = active.far;
+        } else {
+            (inactive as OrthographicCamera).up.copy(active.up);
+            (inactive as OrthographicCamera).zoom = active.zoom;
+            (inactive as OrthographicCamera).near = active.near;
+            (inactive as OrthographicCamera).far = active.far;
+        }
+        inactive.lookAt(this.cameraTarget);
+        inactive.updateProjectionMatrix();
     }
 
     setEnvironmentBackgroundVisible(visible: boolean): void {
@@ -932,13 +983,14 @@ export class CrystalViewer extends EventTarget {
                 wireframe: this.showWireframe,
             },
             camera: {
-                projection: "perspective",
-                position: [this.camera.position.x, this.camera.position.y, this.camera.position.z],
-                up: [this.camera.up.x, this.camera.up.y, this.camera.up.z],
+                projection: this.projection,
+                position: [this.getActiveCamera().position.x, this.getActiveCamera().position.y, this.getActiveCamera().position.z],
+                up: [this.getActiveCamera().up.x, this.getActiveCamera().up.y, this.getActiveCamera().up.z],
                 target: [this.cameraTarget.x, this.cameraTarget.y, this.cameraTarget.z],
-                zoom: this.camera.zoom,
-                near: this.camera.near,
-                far: this.camera.far,
+                zoom: this.getActiveCamera().zoom,
+                near: this.getActiveCamera().near,
+                far: this.getActiveCamera().far,
+                ...(this.projection === "orthographic" ? { frustumHeight: this.orthoCamera.top - this.orthoCamera.bottom } : {}),
                 groupRotation: [this.crystalGroup.rotation.x, this.crystalGroup.rotation.y, this.crystalGroup.rotation.z],
             },
             atomic: {
@@ -1109,6 +1161,7 @@ export class CrystalViewer extends EventTarget {
         ];
 
         // Restored camera takes precedence over preferred views.
+        this.projection = s.camera.projection ?? "perspective";
         this.camera.position.set(s.camera.position[0], s.camera.position[1], s.camera.position[2]);
         this.camera.up.set(s.camera.up[0], s.camera.up[1], s.camera.up[2]);
         this.cameraTarget.set(...(s.camera.target ?? [0, 0, 0]));
@@ -1117,6 +1170,18 @@ export class CrystalViewer extends EventTarget {
         this.camera.far = s.camera.far;
         this.camera.lookAt(this.cameraTarget);
         this.camera.updateProjectionMatrix();
+        // Size the orthographic frustum from the persisted frustumHeight (the
+        // orthographic analog of the perspective FOV), falling back to the
+        // restored perspective fit only when the field is absent (legacy states).
+        const restoreHalfHeight = s.camera.frustumHeight !== undefined
+            ? s.camera.frustumHeight / 2
+            : this.perspectiveFrameHalfHeight();
+        this.frameOrtho(restoreHalfHeight);
+        const active = this.getActiveCamera();
+        active.zoom = s.camera.zoom ?? 1;
+        active.near = s.camera.near;
+        active.far = s.camera.far;
+        active.updateProjectionMatrix();
         this.crystalGroup.rotation.set(s.camera.groupRotation[0], s.camera.groupRotation[1], s.camera.groupRotation[2]);
         this.labelGroup.rotation.copy(this.crystalGroup.rotation);
         this.rotationY = this.crystalGroup.rotation.y;
@@ -1199,10 +1264,18 @@ export class CrystalViewer extends EventTarget {
     resize(width: number, height: number): void {
         this.assertNotDisposed();
         this.renderer.setSize(width, height);
-        this.camera.aspect = width / height;
+        const aspect = width / height;
+        this.camera.aspect = aspect;
         this.camera.updateProjectionMatrix();
-        this.backgroundCamera.aspect = width / height;
+        this.backgroundCamera.aspect = aspect;
         this.backgroundCamera.updateProjectionMatrix();
+        // Preserve the current orthographic frustum height, adjusting only for aspect.
+        const halfHeight = (this.orthoCamera.top - this.orthoCamera.bottom) / 2;
+        this.orthoCamera.left = -halfHeight * aspect;
+        this.orthoCamera.right = halfHeight * aspect;
+        this.orthoCamera.top = halfHeight;
+        this.orthoCamera.bottom = -halfHeight;
+        this.orthoCamera.updateProjectionMatrix();
     }
 
     render(): void {
@@ -1351,23 +1424,33 @@ export class CrystalViewer extends EventTarget {
 
     private renderFrame(): void {
         const renderer = this.renderer as WebGLRenderer & { clearDepth?: () => void };
+        const activeCamera = this.getActiveCamera();
         if (typeof renderer.clearDepth !== "function") {
-            renderer.render(this.scene, this.camera);
+            renderer.render(this.scene, activeCamera);
             return;
         }
 
-        this.backgroundCamera.position.copy(this.camera.position);
-        this.backgroundCamera.quaternion.copy(this.camera.quaternion);
-        this.backgroundCamera.up.copy(this.camera.up);
+        this.backgroundCamera.position.copy(activeCamera.position);
+        this.backgroundCamera.quaternion.copy(activeCamera.quaternion);
+        this.backgroundCamera.up.copy(activeCamera.up);
         this.backgroundCamera.aspect = this.camera.aspect;
-        this.backgroundCamera.fov = 2 * Math.atan(Math.tan(this.camera.fov * Math.PI / 360) / this.environmentBackgroundZoom) * 180 / Math.PI;
+        // When the active camera is orthographic, derive an equivalent perspective FOV
+        // from the orthographic frustum height and distance to target so the background
+        // panorama composition matches the scientific content.
+        if (this.projection === "orthographic") {
+            const distance = activeCamera.position.distanceTo(this.cameraTarget);
+            const halfHeight = (this.orthoCamera.top - this.orthoCamera.bottom) / 2 / this.orthoCamera.zoom;
+            this.backgroundCamera.fov = 2 * Math.atan(halfHeight / distance / this.environmentBackgroundZoom) * 180 / Math.PI;
+        } else {
+            this.backgroundCamera.fov = 2 * Math.atan(Math.tan(this.camera.fov * Math.PI / 360) / this.environmentBackgroundZoom) * 180 / Math.PI;
+        }
         this.backgroundCamera.updateProjectionMatrix();
 
         renderer.autoClear = true;
         renderer.render(this.backgroundScene, this.backgroundCamera);
         renderer.autoClear = false;
         renderer.clearDepth();
-        renderer.render(this.scene, this.camera);
+        renderer.render(this.scene, activeCamera);
         renderer.autoClear = true;
     }
 
@@ -1684,6 +1767,7 @@ export class CrystalViewer extends EventTarget {
         this.camera.near = distance / 100;
         this.camera.far = distance * 100;
         this.camera.updateProjectionMatrix();
+        this.frameOrtho(this.perspectiveFrameHalfHeight());
     }
 
     private frameCamera(min: readonly number[], max: readonly number[]): void {
@@ -1703,6 +1787,28 @@ export class CrystalViewer extends EventTarget {
         this.camera.near = distance / 100;
         this.camera.far = distance * 100;
         this.camera.updateProjectionMatrix();
+        this.frameOrtho(this.perspectiveFrameHalfHeight());
+    }
+
+    /** Returns the target-plane half-height of the current perspective framing. */
+    private perspectiveFrameHalfHeight(): number {
+        return this.camera.position.distanceTo(this.cameraTarget) * Math.tan(this.camera.fov * Math.PI / 360);
+    }
+
+    /** Sets the orthographic frustum to the given unzoomed half-height, fitting the perspective camera's pose and clipping. */
+    private frameOrtho(halfHeight: number): void {
+        this.orthoCamera.position.copy(this.camera.position);
+        this.orthoCamera.up.copy(this.camera.up);
+        this.orthoCamera.zoom = 1;
+        this.orthoCamera.near = this.camera.near;
+        this.orthoCamera.far = this.camera.far;
+        this.orthoCamera.lookAt(this.cameraTarget);
+        const aspect = this.camera.aspect || 1;
+        this.orthoCamera.left = -halfHeight * aspect;
+        this.orthoCamera.right = halfHeight * aspect;
+        this.orthoCamera.top = halfHeight;
+        this.orthoCamera.bottom = -halfHeight;
+        this.orthoCamera.updateProjectionMatrix();
     }
 
     private onPointerDown(e: PointerEvent): void {
@@ -1737,7 +1843,7 @@ export class CrystalViewer extends EventTarget {
             ((e.clientX - rect.left) / rect.width) * 2 - 1,
             -((e.clientY - rect.top) / rect.height) * 2 + 1,
         );
-        this.raycaster.setFromCamera(ndc, this.camera);
+        this.raycaster.setFromCamera(ndc, this.getActiveCamera());
         const intersects = this.raycaster.intersectObject(this.mesh);
         if (intersects.length === 0) {
             this.selectedFaceIndex = null;

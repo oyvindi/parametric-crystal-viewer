@@ -1,13 +1,18 @@
 /**
  * Viewer state serialization (M7).
  *
- * State is JSON-compatible and versioned. Version 1 is the V1 format. The
- * viewer owns serialization in `crystal-viewer`; the shape validation here is
- * pure so `setState` can reject malformed payloads before any mutation.
+ * State is JSON-compatible and versioned. Version 2 adds the `camera.projection`
+ * field (`"perspective" | "orthographic"`). Version 1 is accepted on restore and
+ * migrated: it defaults to `"perspective"` (the only projection V1 supported) and
+ * is normalized to version 2 internally. The viewer owns serialization in
+ * `crystal-viewer`; the shape validation here is pure so `setState` can reject
+ * malformed payloads before any mutation.
  *
- * Open decisions resolved in M7 (see docs/decisions/0004-viewer-state-serialization.md):
- * - Version identifiers: a single integer `version`. V1 ships version 1.
- * - Migration policy: no migrations in V1; unsupported versions are rejected.
+ * Open decisions resolved (see docs/decisions/0004-viewer-state-serialization.md
+ * and docs/decisions/0012-orthographic-projection.md):
+ * - Version identifiers: a single integer `version`. V2 ships version 2.
+ * - Migration policy: version 1 is migrated on restore (projection defaults to
+ *   `"perspective"`); no other v1 field changes. Unsupported versions are rejected.
  * - Referenced-data compatibility: bundled minerals are referenced by id +
  *   dataRevision; the viewer verifies the revision on restore. Imported
  *   structures are embedded in full (portable, provenance preserved).
@@ -17,7 +22,10 @@
 import type { Diagnostic } from "@crystal/core";
 import type { Mineral, StructuralDefinition } from "@crystal/data";
 
-export const STATE_VERSION = 1 as const;
+export const STATE_VERSION = 2 as const;
+
+/** Supported camera projections. Version 1 only supported `"perspective"`. */
+export type CameraProjection = "perspective" | "orthographic";
 
 export type ViewMode = "morphology" | "atomic";
 
@@ -35,14 +43,21 @@ export interface DisplayState {
 }
 
 export interface CameraState {
-    /** The only camera projection supported in V1. Omitted by legacy V1 states. */
-    readonly projection?: "perspective";
+    /** Camera projection. Omitted by legacy V1 states (defaults to `"perspective"`). */
+    readonly projection?: CameraProjection;
     readonly position: readonly [number, number, number];
     readonly up: readonly [number, number, number];
     /** Defaults to the origin for V1 states written before this field existed. */
     readonly target?: readonly [number, number, number];
-    /** Perspective-camera zoom; defaults to 1 for legacy V1 states. */
+    /** Camera zoom; defaults to 1 for legacy V1 states. */
     readonly zoom?: number;
+    /**
+     * Unzoomed world-space frustum height (top − bottom at zoom 1) for the
+     * orthographic projection; the analog of the perspective camera's fixed FOV.
+     * Omitted by perspective and legacy V1 states. Restore sizes the orthographic
+     * frustum directly from this value instead of re-deriving it from geometry.
+     */
+    readonly frustumHeight?: number;
     readonly near: number;
     readonly far: number;
     readonly groupRotation: readonly [number, number, number];
@@ -89,7 +104,8 @@ export interface SurfaceDetailState {
 }
 
 export interface ViewerState {
-    readonly version: 1;
+    /** Version 2 is current; version 1 is accepted on restore and migrated. */
+    readonly version: 1 | 2;
     readonly mineral?: MineralRefState;
     readonly habit?: string;
     readonly forms: Readonly<Record<string, FormState>>;
@@ -139,12 +155,32 @@ function expectVec3(value: unknown, path: string, code: string): readonly Diagno
 export function validateStateShape(input: unknown): { ok: true; value: ViewerState } | { ok: false; diagnostics: readonly Diagnostic[] } {
     const diagnostics: Diagnostic[] = [];
     if (!isObject(input)) return { ok: false, diagnostics: [diag("viewer.state.malformed", "State must be a JSON object.", "")] };
-    const version = input["version"];
-    if (version !== STATE_VERSION) {
-        return { ok: false, diagnostics: [diag("viewer.state.unsupported-version", `Unsupported state version ${String(version)}; supported version is ${STATE_VERSION}.`, "/version")] };
+    const sourceVersion = input["version"];
+    if (sourceVersion !== 1 && sourceVersion !== 2) {
+        return { ok: false, diagnostics: [diag("viewer.state.unsupported-version", `Unsupported state version ${String(sourceVersion)}; supported versions are 1 and ${STATE_VERSION}.`, "/version")] };
     }
 
-    const mineral = input["mineral"];
+    // Migrate version 1 to version 2 without modifying the caller's payload.
+    // This permits immutable state stores and keeps validation pure.
+    const normalized: Record<string, unknown> = sourceVersion === 1
+        ? {
+            ...input,
+            version: 2,
+            camera: isObject(input["camera"])
+                ? { ...input["camera"], projection: input["camera"]["projection"] ?? "perspective" }
+                : input["camera"],
+        }
+        : input;
+
+    const legacyCamera = sourceVersion === 1 && isObject(input["camera"]) ? input["camera"] : undefined;
+    if (legacyCamera?.["projection"] !== undefined && legacyCamera["projection"] !== "perspective") {
+        diagnostics.push(diag("viewer.state.malformed", "version 1 camera.projection must be 'perspective' when present.", "/camera/projection"));
+    }
+    if (legacyCamera?.["frustumHeight"] !== undefined) {
+        diagnostics.push(diag("viewer.state.malformed", "version 1 camera.frustumHeight is unsupported.", "/camera/frustumHeight"));
+    }
+
+    const mineral = normalized["mineral"];
     if (mineral !== undefined) {
         if (!isObject(mineral)) diagnostics.push(diag("viewer.state.malformed", "mineral must be an object.", "/mineral"));
         else {
@@ -155,9 +191,9 @@ export function validateStateShape(input: unknown): { ok: true; value: ViewerSta
         }
     }
 
-    if (input["habit"] !== undefined && !isString(input["habit"])) diagnostics.push(diag("viewer.state.malformed", "habit must be a string.", "/habit"));
+    if (normalized["habit"] !== undefined && !isString(normalized["habit"])) diagnostics.push(diag("viewer.state.malformed", "habit must be a string.", "/habit"));
 
-    const forms = input["forms"];
+    const forms = normalized["forms"];
     if (!isObject(forms)) {
         diagnostics.push(diag("viewer.state.malformed", "forms must be an object.", "/forms"));
     } else {
@@ -168,9 +204,9 @@ export function validateStateShape(input: unknown): { ok: true; value: ViewerSta
         }
     }
 
-    if (input["morphologyScale"] !== undefined && !isNumber(input["morphologyScale"])) diagnostics.push(diag("viewer.state.malformed", "morphologyScale must be a number.", "/morphologyScale"));
+    if (normalized["morphologyScale"] !== undefined && !isNumber(normalized["morphologyScale"])) diagnostics.push(diag("viewer.state.malformed", "morphologyScale must be a number.", "/morphologyScale"));
 
-    const appearance = input["appearance"];
+    const appearance = normalized["appearance"];
     if (appearance !== undefined) {
         if (!isObject(appearance)) {
             diagnostics.push(diag("viewer.state.malformed", "appearance must be an object.", "/appearance"));
@@ -192,7 +228,7 @@ export function validateStateShape(input: unknown): { ok: true; value: ViewerSta
         }
     }
 
-    const surfaceDetail = input["surfaceDetail"];
+    const surfaceDetail = normalized["surfaceDetail"];
     if (surfaceDetail !== undefined) {
         if (!isObject(surfaceDetail)) {
             diagnostics.push(diag("viewer.state.malformed", "surfaceDetail must be an object.", "/surfaceDetail"));
@@ -204,7 +240,7 @@ export function validateStateShape(input: unknown): { ok: true; value: ViewerSta
         }
     }
 
-    const display = input["display"];
+    const display = normalized["display"];
     if (!isObject(display)) {
         diagnostics.push(diag("viewer.state.malformed", "display must be an object.", "/display"));
     } else {
@@ -213,12 +249,12 @@ export function validateStateShape(input: unknown): { ok: true; value: ViewerSta
         }
     }
 
-    const camera = input["camera"];
+    const camera = normalized["camera"];
     if (!isObject(camera)) {
         diagnostics.push(diag("viewer.state.malformed", "camera must be an object.", "/camera"));
     } else {
-        if (camera["projection"] !== undefined && camera["projection"] !== "perspective") {
-            diagnostics.push(diag("viewer.state.malformed", "camera.projection must be 'perspective'.", "/camera/projection"));
+        if (camera["projection"] !== "perspective" && camera["projection"] !== "orthographic") {
+            diagnostics.push(diag("viewer.state.malformed", "camera.projection must be 'perspective' or 'orthographic'.", "/camera/projection"));
         }
         const pos = expectVec3(camera["position"], "/camera/position", "viewer.state.malformed");
         if (pos) diagnostics.push(...pos);
@@ -231,13 +267,22 @@ export function validateStateShape(input: unknown): { ok: true; value: ViewerSta
         if (camera["zoom"] !== undefined && (!isNumber(camera["zoom"]) || camera["zoom"] <= 0)) {
             diagnostics.push(diag("viewer.state.malformed", "camera.zoom must be a positive finite number.", "/camera/zoom"));
         }
+        if (camera["frustumHeight"] !== undefined && (!isNumber(camera["frustumHeight"]) || camera["frustumHeight"] <= 0)) {
+            diagnostics.push(diag("viewer.state.malformed", "camera.frustumHeight must be a positive finite number.", "/camera/frustumHeight"));
+        }
+        if (camera["projection"] === "orthographic" && camera["frustumHeight"] === undefined) {
+            diagnostics.push(diag("viewer.state.malformed", "orthographic camera.frustumHeight is required.", "/camera/frustumHeight"));
+        }
+        if (camera["projection"] === "perspective" && camera["frustumHeight"] !== undefined) {
+            diagnostics.push(diag("viewer.state.malformed", "perspective camera.frustumHeight must be omitted.", "/camera/frustumHeight"));
+        }
         if (!isNumber(camera["near"])) diagnostics.push(diag("viewer.state.malformed", "camera.near must be a number.", "/camera/near"));
         if (!isNumber(camera["far"])) diagnostics.push(diag("viewer.state.malformed", "camera.far must be a number.", "/camera/far"));
         const rot = expectVec3(camera["groupRotation"], "/camera/groupRotation", "viewer.state.malformed");
         if (rot) diagnostics.push(...rot);
     }
 
-    const atomic = input["atomic"];
+    const atomic = normalized["atomic"];
     if (!isObject(atomic)) {
         diagnostics.push(diag("viewer.state.malformed", "atomic must be an object.", "/atomic"));
     } else {
@@ -246,7 +291,7 @@ export function validateStateShape(input: unknown): { ok: true; value: ViewerSta
         if (rep) diagnostics.push(...rep);
     }
 
-    const structure = input["structure"];
+    const structure = normalized["structure"];
     if (structure !== undefined) {
         if (!isObject(structure) || !isObject(structure["definition"])) diagnostics.push(diag("viewer.state.malformed", "structure.definition must be an object.", "/structure/definition"));
     }
@@ -255,5 +300,5 @@ export function validateStateShape(input: unknown): { ok: true; value: ViewerSta
 
     // Shape is valid; cast. Referenced data and structural compatibility are
     // resolved by the viewer before commit.
-    return { ok: true, value: input as unknown as ViewerState };
+    return { ok: true, value: normalized as unknown as ViewerState };
 }

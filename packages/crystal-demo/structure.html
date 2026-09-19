@@ -93,10 +93,12 @@
 
 <script type="module">
 import { CrystalViewer, listMinerals, getMineral } from "@crystal/viewer";
+import { installProjectionControl } from "./projection-control.js";
 
 const capitalize = (s) => s ? s.charAt(0).toUpperCase() + s.slice(1) : s;
 const canvasEl = document.getElementById("canvas");
 const viewer = new CrystalViewer(canvasEl);
+installProjectionControl([viewer]);
 viewer.start();
 
 const structureInfo = document.getElementById("structure-info");

@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { Color, FrontSide, Group, Mesh, MeshBasicMaterial, PerspectiveCamera, Scene } from "three";
+import { Color, FrontSide, Group, Mesh, MeshBasicMaterial, OrthographicCamera, PerspectiveCamera, Scene, Vector3 } from "three";
 import { FLUORITE, QUARTZ } from "@crystal/data";
 import { CrystalViewer, ViewerOperationError } from "./index.js";
 
@@ -288,5 +288,139 @@ describe("face selection presentation", () => {
         expect(material.transparent).toBe(true);
         expect(material.opacity).toBeLessThan(0.5);
         expect(material.depthWrite).toBe(false);
+    });
+});
+
+function freshCanvas(): HTMLCanvasElement {
+    return Object.assign(new EventTarget(), { clientWidth: 400, clientHeight: 300 }) as HTMLCanvasElement;
+}
+
+describe("orthographic projection", () => {
+    it("defaults to perspective, switches projection, and renders through the active camera", async () => {
+        const { viewer } = await setup();
+        expect(viewer.getProjection()).toBe("perspective");
+        expect(viewer.getState().camera.projection).toBe("perspective");
+        expect(render.mock.lastCall![1] instanceof PerspectiveCamera).toBe(true);
+        viewer.setProjection("orthographic");
+        expect(render.mock.lastCall![1] instanceof OrthographicCamera).toBe(true);
+        viewer.setProjection("perspective");
+        expect(render.mock.lastCall![1] instanceof PerspectiveCamera).toBe(true);
+    });
+
+    it("matches the perspective fit when framing an orthographic view", async () => {
+        const { viewer } = await setup();
+        const internals = viewer as unknown as { camera: PerspectiveCamera; orthoCamera: OrthographicCamera; cameraTarget: Vector3 };
+        const expectedHalfHeight = internals.camera.position.distanceTo(internals.cameraTarget) * Math.tan(internals.camera.fov * Math.PI / 360);
+        expect((internals.orthoCamera.top - internals.orthoCamera.bottom) / 2).toBeCloseTo(expectedHalfHeight);
+        expect(internals.orthoCamera.left).toBeCloseTo(-expectedHalfHeight * 4 / 3);
+    });
+
+    it("rejects an unsupported projection without changing state", async () => {
+        const { viewer } = await setup();
+        expect(() => viewer.setProjection("isometric" as never)).toThrow(ViewerOperationError);
+        expect(viewer.getProjection()).toBe("perspective");
+        expect(viewer.getState().camera.projection).toBe("perspective");
+    });
+
+    it("round-trips projection and frustumHeight through getState/setState in a fresh viewer", async () => {
+        const { viewer } = await setup();
+        viewer.setProjection("orthographic");
+        const state = viewer.getState();
+        expect(state.camera.projection).toBe("orthographic");
+        expect(state.camera.frustumHeight).toBeGreaterThan(0);
+        const fresh = new CrystalViewer(freshCanvas());
+        viewers.push(fresh);
+        fresh.setState(state);
+        expect(fresh.getProjection()).toBe("orthographic");
+        expect(fresh.getState().camera.projection).toBe("orthographic");
+        expect(fresh.getState().camera.frustumHeight).toBeCloseTo(state.camera.frustumHeight!);
+    });
+
+    it("round-trips orthographic framing without applying zoom twice", async () => {
+        const { viewer } = await setup();
+        viewer.setProjection("orthographic");
+        const orthographic = (viewer as unknown as { orthoCamera: OrthographicCamera }).orthoCamera;
+        orthographic.zoom = 2;
+        orthographic.updateProjectionMatrix();
+        const state = viewer.getState();
+        expect(state.camera.frustumHeight).toBeCloseTo(orthographic.top - orthographic.bottom);
+
+        const fresh = new CrystalViewer(freshCanvas());
+        viewers.push(fresh);
+        fresh.setState(state);
+        expect(fresh.getState().camera).toEqual(state.camera);
+    });
+
+    it("restores the saved orthographic frustum independent of the target viewer's geometry", async () => {
+        const { viewer } = await setup("quartz");
+        viewer.setProjection("orthographic");
+        const saved = viewer.getState();
+        const savedFrustum = saved.camera.frustumHeight!;
+
+        // Restore into a viewer loaded with a different mineral (different bounds).
+        const fresh = new CrystalViewer(freshCanvas());
+        viewers.push(fresh);
+        await fresh.loadMineral("fluorite");
+        fresh.setState(saved);
+        expect(fresh.getProjection()).toBe("orthographic");
+        // The restored frustum must match the saved value, not be re-derived
+        // from fluorite's geometry bounds.
+        expect(fresh.getState().camera.frustumHeight).toBeCloseTo(savedFrustum);
+    });
+
+    it("migrates a version-1 state by defaulting projection to perspective", async () => {
+        const { viewer } = await setup();
+        viewer.setProjection("orthographic");
+        const v2 = viewer.getState();
+        const v1 = { ...v2, version: 1 as const, camera: { ...v2.camera, projection: undefined, frustumHeight: undefined } };
+        const fresh = new CrystalViewer(freshCanvas());
+        viewers.push(fresh);
+        fresh.setState(v1);
+        expect(fresh.getProjection()).toBe("perspective");
+        expect(fresh.getState().version).toBe(2);
+        expect(fresh.getState().camera.projection).toBe("perspective");
+    });
+
+    it("migrates immutable version-1 state without modifying the caller payload", async () => {
+        const { viewer } = await setup();
+        const v2 = viewer.getState();
+        const v1: any = { ...v2, version: 1, camera: { ...v2.camera, projection: undefined, frustumHeight: undefined } };
+        Object.freeze(v1.camera);
+        Object.freeze(v1);
+        const fresh = new CrystalViewer(freshCanvas());
+        viewers.push(fresh);
+        fresh.setState(v1);
+        expect(v1.version).toBe(1);
+        expect(v1.camera.projection).toBeUndefined();
+        expect(fresh.getProjection()).toBe("perspective");
+    });
+
+    it("rejects incomplete or impossible versioned projection states", async () => {
+        const { viewer } = await setup();
+        viewer.setProjection("orthographic");
+        const missingFrustum: any = structuredClone(viewer.getState());
+        delete missingFrustum.camera.frustumHeight;
+        expect(() => viewer.setState(missingFrustum)).toThrow(ViewerOperationError);
+
+        const v1Orthographic: any = structuredClone(viewer.getState());
+        v1Orthographic.version = 1;
+        expect(() => viewer.setState(v1Orthographic)).toThrow(ViewerOperationError);
+    });
+
+    it("applies environment background zoom while orthographic", async () => {
+        const { viewer } = await setup();
+        const internals = viewer as unknown as {
+            renderer: { clearDepth?: () => void };
+            backgroundCamera: PerspectiveCamera;
+            orthoCamera: OrthographicCamera;
+            cameraTarget: Vector3;
+        };
+        internals.renderer.clearDepth = vi.fn();
+        viewer.setProjection("orthographic");
+        viewer.setEnvironmentBackgroundZoom(2);
+        viewer.render();
+        const halfHeight = (internals.orthoCamera.top - internals.orthoCamera.bottom) / 2 / internals.orthoCamera.zoom;
+        const distance = internals.orthoCamera.position.distanceTo(internals.cameraTarget);
+        expect(internals.backgroundCamera.fov).toBeCloseTo(2 * Math.atan(halfHeight / distance / 2) * 180 / Math.PI);
     });
 });

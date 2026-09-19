@@ -1,6 +1,6 @@
 # Viewer State Serialization
 
-**Status:** accepted.
+**Status:** accepted (versioning and migration stance superseded by [0012 — Orthographic Camera Projection](0012-orthographic-projection.md); referenced-data compatibility and face-selection decisions remain in force).
 
 ## Context
 

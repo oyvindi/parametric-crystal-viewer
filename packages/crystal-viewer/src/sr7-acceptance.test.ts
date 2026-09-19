@@ -102,12 +102,12 @@ describe("SR7 all nine minerals load and report reviewed profiles", () => {
 });
 
 describe("SR7 serialized surface state needs no migration", () => {
-    it("state version is still 1 and surfaceDetail round-trips through setState", async () => {
-        expect(STATE_VERSION).toBe(1);
+    it("surfaceDetail round-trips through setState", async () => {
+        expect(STATE_VERSION).toBe(2);
         const viewer = await loaded("quartz");
         viewer.setSurfaceDetail(true, 0.6);
         const state = viewer.getState();
-        expect(state.version).toBe(1);
+        expect(state.version).toBe(2);
         expect(state.surfaceDetail).toEqual({ enabled: true, strength: 0.6 });
 
         const fresh = new CrystalViewer(canvas());

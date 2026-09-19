@@ -36,14 +36,17 @@
 </div>
 <script type="module">
 import { defineCrystalViewerElement } from "@crystal/viewer/component";
+import { installProjectionControl } from "./projection-control.js";
 defineCrystalViewerElement();
 
 // Start the render loops for each instance.
-document.querySelectorAll("crystal-viewer").forEach(async (el) => {
+const viewers = await Promise.all([...document.querySelectorAll("crystal-viewer")].map(async (el) => {
   await new Promise((r) => requestAnimationFrame(r));
   const viewer = el.getViewer();
   if (viewer) viewer.start();
-});
+  return viewer;
+}));
+installProjectionControl(viewers.filter(Boolean));
 </script>
 </body>
 </html>

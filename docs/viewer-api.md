@@ -212,7 +212,9 @@ The host application must be able to control the lifecycle explicitly.
 
 A habit's optional [preferred view](data-model.md#habit-preset) supplies initial or reset-camera presentation metadata. When no restored or explicitly supplied camera state exists, initial framing uses the current habit's preferred view. `resetCamera()` also uses that preferred view and frames the current geometry bounds.
 
-Changing habit or form settings preserves the user's current camera unless the host explicitly requests a reset. Restored camera state takes precedence over a preferred view. V1 records its supported `"perspective"` projection, position, up vector, target, zoom, clipping planes, and model rotation. Preferred-view metadata is not serialized separately from its referenced habit; the effective camera state is serialized under [Persistent State Coverage](#persistent-state-coverage).
+Changing habit or form settings preserves the user's current camera unless the host explicitly requests a reset. Restored camera state takes precedence over a preferred view. New viewers default to the `"perspective"` projection; legacy version-1 states also restore as `"perspective"`. `setProjection` switches between `"perspective"` and `"orthographic"` while synchronizing the inactive camera so toggling back preserves the view. The serialized state records the active projection, position, up vector, target, zoom, clipping planes, and model rotation. Preferred-view metadata is not serialized separately from its referenced habit; the effective camera state is serialized under [Persistent State Coverage](#persistent-state-coverage).
+
+The reference demos expose this choice through a consistent top-bar projection selector, aligned at the right. Comparison demos apply the selected projection to each linked viewer so their side-by-side views remain comparable.
 
 ### Mineral Loading
 
@@ -485,15 +487,15 @@ State must include the following configuration where the corresponding capabilit
 | Morphology | Effective form definitions or resolvable identities, enabled flags, development values, morphology scale, and supported preset overrides |
 | Habit | Selected preset association alongside effective morphology settings |
 | Appearance | Selected appearance and user overrides |
-| Camera | Projection mode, position/orientation, target, and zoom or equivalent framing |
+| Camera | Projection mode, position/orientation, target, zoom or equivalent framing, and orthographic frustum height |
 | Display | Persistent visibility settings, including axes, labels, unit cell, and wireframe |
 | Atomic view | View mode and lattice repetition settings |
 
 Saved effective settings take precedence over preset defaults during restoration. A habit ID alone is insufficient to reproduce an edited habit. Do not silently substitute changed defaults or incompatible referenced data.
 
-Camera states created before target and zoom were added use the original target `[0, 0, 0]` and zoom `1`; new states always include both fields.
+Camera states created before target and zoom were added use the original target `[0, 0, 0]` and zoom `1`; new states always include both fields. `frustumHeight` (the unzoomed orthographic frustum height, the analog of the perspective FOV) is serialized only for the orthographic projection; legacy perspective-only states omit it.
 
-Transient state such as pointer hover, animation-loop handles, GPU resources, and face selection is excluded. Face selection is mesh-relative and not stable across regeneration, so it is not persistent; hosts re-apply it through the public selection API after geometry is regenerated. Exact state types live in [crystal-viewer](../packages/crystal-viewer/src/state.ts) (`ViewerState`, version 1); see the [state serialization decision](decisions/0004-viewer-state-serialization.md).
+Transient state such as pointer hover, animation-loop handles, GPU resources, and face selection is excluded. Face selection is mesh-relative and not stable across regeneration, so it is not persistent; hosts re-apply it through the public selection API after geometry is regenerated. Exact state types live in [crystal-viewer](../packages/crystal-viewer/src/state.ts) (`ViewerState`, version 2); see the [state serialization decision](decisions/0004-viewer-state-serialization.md) and the [orthographic projection decision](decisions/0012-orthographic-projection.md).
 
 ### Data Portability and Versions
 
@@ -501,7 +503,7 @@ Reference bundled minerals using their identity and data revision or compatibili
 
 Caller-supplied mineral records are embedded as validated definitions alongside their identity and data revision. Bundled minerals remain compact references and must resolve to the recorded compatible revision. This makes a state created from `loadMineral(customRecord)` portable to a fresh viewer without adding custom records to the bundled catalog.
 
-Every complete state payload must declare a state-format version. V1 ships `version: 1`; unsupported versions and incompatible data references produce explicit diagnostics rather than guessed substitutions. Referenced-data compatibility uses the mineral identity and data revision; imported definitions are embedded in full. See the [state serialization decision](decisions/0004-viewer-state-serialization.md) for version identifiers, the supported-version policy, and the compatibility mechanism.
+Every complete state payload must declare a state-format version. V2 ships `version: 2`; version 1 (the original format, which only supported the `"perspective"` projection) is accepted on restore and migrated by defaulting the projection to `"perspective"`. Unsupported versions and incompatible data references produce explicit diagnostics rather than guessed substitutions. Referenced-data compatibility uses the mineral identity and data revision; imported definitions are embedded in full. See the [state serialization decision](decisions/0004-viewer-state-serialization.md) and the [orthographic projection decision](decisions/0012-orthographic-projection.md) for version identifiers, the supported-version policy, and the compatibility mechanism.
 
 ### Transactional Restoration
 

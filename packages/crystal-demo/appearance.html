@@ -58,6 +58,7 @@
 
 <script type="module">
 import { CrystalViewer, getMineral } from "@crystal/viewer";
+import { installProjectionControl } from "./projection-control.js";
 
 // The three documented reference scenes for appearance validation.
 const REFERENCE_MINERALS = ["quartz", "fluorite", "pyrite"];
@@ -71,6 +72,7 @@ const COLOR_FIELDS = ["baseColor", "absorptionColor"];
 
 const canvas = document.getElementById("canvas");
 const viewer = new CrystalViewer(canvas);
+installProjectionControl([viewer]);
 viewer.start();
 document.getElementById("reset-camera").addEventListener("click", () => viewer.resetCamera());
 

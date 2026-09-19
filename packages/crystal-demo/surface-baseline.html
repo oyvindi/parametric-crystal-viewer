@@ -28,6 +28,7 @@
 <output id="surface-baseline-result" hidden></output>
 <script type="module">
 import { CrystalViewer, getMineral, listMinerals } from "@crystal/viewer";
+import { installProjectionControl } from "./projection-control.js";
 
 const params = new URLSearchParams(location.search);
 const mineralId = params.get("mineral") ?? "quartz";
@@ -35,6 +36,7 @@ if (!listMinerals().includes(mineralId)) throw new Error(`Unknown mineral: ${min
 
 const canvas = document.getElementById("canvas");
 const viewer = new CrystalViewer(canvas);
+installProjectionControl([viewer]);
 viewer.resize(960, 720);
 viewer.setEnvironmentIntensity(1);
 viewer.setEnvironmentRotation(0, 0, 0);
