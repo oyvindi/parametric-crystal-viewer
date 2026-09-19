@@ -384,6 +384,32 @@ Acceptance:
 * numeric tests cover selector matching and visual regressions demonstrate no seams,
   camera-space swimming, or confusion between raised and recessed patterns.
 
+#### Reference-Image Scope Calibration (2026-09-19)
+
+User-supplied photos were reviewed as visual-design references only. They are not
+source-backed mineral-data claims, must not be committed or redistributed without an
+explicit licensing decision, and cannot promote a renderer profile by themselves.
+
+**Feasible with the current face-local system:** fine, bounded striations and shallow
+growth-layer cues can be represented by deterministic normal and roughness changes on
+an already-selected convex face. Quartz prism striations are the intended restrained
+case: close, reflection-led bands perpendicular to the c-axis, with clean termination
+faces. Fluorite `{100}` growth steps may use the same mechanism as a typical,
+non-specimen-measured cue. Neither effect may add separate solids, deep occlusion,
+or alter the silhouette.
+
+**Requires later research or a separate design:** anatase photos show strong,
+face-bounded parallel striations and a dark, highly specular appearance. The former
+is technically compatible with face-local shading, but remains a candidate until its
+pyramidal form, crystallographic direction, growth-face origin, and representative
+scope are verified. The latter is visual reference only: review anatase's reported
+adamantine/splendent/metallic luster and define a curated material mapping before
+changing its appearance presets. Do not infer either rule from a photograph.
+
+The reviewed fluorite overgrowth and quartz window/fenster examples instead have
+visible child crystals, nested or recessed frames, self-occlusion, and often altered
+transmission paths. These require non-convex display geometry and belong to SR10.
+
 ### SR10 — Non-Convex Growth Morphologies
 
 **Status:** deferred. Skeleton, hopper, window/fenster, and comparable quartz growth
@@ -396,12 +422,11 @@ core mesh and provide explicit provenance, terminology, and a mode/label that ma
 the display approximation clear. Do not use `surfaceProfiles`, normal mapping, or
 the current convex half-space intersection to imitate skeleton quartz.
 
-A user-supplied close-up reviewed on 2026-09-19 illustrates the boundary: its many
-smaller cubic overgrowths have visible edges, occlusion, and silhouette changes. Treat
-such "child crystal" growth as a visual-design reference for this display-only layer,
-not as a source-backed mineral-data claim and not as an SR9 growth-step shader target.
-Do not commit or redistribute the reference image without its owner's explicit
-licensing decision.
+The user-supplied fluorite overgrowth and quartz fenster references reviewed on
+2026-09-19 illustrate this boundary. Treat their child-crystal growth and nested
+windows as visual-design references for this display-only layer, not as source-backed
+mineral-data claims or SR9 shader targets. Do not commit or redistribute the images
+without their owner's explicit licensing decision.
 
 This phase requires a separate architecture and data-model decision covering
 non-convex display geometry, inspection/picking behavior, exports, state, and the
