@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html lang="en" data-bs-theme="dark">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Terraced fluorite — SR10 review</title><link rel="stylesheet" href="./demo.css"></head>
+<body class="cv-grid-cols">
+<header class="cv-header"><h1>Terraced fluorite — SR10</h1><p>Fixed review settings: cube habit, project studio environment, AgX, exposure 1, surface detail off.</p></header>
+<main class="cv-main">
+  <section class="view"><div class="overlay-label"><strong>Idealized core</strong><span>Scientific geometry and default export</span></div><canvas id="ideal"></canvas></section>
+  <section class="view"><div class="overlay-label"><strong>Terraced fluorite</strong><span>Curated stepped cubic-growth interpretation</span></div><canvas id="terraced"></canvas></section>
+</main>
+<aside class="cv-aside"><h2>Review checklist</h2><p>Confirm coherent small cubic child growth, stepped relief, shared coverage, and self-occlusion. The right panel is not specimen-measured or a scientific reconstruction. Click either panel: inspection resolves only the originating core face.</p><p>Drag either crystal to compare the same orientation.</p></aside>
+<script type="module">
+import { CrystalViewer } from "@crystal/viewer";
+import { installProjectionControl } from "./projection-control.js";
+const ideal = new CrystalViewer(document.getElementById("ideal"));
+const terraced = new CrystalViewer(document.getElementById("terraced"));
+installProjectionControl([ideal, terraced]);
+for (const viewer of [ideal, terraced]) { viewer.resize(480, 600); viewer.setEnvironmentIntensity(1); viewer.setToneMapping("agx"); viewer.setExposure(1); await viewer.loadMineral("fluorite"); viewer.setHabit("cube"); viewer.setSurfaceDetail(false); viewer.resetCamera(); viewer.start(); }
+terraced.setDisplayGrowth("terraced-fluorite");
+function resize() { for (const [viewer, canvas] of [[ideal, document.getElementById("ideal")], [terraced, document.getElementById("terraced")]]) viewer.resize(canvas.clientWidth, canvas.clientHeight); }
+addEventListener("resize", resize); resize();
+</script></body></html>

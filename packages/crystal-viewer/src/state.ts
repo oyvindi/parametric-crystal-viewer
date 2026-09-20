@@ -22,7 +22,7 @@
 import type { Diagnostic } from "@crystal/core";
 import type { Mineral, StructuralDefinition } from "@crystal/data";
 
-export const STATE_VERSION = 2 as const;
+export const STATE_VERSION = 3 as const;
 
 /** Supported camera projections. Version 1 only supported `"perspective"`. */
 export type CameraProjection = "perspective" | "orthographic";
@@ -103,15 +103,21 @@ export interface SurfaceDetailState {
     readonly strength: number;
 }
 
+/** Render-only morphology selection. `idealized` is the scientific default. */
+export type DisplayGrowthMode = "idealized" | "terraced-fluorite";
+
 export interface ViewerState {
-    /** Version 2 is current; version 1 is accepted on restore and migrated. */
-    readonly version: 1 | 2;
+    /** Version 3 is current; versions 1 and 2 are accepted and migrated. */
+    readonly version: 1 | 2 | 3;
     readonly mineral?: MineralRefState;
     readonly habit?: string;
     readonly forms: Readonly<Record<string, FormState>>;
     readonly morphologyScale?: number;
     readonly appearance?: AppearanceState;
     readonly surfaceDetail?: SurfaceDetailState;
+    readonly displayGrowth?: DisplayGrowthMode;
+    /** Optional unsigned 32-bit procedural seed for the display-growth realization. */
+    readonly displayGrowthSeed?: number;
     readonly display: DisplayState;
     readonly camera: CameraState;
     readonly atomic: AtomicState;
@@ -156,19 +162,20 @@ export function validateStateShape(input: unknown): { ok: true; value: ViewerSta
     const diagnostics: Diagnostic[] = [];
     if (!isObject(input)) return { ok: false, diagnostics: [diag("viewer.state.malformed", "State must be a JSON object.", "")] };
     const sourceVersion = input["version"];
-    if (sourceVersion !== 1 && sourceVersion !== 2) {
-        return { ok: false, diagnostics: [diag("viewer.state.unsupported-version", `Unsupported state version ${String(sourceVersion)}; supported versions are 1 and ${STATE_VERSION}.`, "/version")] };
+    if (sourceVersion !== 1 && sourceVersion !== 2 && sourceVersion !== 3) {
+        return { ok: false, diagnostics: [diag("viewer.state.unsupported-version", `Unsupported state version ${String(sourceVersion)}; supported versions are 1 through ${STATE_VERSION}.`, "/version")] };
     }
 
     // Migrate version 1 to version 2 without modifying the caller's payload.
     // This permits immutable state stores and keeps validation pure.
-    const normalized: Record<string, unknown> = sourceVersion === 1
+    const normalized: Record<string, unknown> = sourceVersion < 3
         ? {
             ...input,
-            version: 2,
+            version: 3,
             camera: isObject(input["camera"])
                 ? { ...input["camera"], projection: input["camera"]["projection"] ?? "perspective" }
                 : input["camera"],
+            displayGrowth: "idealized",
         }
         : input;
 
@@ -239,6 +246,11 @@ export function validateStateShape(input: unknown): { ok: true; value: ViewerSta
             }
         }
     }
+
+    if (normalized["displayGrowth"] !== undefined && normalized["displayGrowth"] !== "idealized" && normalized["displayGrowth"] !== "terraced-fluorite") {
+        diagnostics.push(diag("viewer.state.malformed", "displayGrowth must be 'idealized' or 'terraced-fluorite'.", "/displayGrowth"));
+    }
+    if (normalized["displayGrowthSeed"] !== undefined && (!isNumber(normalized["displayGrowthSeed"]) || !Number.isInteger(normalized["displayGrowthSeed"]) || normalized["displayGrowthSeed"]! < 0 || normalized["displayGrowthSeed"]! > 0xffff_ffff)) diagnostics.push(diag("viewer.state.malformed", "displayGrowthSeed must be an unsigned 32-bit integer.", "/displayGrowthSeed"));
 
     const display = normalized["display"];
     if (!isObject(display)) {

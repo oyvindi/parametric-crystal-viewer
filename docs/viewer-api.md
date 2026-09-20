@@ -427,6 +427,23 @@ microscopic crystal structure
 
 ---
 
+## Display-Growth Mode
+
+The optional displayGrowth state is "idealized" by default. The only SR10 value is
+"terraced-fluorite", available only while fluorite is loaded. It selects a
+display-only, curated seeded stepped-cubic child-growth mesh for cube-form a / {100} faces; it does
+not change the generated core mesh, face-inspection payload, scientific bounds, or
+default export. setDisplayGrowth(mode) emits display-growth-changed; state
+serialization preserves the selection. A display hit resolves to the originating core
+face and exposes no display-feature identifier.
+
+The initial label is **Terraced fluorite**. It is a typical visualization
+interpretation rather than a specimen reconstruction or measurement. The optional
+displayGrowthSeed is an unsigned 32-bit seed for reproducible placement variation. Existing
+face-local surface profiles are not applied to this display mesh.
+
+---
+
 ## State Serialization
 
 Viewer state must be serializable as JSON-compatible data. Restoring state produced by the viewer must reproduce the requested scientific configuration and persistent viewing settings, provided referenced data is available and compatible. This guarantees equivalent configuration, not identical rendered pixels across environments.

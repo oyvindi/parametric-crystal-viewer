@@ -83,16 +83,6 @@ export const FLUORITE = defineMineral({
       "status": "reported"
     },
     {
-      "coverage": ["surfaceProfiles"],
-      "referenceIds": ["desai-fluorite-surfaces-1979"],
-      "status": "reported"
-    },
-    {
-      "coverage": ["surfaceProfiles.*.description"],
-      "status": "curated",
-      "derivation": "The profile identifies a documented natural growth-face observation, not a specimen measurement. Step spacing, height, phase, density, and irregularity are renderer-owned curated values."
-    },
-    {
       "coverage": [
         "appearance"
       ],
@@ -145,9 +135,6 @@ export const FLUORITE = defineMineral({
     {"id":"surface.fluorite.100-growth-steps","property":"growth-steps","description":"Natural fluorite may grow through spreading and piling growth layers parallel to {100} faces.","surfaceOrigin":"growth-face","disposition":"renderer-eligible","selector":{"formId":"a"}},
     {"id":"surface.fluorite.100-etch-pits","property":"etching","description":"Natural fluorite {100} faces have been reported with etch pits attributed to dissolution in nature.","surfaceOrigin":"dissolution-or-etch","disposition":"candidate","dispositionReason":"The observation establishes a natural dissolution origin and face family, but not a reviewed renderer realization or typical pit presentation.","selector":{"formId":"a"}},
     {"id":"surface.fluorite.111-etch-pits","property":"etching","description":"Natural fluorite {111} faces have been reported with etch pits attributed to dissolution in nature.","surfaceOrigin":"dissolution-or-etch","disposition":"candidate","dispositionReason":"The observation establishes a natural dissolution origin and face family, but not a reviewed renderer realization or typical pit presentation.","selector":{"formId":"o"}}
-  ],
-  "surfaceProfiles": [
-    {"id":"fluorite.100-growth-steps","kind":"growth-steps","claimId":"surface.fluorite.100-growth-steps","surfaceOrigin":"growth-face","selector":{"formId":"a"},"description":"Natural fluorite {100} growth faces may show two-dimensional growth layers; the renderer uses a curated typical presentation and is not specimen-measured."}
   ],
   "habits": [
     {

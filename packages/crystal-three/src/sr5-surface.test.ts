@@ -56,30 +56,6 @@ describe("SR5 reviewed surface profiles", () => {
         local.buffer.dispose();
     });
 
-    it("routes a reviewed fluorite growth-step profile only to {100} faces", () => {
-        const geometry = valid(generateCrystal(
-            { crystalSystem: "cubic", unitCell: fluoriteCell, pointGroup: "m-3m", setting: "cubic-standard" },
-            { forms: [
-                { id: "a", indices: { notation: "miller", h: 1, k: 0, l: 0 }, development: 1 },
-                { id: "o", indices: { notation: "miller", h: 1, k: 1, l: 1 }, development: 0.8 },
-            ] },
-        ));
-        const rules = createReviewedSurfaceRules([{
-            id: "fluorite.100-growth-steps",
-            kind: "growth-steps",
-            selector: { formId: "a" },
-        }], fluoriteCell);
-        const local = createFaceLocalGeometry(geometry, rules);
-        const stepProfile = REVIEWED_SURFACE_PROFILE_IDS["fluorite.100-growth-steps"];
-        expect(local.faces.some((face) => face.profileId === stepProfile)).toBe(true);
-        for (const face of local.faces) {
-            const normal = geometry.faces[face.faceIndex]!.normal;
-            const isCubeFace = Math.max(...normal.map(Math.abs)) > 0.999999;
-            expect(face.profileId === stepProfile).toBe(isCubeFace);
-        }
-        local.buffer.dispose();
-    });
-
     it("does not infer unreviewed profiles and injects profile-specific shader routing", () => {
         expect(createReviewedSurfaceRules([{ id: "future.unknown", kind: "directional-striations", selector: { formId: "x" } }], pyriteCell)).toEqual([]);
         const material = new MeshPhysicalMaterial();
@@ -96,9 +72,8 @@ describe("SR5 reviewed surface profiles", () => {
         expect(shader.fragmentShader).toContain("hasSurfaceProfile(2.0)");
         expect(shader.fragmentShader).toContain("quartzStriation");
         expect(shader.fragmentShader).toContain("pyriteStriation");
-        expect(shader.fragmentShader).toContain("fluoriteGrowthSteps");
-        expect(shader.fragmentShader).toContain("growthStepSlope");
-        expect(shader.fragmentShader).toContain("surfaceDetailStrength * fluoriteGrowthSteps");
+        expect(shader.fragmentShader).not.toContain("fluoriteGrowthSteps");
+        expect(shader.fragmentShader).not.toContain("growthStepSlope");
         expect(shader.fragmentShader).toContain("surfaceDetailStrength * pearly");
         const roughness = shader.fragmentShader.slice(shader.fragmentShader.indexOf("roughnessFactor = clamp(roughnessFactor"), shader.fragmentShader.indexOf("vec3 q0 = dFdx"));
         expect(roughness).toContain("profileStripe(vSurfaceCoord.x");

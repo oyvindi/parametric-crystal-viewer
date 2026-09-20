@@ -39,9 +39,7 @@ function renderProfiles() {
     const title = document.createElement("strong");
     title.textContent = profile.kind === "pearly-luster"
         ? "Pearly growth-face luster"
-        : profile.kind === "growth-steps"
-            ? "Growth-face steps"
-            : "Directional growth-face striations";
+        : "Directional growth-face striations";
     const claim = document.createElement("code");
     claim.textContent = profile.claimId;
     const description = document.createElement("p");

@@ -388,7 +388,7 @@ describe("M7 state serialization", () => {
         const bad: unknown[] = [
             "not-an-object",
             {},
-            { ...before, version: 3 },
+            { ...before, version: 4 },
             { ...before, mineral: { id: "nope", dataRevision: "x" } },
             { ...before, mineral: { id: "quartz", dataRevision: "wrong" } },
             { ...before, forms: { ...before.forms, noform: { development: 0.5, enabled: true } } },

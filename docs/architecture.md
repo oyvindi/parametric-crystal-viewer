@@ -231,6 +231,12 @@ function createThreeGeometry(
 ): THREE.BufferGeometry;
 ```
 
+SR10 display-growth geometry is constructed in crystal-three, but its geometry types
+and watertightness validation are renderer-neutral and do not import Three.js. Only the
+final conversion creates GPU buffers. Derived display triangles retain their originating
+core-face index; the viewer owns replacement and disposal of that resource. The core
+mesh remains the source for scientific bounds, inspection, and default export.
+
 The Three.js renderer should initially support:
 
 ```text

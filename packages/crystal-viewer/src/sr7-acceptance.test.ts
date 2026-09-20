@@ -38,7 +38,6 @@ const REVIEWED = new Map<string, string>([
     ["quartz", "quartz.m-prism-striations"],
     ["calcite", "calcite.0001-pearly"],
     ["pyrite", "pyrite.100-cube-striations"],
-    ["fluorite", "fluorite.100-growth-steps"],
 ]);
 
 describe("SR7 public API surface and stable controls", () => {
@@ -93,13 +92,11 @@ describe("SR7 all nine minerals load and report reviewed profiles", () => {
         }
     });
 
-    it("quartz, pyrite, and fluorite reviewed profiles match generated faces; calcite has no shipped {0001} face", async () => {
+    it("quartz and pyrite reviewed profiles match generated faces; calcite has no shipped {0001} face", async () => {
         const quartz = (await loaded("quartz")).getSurfaceProfiles().find((p) => p.id === "quartz.m-prism-striations")!;
         expect(quartz.matchedFaceCount).toBeGreaterThan(0);
         const pyrite = (await loaded("pyrite")).getSurfaceProfiles().find((p) => p.id === "pyrite.100-cube-striations")!;
         expect(pyrite.matchedFaceCount).toBeGreaterThan(0);
-        const fluorite = (await loaded("fluorite")).getSurfaceProfiles().find((p) => p.id === "fluorite.100-growth-steps")!;
-        expect(fluorite.matchedFaceCount).toBeGreaterThan(0);
         const calcite = (await loaded("calcite")).getSurfaceProfiles().find((p) => p.id === "calcite.0001-pearly")!;
         expect(calcite.matchedFaceCount).toBe(0);
     });
@@ -121,11 +118,11 @@ describe("SR7 all nine minerals load and report reviewed profiles", () => {
 
 describe("SR7 serialized surface state", () => {
     it("surfaceDetail round-trips through setState", async () => {
-        expect(STATE_VERSION).toBe(2);
+        expect(STATE_VERSION).toBe(3);
         const viewer = await loaded("quartz");
         viewer.setSurfaceDetail(true, 0.6);
         const state = viewer.getState();
-        expect(state.version).toBe(2);
+        expect(state.version).toBe(3);
         expect(state.surfaceDetail).toEqual({ enabled: true, strength: 0.6 });
 
         const fresh = new CrystalViewer(canvas());

@@ -312,7 +312,7 @@ Initial classification targets:
 | Albite | Vitreous luster, pearly cleavage appearance, and polysynthetic twinning striae | Cleavage descriptive-only; twinning blocked pending twinning and surface-origin support |
 | Anatase | Adamantine-to-splendent/metallic luster range; candidate pyramidal-face striations | Keep striations candidate until the source's pyramid notation and local direction are reconciled with the shipped habits |
 | Beryl | Vitreous/resinous luster range and transparency | Descriptive-only; any prism striation remains candidate until a reliable form-specific source is reviewed |
-| Fluorite | Vitreous luster and rounded or stepped morphology; `{100}` growth terraces | The legacy shader-only `growth-steps` profile is pending removal. Real terraces and dissolution forms require the SR10 display mesh; keep `{100}`/`{111}` etch pits separate. |
+| Fluorite | Vitreous luster and rounded or stepped morphology; `{100}` growth terraces | SR10 realizes reviewed growth terraces as the optional Terraced fluorite display mesh. Keep `{100}`/`{111}` etch pits separate and inactive. |
 | Forsterite | Vitreous luster and striations parallel to elongation | Striation blocked until the elongation direction is resolved for the shipped habits |
 | Gypsum | Coarse `[001]` striations, subvitreous luster, pearly `{010}` cleavage, and silky fibrous material | Growth-face striation candidate until its affected form is known; cleavage and fibrous claims descriptive-only |
 
@@ -342,9 +342,9 @@ Acceptance:
 
 ### SR9 — Face-Local Growth-Step Cue (Superseded)
 
-**Status:** superseded by SR10 on 2026-09-20. The existing fluorite `{100}`
-shader-only `growth-steps` profile was implemented under an earlier interpretation and
-is pending removal. It must not be accepted, expanded, or presented as an adequate
+**Status:** superseded by SR10 on 2026-09-20. The former fluorite `{100}`
+shader-only `growth-steps` profile was removed as part of SR10's first slice. It must
+not be restored, accepted, expanded, or presented as an adequate
 rendering of literal terraces or etching. The [SR9 acceptance audit](sr9-acceptance.md)
 records the historical automated evidence and supersession; it has no pending visual
 review. SR10 is the next implementation milestone.
@@ -438,9 +438,9 @@ normal mapping, or add constraints to the core's convex half-space construction,
 imitate literal terraces, skeleton quartz, or fenster geometry.
 
 The first implementation slice is a fluorite `{100}` procedural display mesh with
-recessed, nested square hopper terraces. It is a curated visualization interpretation
-of the reviewed natural-growth observation, not a reconstruction or measurement of a
-specimen. Every component that represents a solid must be closed and watertight; the
+a coherent seeded field of attached small cubic child-growth components. It is a curated
+visualization interpretation of the reviewed natural-growth observation, not a
+reconstruction or measurement of a specimen. Every component that represents a solid must be closed and watertight; the
 layer may contain multiple such components so later twins, child crystals, and
 window/fenster forms are not constrained to a single mesh. A hit on display geometry
 resolves only to the originating idealized core face; display features do not add a
@@ -451,7 +451,8 @@ first implementation slice; do not run the legacy profile and display mesh toget
 
 Use collector-friendly labels and search aliases without making them scientific
 categories or evidence claims. The initial display label is **Terraced fluorite**, with
-**hopper-style** and **stepped cubic growth** as descriptive terms. A later quartz
+**stepped cubic growth** as a descriptive term. **Hopper-style** remains distinct from
+this fluorite preset. A later quartz
 display preset may be labelled **Fenster (window) quartz**, with **skeletal quartz** and
 **window quartz** as aliases; **elestial** remains a search synonym only because its
 usage is inconsistent.

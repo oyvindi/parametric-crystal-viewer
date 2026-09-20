@@ -55,7 +55,6 @@ const REVIEWED = new Map([
   ["quartz", { id: "quartz.m-prism-striations", label: "Quartz — prism striations", focus: "Striations appear on prism m faces only, perpendicular to c, and stay crystal-local under rotation. Compare off vs enabled." }],
   ["calcite", { id: "calcite.0001-pearly", label: "Calcite — basal pearly luster", focus: "The panel reports the reviewed {0001} profile, but no shipped habit has a basal growth face, so no pearly treatment is inferred from cleavage." }],
   ["pyrite", { id: "pyrite.100-cube-striations", label: "Pyrite — cube striations", focus: "Striations are confined to cube faces and follow edge-relative directions that change per adjacent face, not a world or camera axis." }],
-  ["fluorite", { id: "fluorite.100-growth-steps", label: "Fluorite — {100} growth steps", focus: "Gentle terraces appear on cube {100} faces only. They stay crystal-local under rotation and change shading only: the silhouette, face picking, and scientific geometry are unchanged." }],
 ]);
 
 for (const id of listMinerals()) {
@@ -81,9 +80,7 @@ function updateOnDescription(id) {
     onDescription.textContent = `Generic artistic microvariation · strength ${value}`;
     return;
   }
-  const label = profile.kind === "growth-steps"
-    ? "Documented-typical growth-step shading"
-    : profile.kind === "pearly-luster"
+  const label = profile.kind === "pearly-luster"
       ? "Documented-typical pearly growth-face shading"
       : "Documented-typical directional striation shading";
   onDescription.textContent = `${label} · ${profile.matchedFaceCount} matched face${profile.matchedFaceCount === 1 ? "" : "s"} · strength ${value}`;
@@ -112,9 +109,7 @@ function renderProfiles(id) {
     const title = document.createElement("strong");
     title.textContent = profile.kind === "pearly-luster"
         ? "Pearly growth-face luster"
-        : profile.kind === "growth-steps"
-            ? "Growth-face steps"
-            : "Directional growth-face striations";
+        : "Directional growth-face striations";
     const claim = document.createElement("code");
     claim.textContent = profile.claimId;
     const description = document.createElement("p");

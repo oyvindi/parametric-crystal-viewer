@@ -377,7 +377,7 @@ describe("orthographic projection", () => {
         viewers.push(fresh);
         fresh.setState(v1);
         expect(fresh.getProjection()).toBe("perspective");
-        expect(fresh.getState().version).toBe(2);
+        expect(fresh.getState().version).toBe(3);
         expect(fresh.getState().camera.projection).toBe("perspective");
     });
 

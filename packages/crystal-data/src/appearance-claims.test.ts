@@ -29,10 +29,10 @@ describe("descriptive appearance claims", () => {
         expect(result.diagnostics.some((diagnostic) => diagnostic.path === "/appearanceClaims/1/surfaceOrigin")).toBe(true);
     });
 
-    it("keeps the fluorite {100} growth-step claim traceable through its reviewed profile", () => {
+    it("keeps the fluorite {100} growth-step claim descriptive until its display-mesh realization", () => {
         const claim = FLUORITE.appearanceClaims?.find((item) => item.id === "surface.fluorite.100-growth-steps");
         expect(claim?.disposition).toBe("renderer-eligible");
-        expect(FLUORITE.surfaceProfiles?.some((profile) => profile.claimId === claim?.id)).toBe(true);
+        expect(FLUORITE.surfaceProfiles ?? []).toHaveLength(0);
     });
 
     it("records the locality-specific quartz z-face etching observation without promoting it", () => {
@@ -55,7 +55,7 @@ describe("descriptive appearance claims", () => {
             expect(claims.find((item) => item.id === id)).toMatchObject({
                 property: "etching", surfaceOrigin: "dissolution-or-etch", disposition: "candidate", selector: { formId },
             });
-            expect(FLUORITE.surfaceProfiles?.some((profile) => profile.claimId === id)).toBe(false);
+            expect((FLUORITE.surfaceProfiles ?? []).some((profile) => profile.claimId === id)).toBe(false);
         }
     });
 
@@ -65,19 +65,6 @@ describe("descriptive appearance claims", () => {
         const result = validateMineral(candidate);
         expect(result.ok).toBe(false);
         expect(result.diagnostics.some((diagnostic) => diagnostic.path === "/appearanceClaims/1/dispositionReason")).toBe(true);
-    });
-
-    it("requires a renderer profile to promote its own eligible claim with the same selector", () => {
-        const candidate = structuredClone(FLUORITE) as unknown as {
-            appearanceClaims: Array<Record<string, unknown>>;
-            surfaceProfiles: Array<Record<string, unknown>>;
-        };
-        candidate.surfaceProfiles[0].claimId = "appearance.fluorite.luster";
-        candidate.surfaceProfiles[0].selector = { formId: "o" };
-        const result = validateMineral(candidate);
-        expect(result.ok).toBe(false);
-        expect(result.diagnostics.some((diagnostic) => diagnostic.path === "/surfaceProfiles/0/claimId")).toBe(true);
-        expect(result.diagnostics.some((diagnostic) => diagnostic.path === "/surfaceProfiles/0/selector")).toBe(true);
     });
 
     it("rejects a renderer-eligible claim that names no shipped form", () => {

@@ -21,16 +21,16 @@
   other display-feature identity.
 
   The first implementation slice is a curated fluorite `{100}` display interpretation:
-  recessed, nested square hopper terraces on faces selected by the shipped cube form
-  `a`. It is not a specimen reconstruction or a claim that its terrace dimensions,
-  depth, density, or regularity were measured. The current appearance, lighting,
+  a coherent seeded field of attached small cubic child-growth components on faces
+  selected by the shipped cube form `a`. It is not a specimen reconstruction or a
+  claim that its child dimensions, density, placement, or regularity were measured. The current appearance, lighting,
   transmission, camera, and global surface-detail controls apply to display geometry.
   Existing reviewed face-local profiles do not apply automatically; a future mapping
   must be explicit.
 
   The viewer calls this optional mode **display-growth mode**. Its initial preset label
-  is **Terraced fluorite**, with **hopper-style** and **stepped cubic growth** as
-  descriptive terms. A future quartz preset may use **Fenster (window) quartz**, with
+  is **Terraced fluorite**, with **stepped cubic growth** as a descriptive term.
+  **Hopper-style** remains distinct from this preset. A future quartz preset may use **Fenster (window) quartz**, with
   **skeletal quartz** and **window quartz** as aliases. **Elestial** is a search synonym
   only, not a scientific category or procedural rule.
 * **Alternatives:**

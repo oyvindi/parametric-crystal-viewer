@@ -1,11 +1,11 @@
 import { Scene, PerspectiveCamera, OrthographicCamera, WebGLRenderer, MeshPhysicalMaterial, Mesh, MeshBasicMaterial, Color, DirectionalLight, AmbientLight, Group, DoubleSide, FrontSide, Raycaster, Vector2, Vector3, Sprite, SpriteMaterial, CanvasTexture, BufferGeometry, Float32BufferAttribute, LineSegments, LineBasicMaterial, PMREMGenerator, EquirectangularReflectionMapping, AgXToneMapping, ACESFilmicToneMapping, NoToneMapping, type Texture, type WebGLRenderTarget } from "three";
 import { createLattice, expandAtomicStructure, generateCrystal, generateCrystalFromFaces, inferBonds, validatePeriodicBonds, type Diagnostic, type GeometryResult, type CrystalGeometry, type CrystalFace, type ExpandedAtom, type Lattice, type PeriodicBond } from "@crystal/core";
 import { loadMineral as loadMineralData, createCrystalInput, resolveHabit, resolveCrystallography, importCif, getMineral, validateMineral, MineralDataError, type Mineral, type MineralCrystallography, type StructuralDefinition, type SurfaceProfile } from "@crystal/data";
-import { createFaceLocalGeometry, updateFaceLocalAttributes, createReviewedSurfaceRules, createAtomicStructure, atomicBounds, createCrystalMaterial, applyAppearance, applyTransmissionOptics, applySurfaceDetail, updateSurfaceDetailStrength, resolveAppearance, APPEARANCE_FIELDS, type AppearanceParams, type AppearanceField, type ResolvedAppearance, type LusterCategory, type FaceSurface, type OpticalBounds } from "@crystal/three";
+import { createFaceLocalGeometry, createTerracedFluoriteDisplayGeometry, createThreeDisplayGrowthGeometry, updateFaceLocalAttributes, createReviewedSurfaceRules, createAtomicStructure, atomicBounds, createCrystalMaterial, applyAppearance, applyTransmissionOptics, applySurfaceDetail, updateSurfaceDetailStrength, resolveAppearance, APPEARANCE_FIELDS, type AppearanceParams, type AppearanceField, type ResolvedAppearance, type LusterCategory, type FaceSurface, type OpticalBounds } from "@crystal/three";
 import { cameraBasis } from "./camera.js";
-import { STATE_VERSION, validateStateShape, type ViewerState, type ViewMode, type FormState, type MineralRefState, type AppearanceState, type AppearanceOverride, type SurfaceDetailState, type CameraProjection } from "./state.js";
+import { STATE_VERSION, validateStateShape, type ViewerState, type ViewMode, type FormState, type MineralRefState, type AppearanceState, type AppearanceOverride, type SurfaceDetailState, type CameraProjection, type DisplayGrowthMode } from "./state.js";
 
-export type { ViewerState, ViewMode, AppearanceState, AppearanceOverride, SurfaceDetailState, CameraProjection } from "./state.js";
+export type { ViewerState, ViewMode, AppearanceState, AppearanceOverride, SurfaceDetailState, CameraProjection, DisplayGrowthMode } from "./state.js";
 export { STATE_VERSION } from "./state.js";
 export { listMinerals, getMineral } from "@crystal/data";
 export type { Mineral } from "@crystal/data";
@@ -180,6 +180,8 @@ export class CrystalViewer extends EventTarget {
     private appearanceId: string | undefined;
     private appearanceOverrides: Partial<AppearanceParams> = {};
     private surfaceDetail: SurfaceDetailState = { enabled: false, strength: 0.35 };
+    private displayGrowth: DisplayGrowthMode = "idealized";
+    private displayGrowthSeed: number | undefined;
     private importDiagnostics: readonly Diagnostic[] = [];
     private explicitFaceGeometry = false;
     private environmentSource: Texture | null = null;
@@ -489,6 +491,7 @@ export class CrystalViewer extends EventTarget {
         this.morphologyScale = undefined;
         this.appearanceId = mineral.appearance?.[0]?.id;
         this.appearanceOverrides = {};
+        this.displayGrowth = "idealized";
         this.lastValidGeometry = null;
         this.needsInitialFrame = true;
         this.selectedFaceIndex = null;
@@ -684,7 +687,7 @@ export class CrystalViewer extends EventTarget {
             const bounds = this.currentGeometry?.bounds
                 ?? (this.lastValidGeometry && this.lastValidGeometry.status === "valid" ? this.lastValidGeometry.geometry.bounds : undefined);
             if (bounds) applyTransmissionOptics(this.mesh.material, appearance, [bounds.min, bounds.max] as OpticalBounds);
-            if (this.currentGeometry) this.faceSurfaces = updateFaceLocalAttributes(this.mesh.geometry, this.currentGeometry, this.surfaceRules(), [1, 0, 0], this.surfaceSeedKey());
+            if (this.currentGeometry && this.displayGrowth === "idealized") this.faceSurfaces = updateFaceLocalAttributes(this.mesh.geometry, this.currentGeometry, this.surfaceRules(), [1, 0, 0], this.surfaceSeedKey());
             this.renderOnce();
         }
     }
@@ -713,6 +716,29 @@ export class CrystalViewer extends EventTarget {
     getSurfaceDetail(): SurfaceDetailState {
         return { ...this.surfaceDetail };
     }
+
+    /** Selects the optional render-only growth layer; idealized is the scientific default. */
+    setDisplayGrowth(mode: DisplayGrowthMode): void {
+        this.assertNotDisposed();
+        if (mode !== "idealized" && mode !== "terraced-fluorite") throw new ViewerOperationError([{ code: "viewer.request.invalid-display-growth", severity: "error", message: "display-growth mode must be 'idealized' or 'terraced-fluorite'." }]);
+        if (mode === "terraced-fluorite" && this.mineral?.id !== "fluorite") throw new ViewerOperationError([{ code: "viewer.request.unsupported-display-growth", severity: "error", message: "Terraced fluorite is available only for fluorite." }]);
+        if (mode === this.displayGrowth) return;
+        this.displayGrowth = mode;
+        if (this.currentResult?.status === "valid") this.updateMesh(this.currentResult);
+        this.dispatchEvent(new CustomEvent("display-growth-changed", { detail: { mode } }));
+        this.renderOnce();
+    }
+
+    getDisplayGrowth(): DisplayGrowthMode { return this.displayGrowth; }
+
+    setDisplayGrowthSeed(seed: number | undefined): void {
+        this.assertNotDisposed();
+        if (seed !== undefined && (!Number.isInteger(seed) || seed < 0 || seed > 0xffff_ffff)) throw new ViewerOperationError([{ code: "viewer.request.invalid-display-growth-seed", severity: "error", message: "display-growth seed must be an unsigned 32-bit integer." }]);
+        this.displayGrowthSeed = seed;
+        if (this.displayGrowth === "terraced-fluorite" && this.currentResult?.status === "valid") this.updateMesh(this.currentResult);
+    }
+
+    getDisplayGrowthSeed(): number | null { return this.displayGrowthSeed ?? null; }
 
     // --- Atomic structure view (M6) ---
 
@@ -975,6 +1001,8 @@ export class CrystalViewer extends EventTarget {
                 },
             } : {}),
             surfaceDetail: { ...this.surfaceDetail },
+            displayGrowth: this.displayGrowth,
+            ...(this.displayGrowthSeed !== undefined ? { displayGrowthSeed: this.displayGrowthSeed } : {}),
             display: {
                 axes: this.showAxes,
                 labels: this.showLabels,
@@ -1036,6 +1064,7 @@ export class CrystalViewer extends EventTarget {
             }
         }
         if (mineral) {
+            if (s.displayGrowth === "terraced-fluorite" && mineral.id !== "fluorite") diagnostics.push({ code: "viewer.state.unsupported-display-growth", severity: "error", message: "Terraced fluorite is available only for fluorite.", path: "/displayGrowth" });
             if (s.habit !== undefined) {
                 try { resolveHabit(mineral, s.habit); } catch { diagnostics.push({ code: "viewer.state.unknown-habit", severity: "error", message: `Unknown habit "${s.habit}" for mineral "${mineral.id}".`, path: "/habit" }); }
             }
@@ -1100,6 +1129,8 @@ export class CrystalViewer extends EventTarget {
             this.appearanceId = s.appearance?.id ?? mineral.appearance?.[0]?.id;
             this.appearanceOverrides = { ...(s.appearance?.overrides ?? {}) };
             this.surfaceDetail = s.surfaceDetail ? { ...s.surfaceDetail } : { enabled: false, strength: 0.35 };
+            this.displayGrowth = s.displayGrowth ?? "idealized";
+            this.displayGrowthSeed = s.displayGrowthSeed;
             this.needsInitialFrame = false; // restored camera takes precedence over preferred view
             if (!sameMineral) {
                 this.clearMesh();
@@ -1119,6 +1150,8 @@ export class CrystalViewer extends EventTarget {
             this.appearanceId = undefined;
             this.appearanceOverrides = {};
             this.surfaceDetail = s.surfaceDetail ? { ...s.surfaceDetail } : { enabled: false, strength: 0.35 };
+            this.displayGrowth = "idealized";
+            this.displayGrowthSeed = undefined;
             this.clearMesh();
             this.clearLabels();
             this.lastValidGeometry = null;
@@ -1534,8 +1567,12 @@ export class CrystalViewer extends EventTarget {
     private updateMesh(result: Extract<GeometryResult, { status: "valid" }>): void {
         this.clearMesh();
         this.clearLabels();
+        const display = this.displayGrowth === "terraced-fluorite" && this.mineral?.id === "fluorite";
+        const derived = display ? createTerracedFluoriteDisplayGeometry(result.geometry, this.displayGrowthSeed) : null;
         const seedKey = this.surfaceSeedKey();
-        const { buffer, triangleFaces, faces } = createFaceLocalGeometry(result.geometry, this.surfaceRules(), [1, 0, 0], seedKey);
+        const { buffer, triangleFaces, faces } = derived
+            ? { buffer: createThreeDisplayGrowthGeometry(derived), triangleFaces: derived.triangleFaces, faces: [] as readonly FaceSurface[] }
+            : createFaceLocalGeometry(result.geometry, this.surfaceRules(), [1, 0, 0], seedKey);
         this.triangleFaces = triangleFaces;
         this.faceSurfaces = faces;
         buffer.center();
