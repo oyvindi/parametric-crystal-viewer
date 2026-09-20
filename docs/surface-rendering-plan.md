@@ -415,7 +415,8 @@ shading cue belongs to SR10.
 
 ### SR10 — Procedural Display Growth Morphologies
 
-**Status:** deferred for implementation; the architectural direction is accepted in
+**Status:** first Terraced fluorite slice complete on 2026-09-20; see the
+[SR10 acceptance audit](sr10-acceptance.md). The architectural direction is accepted in
 [ADR 0014](decisions/0014-procedural-display-growth-morphology.md). Skeleton, hopper,
 window/fenster, literal stepped faces, dissolution etch pits, negative-crystal cavities,
 and comparable growth or corrosion forms are not surface textures. They require
@@ -484,6 +485,22 @@ Acceptance:
 * display geometry has deterministic resource replacement and disposal behavior; and
 * any display-geometry export is explicitly requested and labelled as a display
   approximation.
+
+#### Deferred follow-up — Boolean-composed display surface
+
+A future SR10 follow-up may evaluate a renderer-neutral boolean union of the
+idealized-core solid and display-growth solids. Its purpose would be to remove
+overlapping internal render surfaces—particularly visible through transmissive
+materials—and produce a clean external display surface. It is optional and does not
+alter the current closed child-component implementation.
+
+This work is blocked on an implementation design and review that proves deterministic,
+watertight output; preserves an originating core-face attribution for every generated
+triangle; keeps the scientific core, its picking, bounds, normals, contributors, and
+default export unchanged; and defines whether any edge-spanning operand is permitted.
+Do not infer permission for a child footprint to cross a source-face boundary from this
+note. A union limited to the current face-local solids may clean internal overlap but
+does not itself soften a physical cube edge.
 
 ## Cross-Cutting Test Matrix
 

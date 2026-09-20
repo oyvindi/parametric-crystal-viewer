@@ -30,3 +30,25 @@ it("does not make Terraced fluorite available on a different mineral", async () 
     await viewer.loadMineral("quartz");
     expect(() => viewer.setDisplayGrowth("terraced-fluorite")).toThrow(/only for fluorite/i);
 });
+
+it("replaces and disposes derived GPU resources on mode and seed changes without changing the core", async () => {
+    const viewer = new CrystalViewer(canvas()); viewers.push(viewer);
+    await viewer.loadMineral("fluorite");
+    const coreBefore = structuredClone((viewer as unknown as { currentGeometry: unknown }).currentGeometry);
+    const idealMesh = (viewer as unknown as { mesh: { geometry: { dispose: () => void } } }).mesh;
+    const idealDispose = vi.spyOn(idealMesh.geometry, "dispose");
+
+    viewer.setDisplayGrowth("terraced-fluorite");
+    expect(idealDispose).toHaveBeenCalledOnce();
+    const firstDisplayMesh = (viewer as unknown as { mesh: { geometry: { dispose: () => void } } }).mesh;
+    const firstDisplayDispose = vi.spyOn(firstDisplayMesh.geometry, "dispose");
+
+    viewer.setDisplayGrowthSeed(0x1234_5678);
+    expect(firstDisplayDispose).toHaveBeenCalledOnce();
+    const secondDisplayMesh = (viewer as unknown as { mesh: { geometry: { dispose: () => void } } }).mesh;
+    const secondDisplayDispose = vi.spyOn(secondDisplayMesh.geometry, "dispose");
+
+    viewer.setDisplayGrowth("idealized");
+    expect(secondDisplayDispose).toHaveBeenCalledOnce();
+    expect((viewer as unknown as { currentGeometry: unknown }).currentGeometry).toEqual(coreBefore);
+});

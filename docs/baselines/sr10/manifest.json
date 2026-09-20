@@ -1,0 +1,67 @@
+{
+  "schemaVersion": 1,
+  "capturedAt": "2026-09-20T15:06:41.478Z",
+  "viewport": {
+    "width": 960,
+    "height": 720,
+    "deviceScaleFactor": 1
+  },
+  "presentation": {
+    "environment": "project-owned procedural studio gradient",
+    "environmentIntensity": 1,
+    "environmentRotation": [
+      0,
+      0,
+      0
+    ],
+    "backgroundVisible": true,
+    "backgroundZoom": 1,
+    "toneMapping": "agx",
+    "exposure": 1,
+    "surfaceDetail": {
+      "enabled": false,
+      "strength": 0.35
+    }
+  },
+  "scene": {
+    "mineralId": "fluorite",
+    "habitId": "cube",
+    "displayGrowth": "terraced-fluorite",
+    "displayGrowthSeed": 1597463007,
+    "surfaceDetail": {
+      "enabled": false,
+      "strength": 0.35
+    },
+    "camera": {
+      "projection": "perspective",
+      "position": [
+        3.1558437213360135,
+        2.254174086668581,
+        3.1558437213360135
+      ],
+      "up": [
+        -0.5136031331897468,
+        -0.36685938084981917,
+        0.7756455480824748
+      ],
+      "target": [
+        0,
+        0,
+        0
+      ],
+      "zoom": 1,
+      "near": 0.05000000000000001,
+      "far": 500.0000000000001,
+      "groupRotation": [
+        0,
+        0,
+        0
+      ]
+    }
+  },
+  "platform": {
+    "chrome": "Google Chrome 152.0.7977.82",
+    "node": "v26.8.1",
+    "os": "linux x64"
+  }
+}

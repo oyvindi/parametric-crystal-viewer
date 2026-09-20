@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en" data-bs-theme="dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Terraced fluorite baseline</title>
+<link rel="stylesheet" href="./demo.css">
+</head>
+<body class="cv-baseline">
+<canvas id="canvas" width="960" height="720"></canvas>
+<div id="caption"><strong>Terraced fluorite</strong><span id="details">Loading…</span></div>
+<output id="display-growth-baseline-result" hidden></output>
+<script type="module">
+import { CrystalViewer } from "@crystal/viewer";
+
+const params = new URLSearchParams(location.search);
+const seed = Number(params.get("seed") ?? "1597463007");
+if (!Number.isInteger(seed) || seed < 0 || seed > 0xffff_ffff) throw new Error("seed must be an unsigned 32-bit integer");
+const canvas = document.getElementById("canvas");
+const viewer = new CrystalViewer(canvas);
+viewer.resize(960, 720);
+viewer.setEnvironmentIntensity(1);
+viewer.setEnvironmentRotation(0, 0, 0);
+viewer.setEnvironmentBackgroundVisible(true);
+viewer.setEnvironmentBackgroundZoom(1);
+viewer.setToneMapping("agx");
+viewer.setExposure(1);
+await viewer.loadMineral("fluorite");
+viewer.setHabit("cube");
+viewer.setSurfaceDetail(false);
+viewer.setDisplayGrowthSeed(seed);
+viewer.setDisplayGrowth("terraced-fluorite");
+viewer.resetCamera();
+document.getElementById("details").textContent = `cube habit · seed ${seed} · display-only curated interpretation`;
+document.getElementById("display-growth-baseline-result").textContent = JSON.stringify({
+  mineralId: "fluorite", habitId: viewer.getHabitId(), displayGrowth: viewer.getDisplayGrowth(),
+  displayGrowthSeed: viewer.getDisplayGrowthSeed(), surfaceDetail: viewer.getSurfaceDetail(),
+  camera: viewer.getState().camera,
+});
+document.documentElement.dataset.baselineReady = "true";
+</script>
+</body>
+</html>
