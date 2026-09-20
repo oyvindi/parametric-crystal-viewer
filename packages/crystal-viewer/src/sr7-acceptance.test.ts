@@ -1,6 +1,7 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { Scene, PerspectiveCamera, Mesh, Group } from "three";
 import { CrystalViewer, STATE_VERSION, type SurfaceProfileInfo } from "./index.js";
+import { ALBITE } from "@crystal/data";
 
 // Keep real scene, camera, geometry and data. Stub only the GPU/browser boundary.
 const { render } = vi.hoisted(() => ({ render: vi.fn<(scene: Scene, camera: PerspectiveCamera) => void>() }));
@@ -101,6 +102,20 @@ describe("SR7 all nine minerals load and report reviewed profiles", () => {
         expect(fluorite.matchedFaceCount).toBeGreaterThan(0);
         const calcite = (await loaded("calcite")).getSurfaceProfiles().find((p) => p.id === "calcite.0001-pearly")!;
         expect(calcite.matchedFaceCount).toBe(0);
+    });
+
+    it("keeps descriptive, blocked, and candidate appearance claims out of material and face routing", async () => {
+        const baseline = await loaded(ALBITE);
+        const candidate = structuredClone(ALBITE) as unknown as {
+            appearanceClaims: Array<Record<string, unknown>>;
+        };
+        const twinning = candidate.appearanceClaims.find((claim) => claim.id === "appearance.albite.twinning-striae")!;
+        twinning.disposition = "candidate";
+        twinning.selector = { formId: "M" };
+
+        const describedOnly = await loaded(candidate);
+        expect(describedOnly.getAppearance()).toEqual(baseline.getAppearance());
+        expect(describedOnly.getSurfaceProfiles()).toEqual([]);
     });
 });
 

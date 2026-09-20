@@ -64,4 +64,20 @@ describe("descriptive appearance claims", () => {
         expect(result.ok).toBe(false);
         expect(result.diagnostics.some((diagnostic) => diagnostic.path === "/appearanceClaims/3/selector/formId")).toBe(true);
     });
+
+    it("requires provenance coverage for every descriptive claim", () => {
+        const candidate = structuredClone(ALBITE) as unknown as { provenance: Array<{ coverage: string[] }> };
+        candidate.provenance = candidate.provenance.filter((entry) => !entry.coverage.some((coverage) => coverage.startsWith("appearanceClaims")));
+        const result = validateMineral(candidate);
+        expect(result.ok).toBe(false);
+        expect(result.diagnostics.some((diagnostic) => diagnostic.path === "/appearanceClaims/0/id" && diagnostic.code === "data.record.invalid-provenance")).toBe(true);
+    });
+
+    it("accepts semantically identical promoted selectors regardless of JSON key order", () => {
+        const candidate = structuredClone(CALCITE) as unknown as { surfaceProfiles: Array<Record<string, unknown>> };
+        candidate.surfaceProfiles[0].selector = {
+            family: { l: 1, i: 0, k: 0, notation: "miller-bravais", h: 0 },
+        };
+        expect(validateMineral(candidate).ok).toBe(true);
+    });
 });

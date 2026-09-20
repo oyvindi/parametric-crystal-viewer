@@ -266,8 +266,9 @@ high-frequency effects, and browser coverage in a surface-rendering acceptance a
 
 ### SR8 — Descriptive Appearance-Claim Catalogue
 
-**Status:** in progress. This phase improves the catalogue's scientific description of
-how minerals commonly appear; it does not by itself add a renderer effect.
+**Status:** complete. See the [SR8 acceptance audit](sr8-acceptance.md). This phase
+improves the catalogue's scientific description of how minerals commonly appear; it
+does not by itself add a renderer effect.
 
 The current `MineralAppearance` presets contain selected rendering inputs, while
 `surfaceProfiles` contains only renderer-eligible, reviewed growth-face rules. Add a
