@@ -1,6 +1,6 @@
 /** Owner-authorized SR10 experiment. No production export or renderer dependency. */
 import type { CrystalGeometry } from "@crystal/core";
-import type { DisplayGrowthComponent, DisplayGrowthGeometry } from "../display-growth.js";
+import type { DisplayGrowthComponent, DisplayGrowthGeometry } from "./display-growth.js";
 
 type Point = [number, number, number];
 

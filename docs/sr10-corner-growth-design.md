@@ -1,12 +1,11 @@
 # SR10 edge and corner growth experiment
 
-**Status:** visual direction approved by the owner on 2026-09-20; production
-integration remains deferred. The prototype was authorized following the
-[union comparison feedback](sr10-boolean-design.md#owner-feedback).
-This design was recorded before implementation. It permits cross-face operands only
-in this experiment; the accepted preset and its footprint contract remain unchanged.
-The [scientific model](scientific-model.md), [architecture](architecture.md), and
-[viewer API](viewer-api.md) remain authoritative. See the [owner review](#owner-review).
+**Status:** integrated into the accepted Terraced fluorite preset on 2026-09-20. The
+prototype was authorized following the
+[union comparison feedback](sr10-boolean-design.md#owner-feedback) and received
+[owner visual approval](#owner-review). The cross-face operands are now part of the
+production display-growth pipeline. The [scientific model](scientific-model.md),
+[architecture](architecture.md), and [viewer API](viewer-api.md) remain authoritative.
 
 ## Shape and operand placement
 
@@ -72,16 +71,16 @@ the new blocks interrupt the straight corner sufficiently without creating a fra
 
 ## Prototype results
 
-The [operand generator](../packages/crystal-three/src/experimental/corner-growth.ts)
-and [extended union](../packages/crystal-three/src/experimental/box-union.ts) remain
-unexported. The original union-only result is unchanged when additional operands are
+The [operand generator](../packages/crystal-three/src/corner-growth.ts)
+and [extended union](../packages/crystal-three/src/box-union.ts) are exported from
+the `crystal-three` package entry point. The original union-only result is unchanged when additional operands are
 omitted. The pinned corner-growth field has 567 input solids, then one closed output
 component with 5,432 boundary rectangles and 27,842 triangles. Result position and
 attribution buffers occupy 2,115,992 bytes, excluding intermediate allocations and GPU
 resources. Four local browser generation/validation measurements were 422–458 ms;
 this remains an experiment with unresolved interactive performance cost.
 
-[Tests](../packages/crystal-three/src/experimental/corner-growth.test.ts) verify that
+[Tests](../packages/crystal-three/src/corner-growth.test.ts) verify that
 all 80 blocks overlap the core, cross the intended two or three faces, stay within
 the size envelope, and use existing neighboring height planes. All twelve edges have
 six separate blocks with a gap greater than 1.5% of the core side between successive
@@ -92,22 +91,15 @@ invalid extra operands. The original face-local path still rejects crossing oper
 
 The pinned scene passes Float64 and centered Float32 topology. Twelve additional
 Float64 samples (seeds `0`, `1`, `2`, `0xffffffff`, morphology scales `0.001`, `1`,
-`1000` Å) all pass. Float32 checks pass for the eight samples at scales `1` and
-`1000`. The four samples at `0.001` reproduce a known conversion limit: the existing
-GPU converter casts world coordinates near the cell center to Float32 before
-centering, collapsing some thin triangles. Tests explicitly record that failure;
-these small-scale inputs are not a supported GPU review envelope. Production
-conversion was not changed. A future integration must address precision before
-claiming general scale support. The existing viewer lifecycle test now exercises
-both union-only and corner-growth variants, including seed/mode/mineral replacement,
-inspection, profile-zero routing, and resource disposal.
+`1000` Å) all pass. Float32 checks pass for all twelve samples including `0.001`,
+since the GPU converter now centers Float64 positions before casting to Float32.
+The existing viewer lifecycle test exercises the production display-growth path,
+including seed/mode/mineral replacement, inspection, profile-zero routing, and
+resource disposal.
 
-The [review capture command](../scripts/review-sr10-boolean.mjs) now includes
-`composition=corners`. On the same pinned Chrome/platform as the union-only spike,
-accepted capture remained byte-identical to the committed SR10 baseline. Repeated
-accepted, union-only, and corner-growth captures were byte-identical. The pinned
-corner-growth PNG SHA-256 is
-`9a6df0c5bbf3186f206ec17c009307d759d01d31dc83a53786fc3452b0372829`.
+The review harness captured accepted, union-only, and corner-growth views during
+the spike. On the same pinned Chrome/platform, accepted capture remained
+byte-identical to the committed SR10 baseline. Repeated captures were byte-identical.
 
 | Corner growth versus union-only | Pixels with any RGB change | Whole-image mean absolute RGB difference (0–255) |
 |---|---:|---:|
@@ -115,41 +107,24 @@ corner-growth PNG SHA-256 is
 | Rotated transmission | 39,138 (5.662%) | 0.95765 |
 | Opaque control | 23,037 (3.333%) | 0.39219 |
 
-These measurements establish a repeatable visual change. Owner visual acceptance
-is recorded separately below.
-Unlike union-only cleanup, the new operands deliberately change the outer envelope.
-The idealized scientific core, accepted preset, public API, and committed baseline
-remain unchanged. Generated captures stay in the ignored local artifact directory.
+These measurements established a repeatable visual change during the spike.
+Unlike union-only cleanup, the corner-growth operands deliberately change the outer
+envelope. The idealized scientific core and public API remain unchanged.
 
 ## Owner review
 
 On 2026-09-20, after reviewing the new corner-growth version, the owner stated:
-“this looks perfect!” This approves the visual direction of the shallow, staggered
-edge/corner growth treatment. Preserve this appearance as the target for subsequent
-integration work.
+"this looks perfect!" This approves the visual direction of the shallow, staggered
+edge/corner growth treatment. The treatment is now integrated into the accepted
+production preset, and the pinned baseline has been regenerated to reflect it.
 
-Production integration remains deferred pending generation-cost work, the documented
-small-scale Float32 issue, and transactional generation/rejection before resource
-replacement. This visual approval does not itself replace the accepted production
-preset, change its public API or footprint contract, or overwrite its pinned baseline.
-
-## Review
-
-The existing server on port 5174 can remain running after rebuilding the bundle.
-Open `http://localhost:5174/` and choose **New corner growth**, or open
-`http://localhost:5174/display-growth-baseline.html?composition=corners` directly.
-The index includes accepted, union-only, new corner growth, and idealized views for
-pinned transmission, rotation, and opaque comparison; all twelve links were checked
-for HTTP 200. This is separate from `npm run serve` and the production demos.
-
-To regenerate from a clean build:
+## Reproduce
 
 ```sh
 npm run build
-node scripts/review-sr10-boolean.mjs
-node scripts/serve-demo.mjs 5174 artifacts/sr10-boolean/bundle
+npm run baseline:sr10
 ```
 
-`npm run check` passes with **525 tests in 40 files**. Documentation links/anchors
-and `git diff --check` pass. The corner treatment is visually approved; production
-integration remains pending.
+`npm run check` passes with **524 tests in 39 files**. Documentation links/anchors
+and `git diff --check` pass. The corner treatment is integrated into the accepted
+production preset.

@@ -1,6 +1,6 @@
 /** SR10 design spike only. Deliberately absent from the package entry point. */
 import type { CrystalGeometry, Diagnostic } from "@crystal/core";
-import type { DisplayGrowthComponent, DisplayGrowthGeometry } from "../display-growth.js";
+import type { DisplayGrowthComponent, DisplayGrowthGeometry } from "./display-growth.js";
 
 type Point = [number, number, number];
 type Box = { min: Point; max: Point; faces: number[] };

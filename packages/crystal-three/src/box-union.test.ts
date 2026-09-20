@@ -1,7 +1,7 @@
 import { expect, it } from "vitest";
 import { readFileSync } from "node:fs";
 import { generateCrystal, type CrystalGeometry } from "@crystal/core";
-import { createTerracedFluoriteDisplayGeometry, createThreeDisplayGrowthGeometry, type DisplayGrowthGeometry, type DisplayGrowthComponent } from "../display-growth.js";
+import { createTerracedFluoriteDisplayGeometry, createThreeDisplayGrowthGeometry, type DisplayGrowthGeometry, type DisplayGrowthComponent } from "./display-growth.js";
 import { inspectUnionTopology, unionTerracedCube } from "./box-union.js";
 
 const bytes = (a: ArrayBufferView): Uint8Array => new Uint8Array(a.buffer, a.byteOffset, a.byteLength);
@@ -149,11 +149,11 @@ it("detects missing and inverted triangles, disconnected shells and pinched vert
     expect(() => inspectUnionTopology(display([base, child([3, 3, 3], [4, 4, 4])]), 6)).toThrow();
 });
 
-it("keeps the spike renderer-neutral and outside the production entry point", () => {
+it("keeps the union renderer-neutral and exports it from the package entry point", () => {
     const source = readFileSync(new URL("./box-union.ts", import.meta.url), "utf8");
     expect(source).not.toMatch(/^import(?! type)/m);
     expect(source).not.toMatch(/\b(?:window|document|THREE)\b/);
-    expect(readFileSync(new URL("../index.ts", import.meta.url), "utf8")).not.toContain("experimental");
+    expect(readFileSync(new URL("./index.ts", import.meta.url), "utf8")).toContain("box-union");
 });
 
 // A face-local maximum-height integral independently checks the complete field.

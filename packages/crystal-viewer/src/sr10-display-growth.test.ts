@@ -52,3 +52,19 @@ it("replaces and disposes derived GPU resources on mode and seed changes without
     expect(secondDisplayDispose).toHaveBeenCalledOnce();
     expect((viewer as unknown as { currentGeometry: unknown }).currentGeometry).toEqual(coreBefore);
 });
+
+it("disposes display geometry on mineral replacement and attributes only core faces", async () => {
+    const viewer = new CrystalViewer(canvas()); viewers.push(viewer);
+    await viewer.loadMineral("fluorite");
+    viewer.setHabit("cube");
+    viewer.setDisplayGrowth("terraced-fluorite");
+    const internal = viewer as unknown as { currentGeometry: unknown; triangleFaces: Uint32Array; mesh: { geometry: { dispose: () => void }; material: { dispose: () => void } } };
+    expect([...internal.triangleFaces].every(face => face < 6)).toBe(true);
+    const displayDispose = vi.spyOn(internal.mesh.geometry, "dispose");
+    const materialDispose = vi.spyOn(internal.mesh.material, "dispose");
+    await viewer.loadMineral("quartz");
+    expect(displayDispose).toHaveBeenCalledOnce();
+    expect(materialDispose).toHaveBeenCalledOnce();
+    // Double dispose is safe.
+    viewer.dispose(); viewer.dispose();
+});

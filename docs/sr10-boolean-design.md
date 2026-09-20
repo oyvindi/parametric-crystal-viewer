@@ -1,12 +1,13 @@
 # SR10 constrained boolean-composition spike
 
-**Status:** implementation design for an isolated experiment, 2026-09-20. Not an
-accepted preset or public API. The [accepted SR10 slice](sr10-acceptance.md),
-[scientific model](scientific-model.md), [architecture](architecture.md), and
-[deferred follow-up](surface-rendering-plan.md#deferred-follow-up--boolean-composed-display-surface)
-remain authoritative. This note is written before prototype implementation.
-The later [edge/corner experiment](sr10-corner-growth-design.md) is separately
-authorized for prototyping; the union-only findings here remain unchanged.
+**Status:** integrated into the accepted Terraced fluorite preset on 2026-09-20. The
+[accepted SR10 slice](sr10-acceptance.md), [scientific model](scientific-model.md),
+[architecture](architecture.md), and
+[boolean-composed display surface](surface-rendering-plan.md#boolean-composed-display-surface)
+remain authoritative. This note records the design spike that established the
+dependency-free path; the production implementation follows this design. The
+[edge/corner experiment](sr10-corner-growth-design.md) extends the union with
+cross-face operands and received owner visual approval.
 
 ## Supported input and isolation
 
@@ -109,7 +110,7 @@ remains deferred.** No general CSG dependency evaluation is needed to continue t
 specific experiment. No accepted geometry generator, viewer dispatch, state, mineral
 data, inspection API, or baseline file changed. No user-supplied image was used.
 
-The [prototype](../packages/crystal-three/src/experimental/box-union.ts) implements
+The [prototype](../packages/crystal-three/src/box-union.ts) implements
 the design above. It consumes component buffers (the redundant flattened input
 buffers are not used), normalizes only derived copies, and returns no geometry on
 rejection. Exact experimental signatures and diagnostic codes live in that module;
@@ -131,7 +132,7 @@ Removing buried surfaces does not imply fewer triangles. The result buffers shar
 storage with the single component; the byte count excludes intermediate allocations,
 GPU attributes and source operands.
 
-The [geometry tests](../packages/crystal-three/src/experimental/box-union.test.ts)
+The [geometry tests](../packages/crystal-three/src/box-union.test.ts)
 verify oriented edge incidence, connected boundary, cyclic vertex links, Euler
 characteristic, positive volume, finite/nondegenerate triangles, immutable core and
 input components, and byte-identical positions and attribution when children are
@@ -149,19 +150,17 @@ provenance, non-finite and unresolved coordinates, boundary-crossing footprints,
 attachment without volume overlap, excess operands, and children that touch along a
 non-manifold edge. There is no silent approximation fallback.
 
-The [viewer test](../packages/crystal-viewer/src/sr10-union-spike.test.ts) substitutes
-the generator only within Vitest. It confirms unchanged face inspection/core state,
-no surface-profile mapping, and disposal of experimental geometry and materials on
-seed, mode, mineral and viewer replacement. Production viewer behavior is unchanged.
+The [viewer test](../packages/crystal-viewer/src/sr10-display-growth.test.ts) confirms
+unchanged face inspection/core state, no surface-profile mapping, and disposal of
+display geometry and materials on seed, mode, mineral and viewer replacement.
 
 ### Rendering evidence
 
-The [review harness](../scripts/review-sr10-boolean.mjs) makes an isolated Vite bundle
-with a build-time substitution, without editing application sources or adding a
-public injection API. It reuses the accepted scene, the existing GPU conversion and
-viewer, and captures accepted, union and idealized views under pinned transmission,
-a fixed extra rotation `[0.31, 0.58, 0.17]`, and an opaque control. Repeated captures
-check determinism. All outputs are ignored under `artifacts/sr10-boolean/`.
+During the spike, a local review harness made an isolated Vite bundle with a
+build-time substitution to compare accepted, union and idealized views under pinned
+transmission, a fixed extra rotation `[0.31, 0.58, 0.17]`, and an opaque control.
+The harness has been removed now that the union is integrated into production;
+its measurements are retained here as spike evidence.
 
 On 2026-09-20, Chrome 152.0.7977.82 / Node 26.8.1 / Linux x64 reproduced the
 committed accepted PNG byte-for-byte. Repeated accepted and union PNGs were also
@@ -212,38 +211,20 @@ it requires revisiting the source-face footprint restriction and is not authoriz
 this feedback. The rejected continuous bridge/bevel/frame remains excluded. No geometry,
 accepted baseline, or production behavior changed as a result of that initial review.
 The owner subsequently authorized the proposed [edge/corner prototype](sr10-corner-growth-design.md),
-which remains isolated and now has [owner visual approval](sr10-corner-growth-design.md#owner-review).
+which received [owner visual approval](sr10-corner-growth-design.md#owner-review) and is
+now integrated into the accepted production preset.
 
-### Reproduce and review
+### Reproduce
 
 ```sh
 npm run build
-node scripts/review-sr10-boolean.mjs
-node scripts/serve-demo.mjs 5174 artifacts/sr10-boolean/bundle
+npm run baseline:sr10
 ```
 
-Open `http://localhost:5174/`. Its comparison table links the accepted field, union,
-and idealized core for all three scenes. Use `--build-only` on the review command to
-skip automated capture. The local `manifest.json` records camera, effective material,
-platform, generation measurements, image hashes and pixel differences. The accepted
-baseline command and its output directory are not used or overwritten.
+`npm run baseline:sr10` captures the pinned fluorite scene and writes the committed
+[baseline](../docs/baselines/sr10/fluorite-terraced.png) and manifest. The accepted
+preset now includes the boolean union and edge/corner growth.
 
-Owner review should assess terrace readability through transmission, the physical
-corner seam during rotation, any apparent silhouette change, and the opaque control.
-Approval of a visual direction would still leave these integration gates:
-
-* Reduce and measure generation/validation cost, triangle count and peak allocation;
-  establish a supported seed/numerical envelope and a broader Float32 test matrix.
-* Design rejection before resource replacement. The current viewer clears the old
-  mesh before calling its accepted generator; directly installing this rejecting
-  prototype would therefore violate the intended transactional failure behavior.
-  The test-only substitution exercises successful results, not rejection recovery.
-* Decide the user-visible diagnostic/fallback behavior for non-cube habits and rejected
-  operands without changing scientific state or default picking/export.
-* Review any change to the accepted preset and pinned baseline explicitly. Edge-spanning
-  operands, reviewed surface-profile mappings, and literal etching remain separate,
-  unresolved scope decisions.
-
-Verification: `npm run check` passes with **521 tests in 39 files** (ten additional
-spike tests); `node scripts/check-docs.mjs` and `git diff --check` pass. Owner visual
-review and production integration are **not accepted** by these automated checks.
+Verification: `npm run check` passes with **524 tests in 39 files**;
+`node scripts/check-docs.mjs` and `git diff --check` pass. The boolean union and
+edge/corner growth are integrated into the accepted production preset.

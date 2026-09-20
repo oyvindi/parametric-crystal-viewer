@@ -53,20 +53,18 @@
     topology, material-profile routing, and display-geometry export are deferred to the
     implementation design. Default scientific export remains the idealized core mesh;
     any display export requires an explicit user choice and label.
-  * A possible later renderer-neutral boolean union of the core solid and display-growth
-    solids is deferred. It may remove overlapping internal display surfaces, especially
-    for transmission, but requires a reviewed deterministic attribution strategy and
-    does not authorize cross-face child footprints. Begin with a dependency-free
-    constrained design spike; any general CSG dependency needs separate review.
-    The [2026-09-20 spike results](../sr10-boolean-design.md#spike-results) support a
-    dependency-free path for the current orthogonal operands, with higher triangle
-    count and measured generation cost. The prototype is isolated from production;
-    performance and transactional integration remain unresolved.
-    This evidence does not supersede or expand the accepted first slice. The owner
-    subsequently authorized an isolated [edge/corner block experiment](../sr10-corner-growth-design.md);
-    the owner [approved its visual direction](../sr10-corner-growth-design.md#owner-review)
-    on 2026-09-20. Its attribution and crossing rules remain experimental pending
-    integration review, including small-scale GPU precision and resource replacement.
+  * A renderer-neutral boolean union of the core solid and display-growth solids is
+    accepted and integrated. It removes overlapping internal display surfaces and
+    composes shallow edge/corner growth blocks that cross adjacent faces under a
+    deterministic core-face attribution rule. The union is dependency-free, produces a
+    single closed watertight component with per-triangle core-face provenance, and
+    preserves deterministic regeneration including reordered operands. GPU conversion
+    centers Float64 positions before casting to Float32. The viewer validates new
+    geometry before disposing the previous mesh so a rejected union leaves the viewer
+    in its prior state. The [2026-09-20 spike results](../sr10-boolean-design.md#spike-results)
+    established the dependency-free path; the [edge/corner experiment](../sr10-corner-growth-design.md)
+    received [owner visual approval](../sr10-corner-growth-design.md#owner-review)
+    on 2026-09-20. No general CSG dependency was introduced.
   * Validation must prove that the idealized core mesh and its bounds, normals,
     contributors, scientific picking result, and default export remain unchanged when
     display-growth mode is enabled. It must also validate watertight components,

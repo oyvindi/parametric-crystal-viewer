@@ -1,8 +1,8 @@
 # SR10 Display-Growth Baseline Workflow
 
-This is a capture workflow, not an SR10 acceptance audit. It records a single
-review scene for the optional **Terraced fluorite** display mode; owner visual review
-is still required before SR10 acceptance documentation is updated.
+This is a capture workflow, not an SR10 acceptance audit. It records the pinned
+scene for the **Terraced fluorite** display mode, which includes the boolean union
+and edge/corner growth composition.
 
 Run:
 

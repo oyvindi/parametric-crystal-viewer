@@ -1,5 +1,7 @@
 import type { CrystalGeometry } from "@crystal/core";
 import { BufferGeometry, Float32BufferAttribute } from "three";
+import { createCornerGrowthOperands } from "./corner-growth.js";
+import { unionTerracedCube } from "./box-union.js";
 
 /** Renderer-neutral, render-only triangles. `triangleFaces` always indexes core faces. */
 export interface DisplayGrowthGeometry {
@@ -104,13 +106,38 @@ export function createTerracedFluoriteDisplayGeometry(core: CrystalGeometry, see
     return { components, positions: new Float64Array(components.flatMap((component) => [...component.positions])), triangleFaces: new Uint32Array(components.flatMap((component) => [...component.triangleFaces])) };
 }
 
+/**
+ * Creates the accepted Terraced fluorite display surface: the face-local cubic
+ * child-growth field composed with shallow edge/corner growth blocks via a
+ * dependency-free boolean union. The result is a single closed watertight
+ * component with per-triangle core-face attribution. Throws on rejection.
+ */
+export function createTerracedFluoriteDisplaySurface(core: CrystalGeometry, seed = 0x5f3759df): DisplayGrowthGeometry {
+    const accepted = createTerracedFluoriteDisplayGeometry(core, seed);
+    const edgeOperands = createCornerGrowthOperands(core, accepted, seed);
+    const result = unionTerracedCube(core, accepted, edgeOperands);
+    if (result.status !== "valid") throw new Error(result.diagnostic.message);
+    return result.geometry;
+}
+
 /** Converts independently validated display geometry to a GPU buffer. */
 export function createThreeDisplayGrowthGeometry(display: DisplayGrowthGeometry): BufferGeometry {
     const buffer = new BufferGeometry();
     const vertexCount = display.positions.length / 3;
+    // Center in Float64 before casting to Float32. The previous implementation
+    // cast world coordinates to Float32 and centered afterwards, which collapsed
+    // thin triangle separations at small morphology scales.
+    const centered = new Float64Array(display.positions.length);
+    if (display.positions.length > 0) {
+        let cx = 0; let cy = 0; let cz = 0;
+        for (let i = 0; i < display.positions.length; i += 3) { cx += display.positions[i]!; cy += display.positions[i + 1]!; cz += display.positions[i + 2]!; }
+        const n = vertexCount;
+        cx /= n; cy /= n; cz /= n;
+        for (let i = 0; i < display.positions.length; i += 3) { centered[i] = display.positions[i]! - cx; centered[i + 1] = display.positions[i + 1]! - cy; centered[i + 2] = display.positions[i + 2]! - cz; }
+    }
     const coordinates = new Float32Array(vertexCount * 2);
     for (let i = 0; i < vertexCount; i += 3) coordinates.set([0, 0, 1, 0, 0, 1], i * 2);
-    buffer.setAttribute("position", new Float32BufferAttribute(display.positions, 3));
+    buffer.setAttribute("position", new Float32BufferAttribute(centered, 3));
     buffer.setAttribute("surfaceTangent", new Float32BufferAttribute(new Float32Array(display.positions.length), 3));
     buffer.setAttribute("surfaceCoord", new Float32BufferAttribute(coordinates, 2));
     buffer.setAttribute("surfaceProfile", new Float32BufferAttribute(new Float32Array(vertexCount), 1));

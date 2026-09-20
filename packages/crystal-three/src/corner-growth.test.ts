@@ -1,6 +1,6 @@
 import { expect, it } from "vitest";
 import { generateCrystal } from "@crystal/core";
-import { createTerracedFluoriteDisplayGeometry, createThreeDisplayGrowthGeometry, type DisplayGrowthComponent } from "../display-growth.js";
+import { createTerracedFluoriteDisplayGeometry, createThreeDisplayGrowthGeometry, type DisplayGrowthComponent } from "./display-growth.js";
 import { createCornerGrowthOperands } from "./corner-growth.js";
 import { inspectUnionTopology, unionTerracedCube } from "./box-union.js";
 
@@ -111,10 +111,9 @@ it("retains topology over sampled seeds and scales and varies placement with the
         if (result.status !== "valid") throw new Error(`${seed}/${scale}: ${JSON.stringify(result.diagnostic)}`);
         const gpu = createThreeDisplayGrowthGeometry(result.geometry); gpu.center();
         const checkGpu = () => inspectUnionTopology({ positions: Float64Array.from(gpu.getAttribute("position").array, v => v / (scale * 2)), triangleFaces: result.geometry.triangleFaces }, 6);
-        // Existing conversion casts world positions before centering. Small crystals
-        // at the cell origin lose thin splits in Float32; retain this known limit.
-        if (scale === 0.001) expect(checkGpu).toThrow(/Degenerate triangle/);
-        else expect(checkGpu).not.toThrow();
+        // Float64 centering before Float32 conversion preserves thin triangle
+        // separations at small morphology scales.
+        expect(checkGpu).not.toThrow();
         gpu.dispose();
     }
 }, 20_000);

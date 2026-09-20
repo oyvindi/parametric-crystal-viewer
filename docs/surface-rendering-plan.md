@@ -486,42 +486,28 @@ Acceptance:
 * any display-geometry export is explicitly requested and labelled as a display
   approximation.
 
-#### Deferred follow-up — Boolean-composed display surface
+#### Boolean-composed display surface
 
-A future SR10 follow-up may evaluate a renderer-neutral boolean union of the
-idealized-core solid and display-growth solids. Its purpose would be to remove
-overlapping internal render surfaces—particularly visible through transmissive
-materials—and produce a clean external display surface. It is optional and does not
-alter the current closed child-component implementation.
+The Terraced fluorite display surface is composed via a renderer-neutral boolean union
+of the idealized-core solid, the face-local cubic child-growth solids, and shallow
+edge/corner growth blocks. The union removes overlapping internal render
+surfaces—particularly visible through transmissive materials—and produces a single
+closed watertight external display surface with per-triangle core-face attribution.
 
-This work is blocked on an implementation design and review that proves deterministic,
-watertight output; preserves an originating core-face attribution for every generated
-triangle; keeps the scientific core, its picking, bounds, normals, contributors, and
-default export unchanged; and defines whether any edge-spanning operand is permitted.
-Do not infer permission for a child footprint to cross a source-face boundary from this
-note. A union limited to the current face-local solids may clean internal overlap but
-does not itself soften a physical cube edge.
-
-Start with a dependency-free, renderer-neutral design spike for the constrained
-fluorite core-plus-cubic-growth case. Adopt a general CSG dependency only after a
-separate review of its determinism, watertightness behavior, generated-triangle
-provenance support, runtime/WASM and bundle cost, licensing, and compatibility with the
-package boundary. Generic renderer-level CSG utilities are not suitable by default
-because they do not preserve the required attribution contract.
+The union is dependency-free and renderer-neutral. It preserves deterministic
+regeneration including reordered operands, keeps the scientific core, its picking,
+bounds, normals, contributors, and default export unchanged, and defines an explicit
+core-face attribution rule for edge/corner blocks that cross adjacent faces. GPU
+conversion centers Float64 positions before casting to Float32 to preserve thin-triangle
+separations at small morphology scales. The viewer validates new geometry before
+disposing the previous mesh so a rejected union leaves the viewer in its prior state.
 
 The [2026-09-20 constrained design spike](sr10-boolean-design.md#spike-results)
-now supplies an isolated, dependency-free orthogonal-box prototype, topology and
-provenance tests, and a reproducible local transmission comparison. It supports
-further work on the constrained path without requiring a general CSG dependency.
-The [owner's initial union-only comparison](sr10-boolean-design.md#owner-feedback)
-reported a visually similar result with pronounced corners. The owner then authorized
-an isolated edge/corner experiment and [approved its visual direction](sr10-corner-growth-design.md#owner-review)
-on 2026-09-20. It adds discrete shallow blocks crossing adjacent faces.
-
-The production follow-up remains deferred: generation cost, small-scale Float32
-precision, and transactional integration remain blocking. Visual approval does not
-replace the accepted preset or its pinned baseline; production cross-face behavior
-and its attribution contract still require integration review.
+established the dependency-free path with topology and provenance tests. The
+[owner's initial union-only comparison](sr10-boolean-design.md#owner-feedback)
+showed pronounced corners; the owner then authorized an edge/corner experiment and
+[approved its visual direction](sr10-corner-growth-design.md#owner-review)
+on 2026-09-20. The integrated preset and its pinned baseline reflect this approval.
 
 ## Cross-Cutting Test Matrix
 

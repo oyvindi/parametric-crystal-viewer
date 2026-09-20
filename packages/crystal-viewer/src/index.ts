@@ -1,7 +1,7 @@
 import { Scene, PerspectiveCamera, OrthographicCamera, WebGLRenderer, MeshPhysicalMaterial, Mesh, MeshBasicMaterial, Color, DirectionalLight, AmbientLight, Group, DoubleSide, FrontSide, Raycaster, Vector2, Vector3, Sprite, SpriteMaterial, CanvasTexture, BufferGeometry, Float32BufferAttribute, LineSegments, LineBasicMaterial, PMREMGenerator, EquirectangularReflectionMapping, AgXToneMapping, ACESFilmicToneMapping, NoToneMapping, type Texture, type WebGLRenderTarget } from "three";
 import { createLattice, expandAtomicStructure, generateCrystal, generateCrystalFromFaces, inferBonds, validatePeriodicBonds, type Diagnostic, type GeometryResult, type CrystalGeometry, type CrystalFace, type ExpandedAtom, type Lattice, type PeriodicBond } from "@crystal/core";
 import { loadMineral as loadMineralData, createCrystalInput, resolveHabit, resolveCrystallography, importCif, getMineral, validateMineral, MineralDataError, type Mineral, type MineralCrystallography, type StructuralDefinition, type SurfaceProfile } from "@crystal/data";
-import { createFaceLocalGeometry, createTerracedFluoriteDisplayGeometry, createThreeDisplayGrowthGeometry, updateFaceLocalAttributes, createReviewedSurfaceRules, createAtomicStructure, atomicBounds, createCrystalMaterial, applyAppearance, applyTransmissionOptics, applySurfaceDetail, updateSurfaceDetailStrength, resolveAppearance, APPEARANCE_FIELDS, type AppearanceParams, type AppearanceField, type ResolvedAppearance, type LusterCategory, type FaceSurface, type OpticalBounds } from "@crystal/three";
+import { createFaceLocalGeometry, createTerracedFluoriteDisplaySurface, createThreeDisplayGrowthGeometry, updateFaceLocalAttributes, createReviewedSurfaceRules, createAtomicStructure, atomicBounds, createCrystalMaterial, applyAppearance, applyTransmissionOptics, applySurfaceDetail, updateSurfaceDetailStrength, resolveAppearance, APPEARANCE_FIELDS, type AppearanceParams, type AppearanceField, type ResolvedAppearance, type LusterCategory, type FaceSurface, type OpticalBounds } from "@crystal/three";
 import { cameraBasis } from "./camera.js";
 import { STATE_VERSION, validateStateShape, type ViewerState, type ViewMode, type FormState, type MineralRefState, type AppearanceState, type AppearanceOverride, type SurfaceDetailState, type CameraProjection, type DisplayGrowthMode } from "./state.js";
 
@@ -1565,10 +1565,16 @@ export class CrystalViewer extends EventTarget {
     }
 
     private updateMesh(result: Extract<GeometryResult, { status: "valid" }>): void {
+        const display = this.displayGrowth === "terraced-fluorite" && this.mineral?.id === "fluorite";
+        // Generate and validate display geometry before disposing the old mesh.
+        // A rejected union leaves the viewer in its previous state.
+        let derived: ReturnType<typeof createTerracedFluoriteDisplaySurface> | null = null;
+        if (display) {
+            try { derived = createTerracedFluoriteDisplaySurface(result.geometry, this.displayGrowthSeed); }
+            catch { return; }
+        }
         this.clearMesh();
         this.clearLabels();
-        const display = this.displayGrowth === "terraced-fluorite" && this.mineral?.id === "fluorite";
-        const derived = display ? createTerracedFluoriteDisplayGeometry(result.geometry, this.displayGrowthSeed) : null;
         const seedKey = this.surfaceSeedKey();
         const { buffer, triangleFaces, faces } = derived
             ? { buffer: createThreeDisplayGrowthGeometry(derived), triangleFaces: derived.triangleFaces, faces: [] as readonly FaceSurface[] }

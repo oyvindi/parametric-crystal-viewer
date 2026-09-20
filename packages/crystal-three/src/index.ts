@@ -5,6 +5,8 @@ export * from "./atomic.js";
 export * from "./appearance.js";
 export * from "./surface.js";
 export * from "./display-growth.js";
+export * from "./box-union.js";
+export * from "./corner-growth.js";
 
 /** Deterministic convex-polygon triangulation; triangleFaces resolves core provenance. */
 export function triangulateCrystal(geometry: CrystalGeometry): {
