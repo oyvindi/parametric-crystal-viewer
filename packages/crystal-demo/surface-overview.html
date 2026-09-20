@@ -70,6 +70,25 @@ if ([...mineralSelect.options].some((option) => option.value === requestedMinera
 function strength() { return Number(strengthInput.value); }
 function enabled() { return enabledInput.checked; }
 
+function updateOnDescription(id) {
+  const value = strength().toFixed(2);
+  if (!enabled()) {
+    onDescription.textContent = "Detail disabled";
+    return;
+  }
+  const profile = onViewer.getSurfaceProfiles().find((item) => item.matchedFaceCount > 0);
+  if (!profile) {
+    onDescription.textContent = `Generic artistic microvariation · strength ${value}`;
+    return;
+  }
+  const label = profile.kind === "growth-steps"
+    ? "Documented-typical growth-step shading"
+    : profile.kind === "pearly-luster"
+      ? "Documented-typical pearly growth-face shading"
+      : "Documented-typical directional striation shading";
+  onDescription.textContent = `${label} · ${profile.matchedFaceCount} matched face${profile.matchedFaceCount === 1 ? "" : "s"} · strength ${value}`;
+}
+
 function renderProfiles(id) {
   profilesEl.replaceChildren();
   const reviewed = REVIEWED.get(id);
@@ -183,15 +202,16 @@ async function load(id) {
   onViewer.resetCamera();
   renderProfiles(id);
   renderAppearanceClaims(id);
+  updateOnDescription(id);
 }
 
 function applyDetail() {
   const value = strength();
   strengthValue.value = value.toFixed(2);
   const on = enabled();
-  onDescription.textContent = on ? `Surface detail strength ${value.toFixed(2)}` : "Detail disabled";
   offViewer.setSurfaceDetail(false, value);
   onViewer.setSurfaceDetail(on, value);
+  updateOnDescription(mineralSelect.value);
 }
 
 // Mirror pointer rotation across both views so the off/enabled comparison stays aligned.
