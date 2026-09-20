@@ -46,6 +46,19 @@ describe("descriptive appearance claims", () => {
         expect(QUARTZ.surfaceProfiles?.some((profile) => profile.claimId === claim?.id)).toBe(false);
     });
 
+    it("keeps fluorite growth layers and natural dissolution-pit candidates separate", () => {
+        const claims = FLUORITE.appearanceClaims ?? [];
+        expect(claims.find((item) => item.id === "surface.fluorite.100-growth-steps")).toMatchObject({
+            surfaceOrigin: "growth-face", disposition: "renderer-eligible", selector: { formId: "a" },
+        });
+        for (const [id, formId] of [["surface.fluorite.100-etch-pits", "a"], ["surface.fluorite.111-etch-pits", "o"]] as const) {
+            expect(claims.find((item) => item.id === id)).toMatchObject({
+                property: "etching", surfaceOrigin: "dissolution-or-etch", disposition: "candidate", selector: { formId },
+            });
+            expect(FLUORITE.surfaceProfiles?.some((profile) => profile.claimId === id)).toBe(false);
+        }
+    });
+
     it("requires a reason when an observation is not renderer-eligible", () => {
         const candidate = structuredClone(CALCITE) as unknown as { appearanceClaims: Array<Record<string, unknown>> };
         delete candidate.appearanceClaims[1].dispositionReason;

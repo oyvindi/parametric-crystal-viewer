@@ -350,6 +350,11 @@ a measurement of the displayed specimen. SR9 remains incomplete: etch pits, a qu
 etch profile, visual-regression acceptance evidence, and the SR9 acceptance audit have
 not been completed.
 
+The fluorite `{100}` and `{111}` natural-dissolution observations, and the
+locality-specific quartz `z {01-11}` observation, are recorded as separate candidate
+claims. None is renderer-active: their source scope does not yet establish a reviewed
+typical pit or etching presentation.
+
 This phase adds only face-local, shader-realized detail. It must not make a convex
 idealized crystal appear to have measured non-convex morphology.
 

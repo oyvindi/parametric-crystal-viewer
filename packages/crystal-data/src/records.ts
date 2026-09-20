@@ -6,7 +6,7 @@ export const FLUORITE = defineMineral({
   "id": "fluorite",
   "name": "Fluorite",
   "formula": "CaF₂",
-  "dataRevision": "sr9-1",
+  "dataRevision": "sr9-2",
   "crystallography": {
     "crystalSystem": "cubic",
     "pointGroup": "m-3m",
@@ -78,7 +78,7 @@ export const FLUORITE = defineMineral({
       "status": "reported"
     },
     {
-      "coverage": ["appearanceClaims.3"],
+      "coverage": ["appearanceClaims.3", "appearanceClaims.4", "appearanceClaims.5"],
       "referenceIds": ["desai-fluorite-surfaces-1979"],
       "status": "reported"
     },
@@ -142,7 +142,9 @@ export const FLUORITE = defineMineral({
     {"id":"appearance.fluorite.color","property":"color","description":"Fluorite occurs colorless, white, purple, blue, green, yellow, orange, red, pink, brown, and bluish black; it is commonly zoned.","surfaceOrigin":"not-surface-specific","disposition":"descriptive-only","dispositionReason":"The colour range and zoning do not define measured renderer colours.","typicality":"general"},
     {"id":"appearance.fluorite.diaphaneity","property":"diaphaneity","description":"Fluorite is reported as transparent to translucent.","surfaceOrigin":"not-surface-specific","disposition":"descriptive-only","dispositionReason":"Diaphaneity does not directly determine the curated transmission value.","typicality":"general"},
     {"id":"appearance.fluorite.luster","property":"luster","description":"Fluorite has vitreous luster, becoming dull when massive.","surfaceOrigin":"not-surface-specific","disposition":"descriptive-only","dispositionReason":"The whole-mineral luster observation has no growth-face selector.","typicality":"general"},
-    {"id":"surface.fluorite.100-growth-steps","property":"growth-steps","description":"Natural fluorite may grow through spreading and piling growth layers parallel to {100} faces.","surfaceOrigin":"growth-face","disposition":"renderer-eligible","selector":{"formId":"a"}}
+    {"id":"surface.fluorite.100-growth-steps","property":"growth-steps","description":"Natural fluorite may grow through spreading and piling growth layers parallel to {100} faces.","surfaceOrigin":"growth-face","disposition":"renderer-eligible","selector":{"formId":"a"}},
+    {"id":"surface.fluorite.100-etch-pits","property":"etching","description":"Natural fluorite {100} faces have been reported with etch pits attributed to dissolution in nature.","surfaceOrigin":"dissolution-or-etch","disposition":"candidate","dispositionReason":"The observation establishes a natural dissolution origin and face family, but not a reviewed renderer realization or typical pit presentation.","selector":{"formId":"a"}},
+    {"id":"surface.fluorite.111-etch-pits","property":"etching","description":"Natural fluorite {111} faces have been reported with etch pits attributed to dissolution in nature.","surfaceOrigin":"dissolution-or-etch","disposition":"candidate","dispositionReason":"The observation establishes a natural dissolution origin and face family, but not a reviewed renderer realization or typical pit presentation.","selector":{"formId":"o"}}
   ],
   "surfaceProfiles": [
     {"id":"fluorite.100-growth-steps","kind":"growth-steps","claimId":"surface.fluorite.100-growth-steps","surfaceOrigin":"growth-face","selector":{"formId":"a"},"description":"Natural fluorite {100} growth faces may show two-dimensional growth layers; the renderer uses a curated typical presentation and is not specimen-measured."}

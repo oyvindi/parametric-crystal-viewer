@@ -224,7 +224,7 @@ export function validateMineral(value: unknown): Result<Mineral> {
     });
     if (value.surfaceProfiles !== undefined) v.entries(value.surfaceProfiles, "/surfaceProfiles", (profile, path) => {
         v.keys(profile, ["id", "kind", "claimId", "surfaceOrigin", "selector", "direction", "description"], path);
-        if (profile.kind !== "directional-striations" && profile.kind !== "pearly-luster" && profile.kind !== "growth-steps") v.error(`${path}/kind`, "Unknown surface profile kind.");
+        if (profile.kind !== "directional-striations" && profile.kind !== "pearly-luster" && profile.kind !== "growth-steps" && profile.kind !== "etch-pits") v.error(`${path}/kind`, "Unknown surface profile kind.");
         v.string(profile.claimId, `${path}/claimId`);
         if (profile.surfaceOrigin !== "growth-face") v.error(`${path}/surfaceOrigin`, "Only reviewed growth-face profiles are renderer-eligible.");
         v.string(profile.description, `${path}/description`);
@@ -237,7 +237,7 @@ export function validateMineral(value: unknown): Result<Mineral> {
             } else if (profile.direction.kind === "intersection-edge") {
                 validateIndices(v, profile.direction.otherFamily, `${path}/direction/otherFamily`);
             } else v.error(`${path}/direction/kind`, "Unknown surface direction.");
-        } else if (profile.direction !== undefined) v.error(`${path}/direction`, "Pearly-luster and growth-step profiles do not take a direction.");
+        } else if (profile.direction !== undefined) v.error(`${path}/direction`, "Pearly-luster, growth-step, and etch-pit profiles do not take a direction.");
     });
     const formLists: { forms: readonly CrystalFormSetting[]; path: string }[] = [];
     v.entries(value.habits, "/habits", (habit, path) => {

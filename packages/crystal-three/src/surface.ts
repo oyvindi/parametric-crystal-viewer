@@ -23,7 +23,7 @@ export interface SurfaceRule {
 /** Structural input accepted from data without making this renderer depend on crystal-data. */
 export interface ReviewedSurfaceProfileInput {
     readonly id: string;
-    readonly kind: "directional-striations" | "pearly-luster" | "growth-steps";
+    readonly kind: "directional-striations" | "pearly-luster" | "growth-steps" | "etch-pits";
     readonly selector: SurfaceSelector;
 }
 
