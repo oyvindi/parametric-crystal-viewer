@@ -6,8 +6,9 @@ project's [acquisition and licensing](../data-model.md#acquisition-and-licensing
 [provenance](../data-model.md#scientific-confidence--provenance) requirements.
 
 **Status:** SR0 review is complete for the quartz, calcite, and pyrite delivery cases.
-The fluorite `{100}` natural-growth claim was accepted and promoted during SR9. The
-remaining-mineral queue, including fluorite dissolution/etch candidates, is still
+The fluorite `{100}` natural-growth claim was accepted and promoted into the now
+superseded SR9 shader cue; the profile remains present only pending removal by SR10.
+The remaining-mineral queue, including fluorite dissolution/etch candidates, is still
 candidate research.
 
 ## Use Policy

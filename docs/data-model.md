@@ -545,9 +545,10 @@ the displayed specimen was measured. Those are curated renderer choices owned by
 
 The current active records are quartz prism `m {10-10}` striations perpendicular to
 c, calcite `{0001}` growth-face pearly luster, pyrite cube `{100}` striations along
-the cube/pyritohedron `{210}` intersection edge, and fluorite `{100}` growth steps.
-The fluorite profile is a curated, typical shading cue, not a measurement of the
-displayed specimen. A candidate claim alone does not activate a profile. Calcite's
+the cube/pyritohedron `{210}` intersection edge, and a legacy fluorite `{100}`
+growth-step shader cue pending removal by SR10. Literal fluorite terraces and etching
+require the separate display-mesh layer; they are not adequately represented by that
+cue. A candidate claim alone does not activate a profile. Calcite's
 separate pearly cleavage claim is renderer-ineligible and is intentionally absent. An
 unmatched, absent, ambiguous, or unknown profile falls back to no face-local treatment.
 

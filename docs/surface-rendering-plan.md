@@ -312,7 +312,7 @@ Initial classification targets:
 | Albite | Vitreous luster, pearly cleavage appearance, and polysynthetic twinning striae | Cleavage descriptive-only; twinning blocked pending twinning and surface-origin support |
 | Anatase | Adamantine-to-splendent/metallic luster range; candidate pyramidal-face striations | Keep striations candidate until the source's pyramid notation and local direction are reconciled with the shipped habits |
 | Beryl | Vitreous/resinous luster range and transparency | Descriptive-only; any prism striation remains candidate until a reliable form-specific source is reviewed |
-| Fluorite | Vitreous luster and rounded or stepped morphology; `{100}` growth terraces | The reviewed natural-growth claim has been promoted to the `growth-steps` profile; keep `{100}`/`{111}` etch pits separate and unimplemented pending dissolution review |
+| Fluorite | Vitreous luster and rounded or stepped morphology; `{100}` growth terraces | The legacy shader-only `growth-steps` profile is pending removal. Real terraces and dissolution forms require the SR10 display mesh; keep `{100}`/`{111}` etch pits separate. |
 | Forsterite | Vitreous luster and striations parallel to elongation | Striation blocked until the elongation direction is resolved for the shipped habits |
 | Gypsum | Coarse `[001]` striations, subvitreous luster, pearly `{010}` cleavage, and silky fibrous material | Growth-face striation candidate until its affected form is known; cleavage and fibrous claims descriptive-only |
 
@@ -340,31 +340,29 @@ Acceptance:
 * documentation distinguishes reported observations from curated appearance presets
   and renderer constants.
 
-### SR9 — Face-Local Growth-Step Cue
+### SR9 — Face-Local Growth-Step Cue (Superseded)
 
-**Status:** in progress. See the [SR9 acceptance audit](sr9-acceptance.md); its owner
-visual review is pending. Fluorite `{100}` growth steps are implemented as the first
-reviewed slice: the promoted natural-growth claim selects only the shipped cube form,
-and the renderer uses deterministic face-local normal and roughness variation with
-curated spacing, height, density, and phase. This is a typical visualization cue, not
-a measurement of the displayed specimen. SR9 remains incomplete pending
-visual-regression acceptance evidence and the SR9 acceptance audit. Etch pits and a
-quartz etch profile are SR10 display-mesh work, not remaining SR9 work.
+**Status:** superseded by SR10 on 2026-09-20. The existing fluorite `{100}`
+shader-only `growth-steps` profile was implemented under an earlier interpretation and
+is pending removal. It must not be accepted, expanded, or presented as an adequate
+rendering of literal terraces or etching. The [SR9 acceptance audit](sr9-acceptance.md)
+records the historical automated evidence and supersession; it has no pending visual
+review. SR10 is the next implementation milestone.
 
 The fluorite `{100}` and `{111}` natural-dissolution observations, and the
 locality-specific quartz `z {01-11}` observation, are recorded as separate candidate
 claims. None is renderer-active. Literal etching is display geometry and belongs to
 SR10; its evidence must not be treated as authorization for an SR9 normal-map cue.
 
-This phase adds only a face-local, shader-realized growth-step cue. It must not make a
-convex idealized crystal appear to have measured non-convex morphology.
+This historical phase added only a face-local, shader-realized growth-step cue. It must
+not make a convex idealized crystal appear to have measured non-convex morphology.
 
 `growth-steps` identifies the reviewed shader cue. The descriptive-claim model retains
 the explicit dissolution/etch origin and `etch-pits` vocabulary for future display-mesh
 rules, but neither activates an SR9 renderer profile. Laboratory etching may inform
 mechanism but cannot by itself establish a typical natural-specimen display treatment.
 
-The initial evidence-gated case is:
+The historical evidence-gated case was:
 
 1. **Fluorite `{100}` growth layers.** Review evidence for two-dimensional growth layers
    parallel to `{100}`, separately from etch pits reported on `{100}` and `{111}`.
@@ -375,24 +373,17 @@ Anatase striations are a parallel candidate, not an SR9 implementation target: f
 resolve whether the reported pyramidal faces map unambiguously to a shipped form and
 whether the feature is representative beyond its documented locality.
 
-The renderer may use deterministic, sparse normal and roughness perturbations in a
-face-local crystallographic frame for growth steps. It must not displace vertices,
-add cavities to the silhouette, change face picking, or simulate source-measured step
-spacing, height, density, or depth. Etch pits need a distinct display-mesh visual
-language and must not read as raised growth terraces.
+The renderer used deterministic, sparse normal and roughness perturbations in a
+face-local crystallographic frame for growth steps. This remains insufficient for the
+literal stepped and etched morphology now in scope. Etch pits need a distinct
+display-mesh visual language and must not read as raised growth terraces.
 
 Acceptance:
 
-* the activated growth-step profile has a reviewed growth-face claim, compatible
-  selector, and source-specific scope;
-* `{100}` fluorite growth steps remain distinct from the inactive fluorite `{100}` /
-  `{111}` dissolution candidates;
-* the cue appears only on the accepted cube faces and is identified as typical, never
-  a measurement of the displayed specimen;
-* enabling the cue leaves core geometry, exports, picking, bounds, and face normals
-  unchanged; and
-* numeric tests cover selector matching and visual regressions demonstrate no seams or
-  camera-space swimming.
+The prior SR9 acceptance list is superseded. Its scientific separation remains useful:
+`{100}` growth evidence and the inactive fluorite `{100}` / `{111}` dissolution
+candidates stay distinct. SR10 must replace the shader cue with a separately identified
+display mesh while preserving the idealized core geometry and its inspection identity.
 
 #### Reference-Image Scope Calibration (2026-09-19)
 
@@ -455,6 +446,8 @@ window/fenster forms are not constrained to a single mesh. A hit on display geom
 resolves only to the originating idealized core face; display features do not add a
 public inspection identity. The existing cube-form selector `a` identifies the initial
 fluorite `{100}` faces under the current selector contract.
+Remove the superseded SR9 shader-only fluorite `growth-steps` profile as part of this
+first implementation slice; do not run the legacy profile and display mesh together.
 
 Use collector-friendly labels and search aliases without making them scientific
 categories or evidence claims. The initial display label is **Terraced fluorite**, with

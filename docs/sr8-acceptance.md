@@ -32,7 +32,7 @@ An eligible form-ID selector must name a form present in a shipped habit. Candid
 blocked claims, cleavage, twinning, fibrous, weathered, and descriptive-only claims
 cannot become face-routing or material input. The existing promoted records remain
 quartz prism striations, calcite basal pearly luster, pyrite cube striations, and
-fluorite `{100}` growth steps.
+the now-superseded fluorite `{100}` growth-step shader cue pending SR10 removal.
 
 ## Automated evidence
 

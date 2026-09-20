@@ -1,9 +1,10 @@
 # SR9 Face-Local Growth-Step Cue Acceptance
 
-**Status:** automated gates pass; owner visual review is pending. SR9 adds only the
-reviewed fluorite `{100}` growth-step cue. It does not implement literal etching:
-etch pits, negative-crystal cavities, channels, and other geometric dissolution forms
-are deferred to the SR10 display-mesh layer.
+**Status:** superseded on 2026-09-20; no owner visual review is required. SR9 added the
+fluorite `{100}` shader-only growth-step cue under an earlier interpretation. The owner
+determined that literal terraces and etching require their own mesh, so SR10 supersedes
+this milestone. The legacy profile is pending removal as part of SR10; this audit is
+historical automated evidence, not a request for sign-off.
 
 ## Scope and evidence
 
@@ -33,26 +34,14 @@ platform, framing, appearance selection, and frame timing. The command uses no r
 runtime asset. These captures are deterministic regression evidence; they do not
 replace the focused owner visual review below.
 
-## Owner visual review
+## Supersession
 
-Start the demo server with `npm run serve`, then open:
-
-`http://127.0.0.1:5173/packages/crystal-demo/surface-overview.html?mineral=fluorite`
-
-With **Surface detail** enabled at strength `0.35`, rotate the fluorite and compare the
-two panels. Confirm that:
-
-* the enabled panel shows restrained, face-local growth-layer shading on cube `{100}`
-  faces only;
-* the cue stays locked to the crystal during rotation, with no seams or camera-space
-  swimming;
-* it reads as a shallow typical growth cue, not as actual recessed etching or a
-  measurement of this specimen; and
-* the silhouette, face edges, and face inspection/picking remain unchanged from the
-  detail-off panel.
-
-Report confirmation or the requested visual adjustment here before marking SR9
-complete. No image upload is needed unless a specific defect needs diagnosis.
+Shading can represent fine, bounded reflection or roughness variation, but it cannot
+provide the parallax, self-occlusion, cavity rims, stepped depth, or negative-crystal
+forms required for literal terracing and etching. SR10 therefore owns the required
+display-only procedural mesh. It must preserve the idealized core mesh, scientific
+exports, bounds, normals, contributors, and inspection identity while rendering a
+separate attributed display mesh.
 
 ## Verification
 
