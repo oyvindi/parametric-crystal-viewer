@@ -242,6 +242,7 @@ body.cv-hdri { margin: 0; height: 100vh; display: flex; background: #202326; col
 
 /* ---- Demo index page ---- */
 .cv-index h1 { font-size: 1.4em; }
+.cv-index h2 { font-size: 1.15em; margin: 1.4em 0 0.4em; }
 .cv-index ul { list-style: none; padding: 0; }
 .cv-index li { margin: 8px 0; }
 .cv-index a { color: var(--cv-accent); text-decoration: none; font-size: 1.05em; }

@@ -18,7 +18,5 @@ capture pins a 960×720 output at device scale factor 1, cube habit, seed
 surface detail. It resets the camera deterministically and records its resolved
 projection and position in the manifest, together with the browser and platform.
 
-Compare rotations and cube corners in the focused
-[Terraced fluorite demo](../packages/crystal-demo/display-growth.html) before accepting
-a baseline. The display mesh remains a curated typical interpretation; it is not a
+The display mesh remains a curated typical interpretation; it is not a
 specimen reconstruction or scientific geometry.
