@@ -509,6 +509,20 @@ provenance support, runtime/WASM and bundle cost, licensing, and compatibility w
 package boundary. Generic renderer-level CSG utilities are not suitable by default
 because they do not preserve the required attribution contract.
 
+The [2026-09-20 constrained design spike](sr10-boolean-design.md#spike-results)
+now supplies an isolated, dependency-free orthogonal-box prototype, topology and
+provenance tests, and a reproducible local transmission comparison. It supports
+further work on the constrained path without requiring a general CSG dependency.
+The [owner's initial union-only comparison](sr10-boolean-design.md#owner-feedback)
+reported a visually similar result with pronounced corners. The owner then authorized
+an isolated edge/corner experiment and [approved its visual direction](sr10-corner-growth-design.md#owner-review)
+on 2026-09-20. It adds discrete shallow blocks crossing adjacent faces.
+
+The production follow-up remains deferred: generation cost, small-scale Float32
+precision, and transactional integration remain blocking. Visual approval does not
+replace the accepted preset or its pinned baseline; production cross-face behavior
+and its attribution contract still require integration review.
+
 ## Cross-Cutting Test Matrix
 
 At minimum, test:

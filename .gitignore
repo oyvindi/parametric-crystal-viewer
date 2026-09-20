@@ -9,3 +9,6 @@ npm-debug.log*
 .env.*
 !.env.example
 .DS_Store
+
+# Local SR10 boolean-spike bundles, captures, and measurements.
+/artifacts/sr10-boolean/

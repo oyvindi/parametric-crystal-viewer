@@ -58,6 +58,15 @@
     for transmission, but requires a reviewed deterministic attribution strategy and
     does not authorize cross-face child footprints. Begin with a dependency-free
     constrained design spike; any general CSG dependency needs separate review.
+    The [2026-09-20 spike results](../sr10-boolean-design.md#spike-results) support a
+    dependency-free path for the current orthogonal operands, with higher triangle
+    count and measured generation cost. The prototype is isolated from production;
+    performance and transactional integration remain unresolved.
+    This evidence does not supersede or expand the accepted first slice. The owner
+    subsequently authorized an isolated [edge/corner block experiment](../sr10-corner-growth-design.md);
+    the owner [approved its visual direction](../sr10-corner-growth-design.md#owner-review)
+    on 2026-09-20. Its attribution and crossing rules remain experimental pending
+    integration review, including small-scale GPU precision and resource replacement.
   * Validation must prove that the idealized core mesh and its bounds, normals,
     contributors, scientific picking result, and default export remain unchanged when
     display-growth mode is enabled. It must also validate watertight components,
