@@ -2,7 +2,7 @@
   "id": "quartz",
   "name": "Quartz",
   "formula": "SiO₂",
-  "dataRevision": "sr8-2",
+  "dataRevision": "sr9-1",
   "crystallography": {
     "crystalSystem": "trigonal",
     "pointGroup": "32",
@@ -192,10 +192,13 @@
     {
       "id": "surface.quartz.z-etching",
       "property": "etching",
-      "description": "Natural quartz z faces can show ridge-and-valley texture through preferential etching of periodic defects.",
+      "description": "Iridescent natural quartz from the Jalgaon District has ridge-and-valley texture on minor z {01-11} faces, attributed to preferential etching of periodic defects; the ridges are parallel to the m/z face edge.",
       "surfaceOrigin": "dissolution-or-etch",
       "disposition": "candidate",
-      "dispositionReason": "The documented case is locality-specific, and mapping its z-face terminology to a renderer selector needs review."
+      "dispositionReason": "The documented case is locality-specific and does not establish a typical quartz renderer profile.",
+      "selector": {
+        "formId": "z"
+      }
     },
     {
       "id": "appearance.quartz.luster",

@@ -35,6 +35,17 @@ describe("descriptive appearance claims", () => {
         expect(FLUORITE.surfaceProfiles?.some((profile) => profile.claimId === claim?.id)).toBe(true);
     });
 
+    it("records the locality-specific quartz z-face etching observation without promoting it", () => {
+        const claim = QUARTZ.appearanceClaims?.find((item) => item.id === "surface.quartz.z-etching");
+        expect(claim).toMatchObject({
+            property: "etching",
+            surfaceOrigin: "dissolution-or-etch",
+            disposition: "candidate",
+            selector: { formId: "z" },
+        });
+        expect(QUARTZ.surfaceProfiles?.some((profile) => profile.claimId === claim?.id)).toBe(false);
+    });
+
     it("requires a reason when an observation is not renderer-eligible", () => {
         const candidate = structuredClone(CALCITE) as unknown as { appearanceClaims: Array<Record<string, unknown>> };
         delete candidate.appearanceClaims[1].dispositionReason;
