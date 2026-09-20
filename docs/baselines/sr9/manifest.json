@@ -1,0 +1,153 @@
+{
+  "schemaVersion": 1,
+  "capturedAt": "2026-09-20T10:15:51.826Z",
+  "viewport": {
+    "width": 960,
+    "height": 720,
+    "deviceScaleFactor": 1
+  },
+  "presentation": {
+    "environment": "project-owned procedural studio gradient",
+    "environmentIntensity": 1,
+    "environmentRotation": [
+      0,
+      0,
+      0
+    ],
+    "backgroundZoom": 1,
+    "toneMapping": "agx",
+    "exposure": 1,
+    "surfaceDetail": {
+      "enabled": true,
+      "strength": 0.35
+    }
+  },
+  "timing": {
+    "method": "requestAnimationFrame intervals in a fixed one-second window after one warm-up frame",
+    "note": "Hardware- and browser-dependent; compare only on the recorded platform."
+  },
+  "platform": {
+    "chrome": "Google Chrome 152.0.7977.82",
+    "node": "v26.8.1",
+    "os": "linux x64"
+  },
+  "scenes": [
+    {
+      "mineralId": "albite",
+      "habitId": "tabular",
+      "appearanceId": "white",
+      "surfaceDetail": {
+        "enabled": true,
+        "strength": 0.35
+      },
+      "frames": 1,
+      "meanFrameMs": 1766.6,
+      "medianFrameMs": 1766.6,
+      "p95FrameMs": 1766.6
+    },
+    {
+      "mineralId": "anatase",
+      "habitId": "dipyramidal",
+      "appearanceId": "indigo",
+      "surfaceDetail": {
+        "enabled": true,
+        "strength": 0.35
+      },
+      "frames": 1,
+      "meanFrameMs": 1633.402,
+      "medianFrameMs": 1633.402,
+      "p95FrameMs": 1633.402
+    },
+    {
+      "mineralId": "beryl",
+      "habitId": "prismatic",
+      "appearanceId": "emerald",
+      "surfaceDetail": {
+        "enabled": true,
+        "strength": 0.35
+      },
+      "frames": 1,
+      "meanFrameMs": 1733.202,
+      "medianFrameMs": 1733.202,
+      "p95FrameMs": 1733.202
+    },
+    {
+      "mineralId": "calcite",
+      "habitId": "rhombohedral",
+      "appearanceId": "colorless",
+      "surfaceDetail": {
+        "enabled": true,
+        "strength": 0.35
+      },
+      "frames": 1,
+      "meanFrameMs": 1550,
+      "medianFrameMs": 1550,
+      "p95FrameMs": 1550
+    },
+    {
+      "mineralId": "fluorite",
+      "habitId": "cube",
+      "appearanceId": "violet",
+      "surfaceDetail": {
+        "enabled": true,
+        "strength": 0.35
+      },
+      "frames": 1,
+      "meanFrameMs": 1966.5,
+      "medianFrameMs": 1966.5,
+      "p95FrameMs": 1966.5
+    },
+    {
+      "mineralId": "forsterite",
+      "habitId": "tabular",
+      "appearanceId": "olive",
+      "surfaceDetail": {
+        "enabled": true,
+        "strength": 0.35
+      },
+      "frames": 1,
+      "meanFrameMs": 1699.902,
+      "medianFrameMs": 1699.902,
+      "p95FrameMs": 1699.902
+    },
+    {
+      "mineralId": "gypsum",
+      "habitId": "tabular",
+      "appearanceId": "colorless",
+      "surfaceDetail": {
+        "enabled": true,
+        "strength": 0.35
+      },
+      "frames": 1,
+      "meanFrameMs": 1583.2,
+      "medianFrameMs": 1583.2,
+      "p95FrameMs": 1583.2
+    },
+    {
+      "mineralId": "pyrite",
+      "habitId": "cubic",
+      "appearanceId": "brass",
+      "surfaceDetail": {
+        "enabled": true,
+        "strength": 0.35
+      },
+      "frames": 484,
+      "meanFrameMs": 46.107,
+      "medianFrameMs": 50,
+      "p95FrameMs": 50.1
+    },
+    {
+      "mineralId": "quartz",
+      "habitId": "prismatic",
+      "appearanceId": "rock-crystal",
+      "surfaceDetail": {
+        "enabled": true,
+        "strength": 0.35
+      },
+      "frames": 1,
+      "meanFrameMs": 1516.6,
+      "medianFrameMs": 1516.6,
+      "p95FrameMs": 1516.6
+    }
+  ]
+}

@@ -7,6 +7,7 @@ import { join } from "node:path";
 const root = fileURLToPath(new URL("..", import.meta.url));
 const label = process.argv[2] ?? "sr0";
 if (!/^sr\d+$/.test(label)) throw new Error(`Invalid baseline label: ${label}`);
+const surfaceDetailEnabled = label === "sr4" || label === "sr9";
 const output = join(root, "docs", "baselines", label);
 const minerals = ["albite", "anatase", "beryl", "calcite", "fluorite", "forsterite", "gypsum", "pyrite", "quartz"];
 const chrome = process.env.CHROME_BIN ?? "google-chrome";
@@ -51,7 +52,7 @@ try {
   const scenes = [];
   for (const mineral of minerals) {
     const screenshot = join(output, `${mineral}.png`);
-    const detail = label === "sr4" ? "&surfaceDetail=0.35" : "";
+    const detail = surfaceDetailEnabled ? "&surfaceDetail=0.35" : "";
     const url = `http://127.0.0.1:${port}/surface-baseline.html?mineral=${mineral}${detail}`;
     const timingUrl = `${url}&timing=1`;
     await run(chrome, [
@@ -75,7 +76,7 @@ try {
     schemaVersion: 1,
     capturedAt: new Date().toISOString(),
     viewport: { width: 960, height: 720, deviceScaleFactor: 1 },
-    presentation: { environment: "project-owned procedural studio gradient", environmentIntensity: 1, environmentRotation: [0, 0, 0], backgroundZoom: 1, toneMapping: "agx", exposure: 1, surfaceDetail: label === "sr4" ? { enabled: true, strength: 0.35 } : { enabled: false, strength: 0.35 } },
+    presentation: { environment: "project-owned procedural studio gradient", environmentIntensity: 1, environmentRotation: [0, 0, 0], backgroundZoom: 1, toneMapping: "agx", exposure: 1, surfaceDetail: surfaceDetailEnabled ? { enabled: true, strength: 0.35 } : { enabled: false, strength: 0.35 } },
     timing: { method: "requestAnimationFrame intervals in a fixed one-second window after one warm-up frame", note: "Hardware- and browser-dependent; compare only on the recorded platform." },
     platform: { chrome: (await run(chrome, ["--version"])).stdout.trim(), node: process.version, os: `${process.platform} ${process.arch}` },
     scenes,

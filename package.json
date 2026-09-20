@@ -23,7 +23,8 @@
     "baseline:sr0": "bash -lc 'npm run build:demo && node scripts/capture-surface-baseline.mjs'",
     "baseline:sr1": "bash -lc 'npm run build:demo && node scripts/capture-surface-baseline.mjs sr1'",
     "baseline:sr2": "bash -lc 'npm run build:demo && node scripts/capture-surface-baseline.mjs sr2'",
-    "baseline:sr4": "bash -lc 'npm run build:demo && node scripts/capture-surface-baseline.mjs sr4'"
+    "baseline:sr4": "bash -lc 'npm run build:demo && node scripts/capture-surface-baseline.mjs sr4'",
+    "baseline:sr9": "bash -lc 'npm run build:demo && node scripts/capture-surface-baseline.mjs sr9'"
   },
   "devDependencies": {
     "@types/node": "^22.0.0",

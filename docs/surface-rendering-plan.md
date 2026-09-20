@@ -340,63 +340,59 @@ Acceptance:
 * documentation distinguishes reported observations from curated appearance presets
   and renderer constants.
 
-### SR9 — Face-Local Growth Steps and Dissolution
+### SR9 — Face-Local Growth-Step Cue
 
-**Status:** in progress. Fluorite `{100}` growth steps are implemented as the first
+**Status:** in progress. See the [SR9 acceptance audit](sr9-acceptance.md); its owner
+visual review is pending. Fluorite `{100}` growth steps are implemented as the first
 reviewed slice: the promoted natural-growth claim selects only the shipped cube form,
 and the renderer uses deterministic face-local normal and roughness variation with
 curated spacing, height, density, and phase. This is a typical visualization cue, not
-a measurement of the displayed specimen. SR9 remains incomplete: etch pits, a quartz
-etch profile, visual-regression acceptance evidence, and the SR9 acceptance audit have
-not been completed.
+a measurement of the displayed specimen. SR9 remains incomplete pending
+visual-regression acceptance evidence and the SR9 acceptance audit. Etch pits and a
+quartz etch profile are SR10 display-mesh work, not remaining SR9 work.
 
 The fluorite `{100}` and `{111}` natural-dissolution observations, and the
 locality-specific quartz `z {01-11}` observation, are recorded as separate candidate
-claims. None is renderer-active: their source scope does not yet establish a reviewed
-typical pit or etching presentation.
+claims. None is renderer-active. Literal etching is display geometry and belongs to
+SR10; its evidence must not be treated as authorization for an SR9 normal-map cue.
 
-This phase adds only face-local, shader-realized detail. It must not make a convex
-idealized crystal appear to have measured non-convex morphology.
+This phase adds only a face-local, shader-realized growth-step cue. It must not make a
+convex idealized crystal appear to have measured non-convex morphology.
 
-Extend the reviewed surface-profile vocabulary with `growth-steps` and `etch-pits`.
-Their factual claims must distinguish growth from dissolution and identify a
-crystallographic face family or form. Add an explicit dissolution/etch surface origin
-to the descriptive-claim model before accepting a natural etching claim; laboratory
-etching may inform mechanism but cannot by itself establish a typical natural-specimen
-renderer profile.
+`growth-steps` identifies the reviewed shader cue. The descriptive-claim model retains
+the explicit dissolution/etch origin and `etch-pits` vocabulary for future display-mesh
+rules, but neither activates an SR9 renderer profile. Laboratory etching may inform
+mechanism but cannot by itself establish a typical natural-specimen display treatment.
 
-Start with two evidence-gated candidates:
+The initial evidence-gated case is:
 
-1. **Fluorite `{100}` terraces.** Review evidence for two-dimensional growth layers
+1. **Fluorite `{100}` growth layers.** Review evidence for two-dimensional growth layers
    parallel to `{100}`, separately from etch pits reported on `{100}` and `{111}`.
    Do not generalize the rule to every fluorite face or imply that the displayed
    specimen is stepped.
-2. **Quartz etching.** Add natural quartz etching as a descriptive claim first.
-   A `z`-face profile is eligible for review only if the source supports the observed
-   feature, its natural dissolution origin, and its face selector. Synthetic or
-   deliberately etched quartz remains mechanism-only evidence.
 
 Anatase striations are a parallel candidate, not an SR9 implementation target: first
 resolve whether the reported pyramidal faces map unambiguously to a shipped form and
 whether the feature is representative beyond its documented locality.
 
 The renderer may use deterministic, sparse normal and roughness perturbations in a
-face-local crystallographic frame. It must not displace vertices, add cavities to the
-silhouette, change face picking, or simulate source-measured pit size, density, or
-depth. Growth steps and etch pits need distinct profiles, seeds, and visual language:
-etched pits must not read as raised growth terraces.
+face-local crystallographic frame for growth steps. It must not displace vertices,
+add cavities to the silhouette, change face picking, or simulate source-measured step
+spacing, height, density, or depth. Etch pits need a distinct display-mesh visual
+language and must not read as raised growth terraces.
 
 Acceptance:
 
-* every activated profile has a reviewed growth or dissolution claim, compatible face
+* the activated growth-step profile has a reviewed growth-face claim, compatible
   selector, and source-specific scope;
-* `{100}` fluorite growth steps and fluorite `{100}`/`{111}` etch pits remain separate;
-* the quartz effect appears only on the accepted face class and is identified as a
-  typical feature, never a measurement of the displayed specimen;
-* enabling either effect leaves core geometry, exports, picking, bounds, and face
-  normals unchanged; and
-* numeric tests cover selector matching and visual regressions demonstrate no seams,
-  camera-space swimming, or confusion between raised and recessed patterns.
+* `{100}` fluorite growth steps remain distinct from the inactive fluorite `{100}` /
+  `{111}` dissolution candidates;
+* the cue appears only on the accepted cube faces and is identified as typical, never
+  a measurement of the displayed specimen;
+* enabling the cue leaves core geometry, exports, picking, bounds, and face normals
+  unchanged; and
+* numeric tests cover selector matching and visual regressions demonstrate no seams or
+  camera-space swimming.
 
 #### Reference-Image Scope Calibration (2026-09-19)
 
@@ -430,8 +426,9 @@ shading cue belongs to SR10.
 
 **Status:** deferred for implementation; the architectural direction is accepted in
 [ADR 0014](decisions/0014-procedural-display-growth-morphology.md). Skeleton, hopper,
-window/fenster, literal stepped faces, and comparable growth forms are not surface
-textures. They require render-only procedural mesh generation. Their resulting geometry
+window/fenster, literal stepped faces, dissolution etch pits, negative-crystal cavities,
+and comparable growth or corrosion forms are not surface textures. They require
+render-only procedural mesh generation. Their resulting geometry
 may be non-convex, but non-convexity is not the defining scope boundary: a visibly
 terraced fluorite face also belongs here.
 
