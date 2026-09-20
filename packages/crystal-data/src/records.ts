@@ -295,7 +295,7 @@ export const QUARTZ = defineMineral({
   "id": "quartz",
   "name": "Quartz",
   "formula": "SiO₂",
-  "dataRevision": "sr8-1",
+  "dataRevision": "sr8-2",
   "crystallography": {
     "crystalSystem": "trigonal",
     "pointGroup": "32",
@@ -429,7 +429,8 @@ export const QUARTZ = defineMineral({
     {
       "coverage": [
         "surfaceProfiles",
-        "appearanceClaims.0"
+        "appearanceClaims.0",
+        "appearanceClaims.2"
       ],
       "referenceIds": [
         "handbook-quartz-v1.2"
@@ -488,6 +489,15 @@ export const QUARTZ = defineMineral({
       "surfaceOrigin": "dissolution-or-etch",
       "disposition": "candidate",
       "dispositionReason": "The documented case is locality-specific, and mapping its z-face terminology to a renderer selector needs review."
+    },
+    {
+      "id": "appearance.quartz.luster",
+      "property": "luster",
+      "description": "Quartz crystals are reported to have vitreous luster.",
+      "surfaceOrigin": "not-surface-specific",
+      "disposition": "descriptive-only",
+      "dispositionReason": "The general luster observation has no growth-face selector.",
+      "typicality": "general"
     }
   ],
   "appearance": [
@@ -782,7 +792,7 @@ export const CALCITE = defineMineral({
   "id": "calcite",
   "name": "Calcite",
   "formula": "CaCO₃",
-  "dataRevision": "sr8-1",
+  "dataRevision": "sr8-2",
   "crystallography": {
     "crystalSystem": "trigonal",
     "pointGroup": "-3m",
@@ -922,6 +932,15 @@ export const CALCITE = defineMineral({
       "surfaceOrigin": "cleavage",
       "disposition": "descriptive-only",
       "dispositionReason": "Cleavage observations must not select generated growth faces."
+    },
+    {
+      "id": "appearance.calcite.luster",
+      "property": "luster",
+      "description": "Calcite is reported to have vitreous luster apart from its pearly basal and cleavage appearances.",
+      "surfaceOrigin": "not-surface-specific",
+      "disposition": "descriptive-only",
+      "dispositionReason": "The general luster observation has no growth-face selector.",
+      "typicality": "general"
     }
   ],
   "appearance": [
@@ -1048,7 +1067,7 @@ export const PYRITE = defineMineral({
   "id": "pyrite",
   "name": "Pyrite",
   "formula": "FeS₂",
-  "dataRevision": "sr8-1",
+  "dataRevision": "sr8-2",
   "crystallography": {
     "crystalSystem": "cubic",
     "pointGroup": "m-3",
@@ -1184,6 +1203,15 @@ export const PYRITE = defineMineral({
       "selector": {
         "formId": "a"
       }
+    },
+    {
+      "id": "appearance.pyrite.luster",
+      "property": "luster",
+      "description": "Pyrite is reported to have metallic to splendent luster.",
+      "surfaceOrigin": "not-surface-specific",
+      "disposition": "descriptive-only",
+      "dispositionReason": "The general luster observation has no growth-face selector.",
+      "typicality": "general"
     }
   ],
   "appearance": [

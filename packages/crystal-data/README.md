@@ -40,6 +40,11 @@ polyhedron. Thus disabled or non-enclosing form combinations remain valid record
 inputs and produce geometry diagnostics when rendered. Shipping a *completed habit*
 still requires the separate [habit acceptance checks](../../docs/data-model.md#completed-habit-presets).
 
+Descriptive `appearanceClaims` are provenance-backed observations and never renderer
+input on their own. A `surfaceProfiles` entry must promote an existing
+`renderer-eligible` growth-face claim and retain its exact selector; blocked,
+candidate, and descriptive-only claims cannot activate a material or select faces.
+
 The normalized-record default length unit is Ångström. Explicit nanometres are
 converted to Ångström and the original unit is retained in `sourceLengthUnit`.
 Unknown units are rejected. Importers must establish source units before using this

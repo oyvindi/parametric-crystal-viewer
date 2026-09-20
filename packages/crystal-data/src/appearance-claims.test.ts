@@ -42,4 +42,26 @@ describe("descriptive appearance claims", () => {
         expect(result.ok).toBe(false);
         expect(result.diagnostics.some((diagnostic) => diagnostic.path === "/appearanceClaims/1/dispositionReason")).toBe(true);
     });
+
+    it("requires a renderer profile to promote its own eligible claim with the same selector", () => {
+        const candidate = structuredClone(FLUORITE) as unknown as {
+            appearanceClaims: Array<Record<string, unknown>>;
+            surfaceProfiles: Array<Record<string, unknown>>;
+        };
+        candidate.surfaceProfiles[0].claimId = "appearance.fluorite.luster";
+        candidate.surfaceProfiles[0].selector = { formId: "o" };
+        const result = validateMineral(candidate);
+        expect(result.ok).toBe(false);
+        expect(result.diagnostics.some((diagnostic) => diagnostic.path === "/surfaceProfiles/0/claimId")).toBe(true);
+        expect(result.diagnostics.some((diagnostic) => diagnostic.path === "/surfaceProfiles/0/selector")).toBe(true);
+    });
+
+    it("rejects a renderer-eligible claim that names no shipped form", () => {
+        const candidate = structuredClone(FLUORITE) as unknown as { appearanceClaims: Array<Record<string, unknown>> };
+        const claim = candidate.appearanceClaims.find((item) => item.id === "surface.fluorite.100-growth-steps")!;
+        claim.selector = { formId: "not-a-fluorite-form" };
+        const result = validateMineral(candidate);
+        expect(result.ok).toBe(false);
+        expect(result.diagnostics.some((diagnostic) => diagnostic.path === "/appearanceClaims/3/selector/formId")).toBe(true);
+    });
 });

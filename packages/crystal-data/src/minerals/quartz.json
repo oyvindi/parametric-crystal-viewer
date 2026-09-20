@@ -2,7 +2,7 @@
   "id": "quartz",
   "name": "Quartz",
   "formula": "SiO₂",
-  "dataRevision": "sr8-1",
+  "dataRevision": "sr8-2",
   "crystallography": {
     "crystalSystem": "trigonal",
     "pointGroup": "32",
@@ -136,7 +136,8 @@
     {
       "coverage": [
         "surfaceProfiles",
-        "appearanceClaims.0"
+        "appearanceClaims.0",
+        "appearanceClaims.2"
       ],
       "referenceIds": [
         "handbook-quartz-v1.2"
@@ -195,6 +196,15 @@
       "surfaceOrigin": "dissolution-or-etch",
       "disposition": "candidate",
       "dispositionReason": "The documented case is locality-specific, and mapping its z-face terminology to a renderer selector needs review."
+    },
+    {
+      "id": "appearance.quartz.luster",
+      "property": "luster",
+      "description": "Quartz crystals are reported to have vitreous luster.",
+      "surfaceOrigin": "not-surface-specific",
+      "disposition": "descriptive-only",
+      "dispositionReason": "The general luster observation has no growth-face selector.",
+      "typicality": "general"
     }
   ],
   "appearance": [

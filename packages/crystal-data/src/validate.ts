@@ -146,6 +146,21 @@ function validateSurfaceSelector(v: RecordValidator, value: unknown, path: strin
     if (value.formId === undefined && value.family === undefined && value.orientedIndices === undefined) v.error(path, "A surface selector needs a form ID or Miller selector.");
 }
 
+/** Surface-profile promotion must retain the exact reviewed face selector. */
+function sameSurfaceSelector(a: SurfaceSelector, b: SurfaceSelector): boolean {
+    return a.formId === b.formId
+        && sameMillerIndices(a.family, b.family)
+        && sameMillerIndices(a.orientedIndices, b.orientedIndices);
+}
+
+function sameMillerIndices(a: SurfaceSelector["family"], b: SurfaceSelector["family"]): boolean {
+    return a?.notation === b?.notation
+        && a?.h === b?.h
+        && a?.k === b?.k
+        && (a?.notation !== "miller-bravais" || b?.notation !== "miller-bravais" || a.i === b.i)
+        && a?.l === b?.l;
+}
+
 /** Validate, normalize and freeze a detached mineral snapshot. No geometry is required. */
 export function validateMineral(value: unknown): Result<Mineral> {
     if (object(value) && validated.has(value)) return { ok: true, value: value as unknown as Mineral, diagnostics: [] };
@@ -272,6 +287,29 @@ export function validateMineral(value: unknown): Result<Mineral> {
     }
     if (v.diagnostics.some((d) => d.severity === "error")) return { ok: false, diagnostics: v.diagnostics };
     const mineral = value as unknown as Mineral;
+    const claimsById = new Map(mineral.appearanceClaims?.map((claim) => [claim.id, claim]));
+    const knownFormIds = new Set(mineral.habits.flatMap((habit) => habit.forms.map((form) => form.id)));
+    mineral.appearanceClaims?.forEach((claim, i) => {
+        if (claim.disposition === "renderer-eligible" && claim.selector?.formId !== undefined && !knownFormIds.has(claim.selector.formId)) {
+            v.error(`/appearanceClaims/${i}/selector/formId`, "Renderer-eligible appearance claims must select a form used by a shipped habit.");
+        }
+    });
+    mineral.surfaceProfiles?.forEach((profile, i) => {
+        const claim = claimsById.get(profile.claimId);
+        if (!claim) {
+            v.error(`/surfaceProfiles/${i}/claimId`, "Surface profiles must reference an appearance claim.");
+            return;
+        }
+        if (claim.disposition !== "renderer-eligible") {
+            v.error(`/surfaceProfiles/${i}/claimId`, "Surface profiles may only promote renderer-eligible appearance claims.");
+        }
+        if (claim.surfaceOrigin !== "growth-face") {
+            v.error(`/surfaceProfiles/${i}/claimId`, "Surface profiles may only promote growth-face appearance claims.");
+        }
+        if (!claim.selector || !sameSurfaceSelector(profile.selector, claim.selector)) {
+            v.error(`/surfaceProfiles/${i}/selector`, "Surface profile selector must match its promoted appearance claim.");
+        }
+    });
     const references = new Map(mineral.references.map((r) => [r.id, r]));
     const traceable = (r: Reference) => Boolean(r.title || r.url || r.doi);
     for (const [i, reference] of mineral.references.entries()) if (!traceable(reference)) v.error(`/references/${i}`, "A source needs a title, URL, or DOI.", "data.record.invalid-reference");

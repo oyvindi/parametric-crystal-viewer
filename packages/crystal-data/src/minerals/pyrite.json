@@ -2,7 +2,7 @@
   "id": "pyrite",
   "name": "Pyrite",
   "formula": "FeS₂",
-  "dataRevision": "sr8-1",
+  "dataRevision": "sr8-2",
   "crystallography": {
     "crystalSystem": "cubic",
     "pointGroup": "m-3",
@@ -138,6 +138,15 @@
       "selector": {
         "formId": "a"
       }
+    },
+    {
+      "id": "appearance.pyrite.luster",
+      "property": "luster",
+      "description": "Pyrite is reported to have metallic to splendent luster.",
+      "surfaceOrigin": "not-surface-specific",
+      "disposition": "descriptive-only",
+      "dispositionReason": "The general luster observation has no growth-face selector.",
+      "typicality": "general"
     }
   ],
   "appearance": [

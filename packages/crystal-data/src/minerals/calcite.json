@@ -2,7 +2,7 @@
   "id": "calcite",
   "name": "Calcite",
   "formula": "CaCO₃",
-  "dataRevision": "sr8-1",
+  "dataRevision": "sr8-2",
   "crystallography": {
     "crystalSystem": "trigonal",
     "pointGroup": "-3m",
@@ -142,6 +142,15 @@
       "surfaceOrigin": "cleavage",
       "disposition": "descriptive-only",
       "dispositionReason": "Cleavage observations must not select generated growth faces."
+    },
+    {
+      "id": "appearance.calcite.luster",
+      "property": "luster",
+      "description": "Calcite is reported to have vitreous luster apart from its pearly basal and cleavage appearances.",
+      "surfaceOrigin": "not-surface-specific",
+      "disposition": "descriptive-only",
+      "dispositionReason": "The general luster observation has no growth-face selector.",
+      "typicality": "general"
     }
   ],
   "appearance": [
