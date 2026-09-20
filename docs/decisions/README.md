@@ -28,3 +28,4 @@ Decision records explain why a choice was made. Update the owning contract when 
 * [0011 — Demo Production Bundling with tsdown](0011-demo-production-bundling.md) — superseded for the demo build path by 0013.
 * [0012 — Orthographic Camera Projection](0012-orthographic-projection.md) — accepted.
 * [0013 — Demo UI and Build Tooling](0013-demo-ui-and-build-tooling.md) — accepted. Supersedes 0011 for the demo build path.
+* [0014 — Procedural Display Growth Morphology](0014-procedural-display-growth-morphology.md) — accepted.

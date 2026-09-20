@@ -4,6 +4,11 @@
 owner sign-off; this audit does not substitute automated checks for human visual judgment.
 One generic-microvariation appearance item is deferred for later review (see below).
 
+This is the historical SR7 acceptance record. SR9 subsequently added the fluorite
+`{100}` growth-step profile; SR7's three-profile inventory, demo instructions, and
+test counts below describe the SR7 baseline and are not the current SR9 acceptance
+evidence.
+
 SR7 closes the surface-rendering track. It adds a comprehensive demo, confirms the stable
 public API, records the state-migration decision, adds `prefers-reduced-motion` handling,
 and collects the cross-cutting acceptance evidence. No scientific geometry, mineral data,

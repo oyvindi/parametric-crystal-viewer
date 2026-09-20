@@ -5,8 +5,10 @@ This record identifies where to obtain evidence for the
 project's [acquisition and licensing](../data-model.md#acquisition-and-licensing) and
 [provenance](../data-model.md#scientific-confidence--provenance) requirements.
 
-**Status:** SR0 review complete for the quartz, calcite, and pyrite delivery cases.
-The remaining-mineral queue is still candidate research.
+**Status:** SR0 review is complete for the quartz, calcite, and pyrite delivery cases.
+The fluorite `{100}` natural-growth claim was accepted and promoted during SR9. The
+remaining-mineral queue, including fluorite dissolution/etch candidates, is still
+candidate research.
 
 ## Use Policy
 
@@ -83,6 +85,19 @@ cite these IDs without treating procedural values as measurements.
 | `gia-quartz-iridescence-2017` | Lin et al. (2017), “Causes of Iridescence in Natural Quartz,” *Gems & Gemology*, [article](https://origin.prod.gia.edu/gems-gemology/spring-2017-iridescence-natural-quartz), accessed 2026-09-19. | Publicly readable; facts paraphrased, no source artifact distributed. |
 | `augustine-quartz-etching-1960` | F. Augustine (1960), “Topography and etch patterns of synthetic quartz,” *Journal of Physics and Chemistry of Solids* 13, 344–346, [DOI](https://doi.org/10.1016/0022-3697(60)90019-6), accessed 2026-09-19. | Abstract publicly readable; mechanism evidence only; facts paraphrased, no source artifact distributed. |
 | `eb1911-pyrites` | L. J. Spencer (1911), “Pyrites,” *Encyclopædia Britannica*, vol. 22, pp. 696–697, [transcription and scan link](https://en.wikisource.org/wiki/1911_Encyclop%C3%A6dia_Britannica/Pyrites), accessed 2026-09-19. | Original is public domain. No prose or figure is copied into distributable data. |
+
+## Visual Design References (Not Scientific Evidence)
+
+The following photographs are visual-design references for the deferred SR10
+display-growth work. They do not establish mineral-data claims, face selectors,
+procedural parameters, or specimen reconstruction. No image is committed to this
+repository by recording it here.
+
+| Reference ID | Reference and visual role | Rights / project use decision |
+|---|---|---|
+| `visual.quartz.mud-fenster-lavinsky` | Robert M. Lavinsky / iRocks.com, [*Quartz-284038.jpg*](https://commons.wikimedia.org/wiki/File:Quartz-284038.jpg), a yellowish skeletal “mud quartz” specimen on a black background; useful only as a visual reference for skeletal/window-like quartz. Wikimedia Commons identifies the specimen as a former Brian Kosnar Collection item; that provenance is distinct from image ownership. Accessed 2026-09-20. | CC BY-SA 3.0. The copyright holder is Rob Lavinsky / iRocks.com. It may be reused only with appropriate attribution, a license link, modification notice, and compatible share-alike treatment. Not committed or distributed by the project at present. |
+| `visual.quartz.skeletal-arkenstone` | The Arkenstone, [Quartz, reference RA23-30](https://www.minfind.com/en/mineral-1414081.html), a large clear skeletal quartz specimen shown held in a hand; useful only as a visual reference for hopper/fenster-like growth. Accessed 2026-09-20. | Copyright © The Arkenstone. The listing says its photos may not be used for another purpose without permission. Reference-only; do not commit, redistribute, or use in project output without explicit permission. |
+| `visual.fluorite.overgrowth-user-supplied` | User-supplied fluorite overgrowth photograph referenced by SR9/SR10. Its source identity and rights metadata have not yet been provided. | Reference-only pending owner provenance. Do not commit, redistribute, or treat it as scientific evidence until the owner and reuse terms are recorded. |
 
 ### Quartz prism striations
 
@@ -161,6 +176,8 @@ Request owner input before:
 * purchasing or requesting institutional access to a paywalled source;
 * contacting a publisher or author for reproduction permission;
 * committing any downloaded source document, scan, figure, or substantial excerpt;
+* reusing the CC BY-SA visual reference in project output, so attribution, modification
+  notice, and compatible share-alike treatment can be confirmed;
 * selecting a source whose terms or authorship remain unclear as the sole authority for
   a shipped claim; or
 * accepting a renderer behavior when sources conflict and scientific review cannot

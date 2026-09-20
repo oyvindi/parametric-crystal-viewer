@@ -311,7 +311,7 @@ Initial classification targets:
 | Albite | Vitreous luster, pearly cleavage appearance, and polysynthetic twinning striae | Cleavage descriptive-only; twinning blocked pending twinning and surface-origin support |
 | Anatase | Adamantine-to-splendent/metallic luster range; candidate pyramidal-face striations | Keep striations candidate until the source's pyramid notation and local direction are reconciled with the shipped habits |
 | Beryl | Vitreous/resinous luster range and transparency | Descriptive-only; any prism striation remains candidate until a reliable form-specific source is reviewed |
-| Fluorite | Vitreous luster and rounded or stepped morphology; candidate `{100}` growth terraces | Keep steps candidate until source scope, face selector, and growth-versus-dissolution treatment are reviewed |
+| Fluorite | Vitreous luster and rounded or stepped morphology; `{100}` growth terraces | The reviewed natural-growth claim has been promoted to the `growth-steps` profile; keep `{100}`/`{111}` etch pits separate and unimplemented pending dissolution review |
 | Forsterite | Vitreous luster and striations parallel to elongation | Striation blocked until the elongation direction is resolved for the shipped habits |
 | Gypsum | Coarse `[001]` striations, subvitreous luster, pearly `{010}` cleavage, and silky fibrous material | Growth-face striation candidate until its affected form is known; cleavage and fibrous claims descriptive-only |
 
@@ -334,15 +334,23 @@ Acceptance:
   a renderer-eligible claim without a compatible growth-face selector;
 * catalogue tests demonstrate that descriptive-only, blocked, and candidate claims
   cannot alter materials or select faces;
-* the existing quartz, calcite, and pyrite `surfaceProfiles` remain the only
-  renderer-active mineral-specific rules unless a new claim has passed promotion; and
+* only reviewed, promoted claims can become renderer-active mineral-specific rules;
+  the current active profiles are quartz, calcite, pyrite, and fluorite; and
 * documentation distinguishes reported observations from curated appearance presets
   and renderer constants.
 
 ### SR9 — Face-Local Growth Steps and Dissolution
 
-**Status:** planned. This phase adds only face-local, shader-realized detail. It must
-not make a convex idealized crystal appear to have measured non-convex morphology.
+**Status:** in progress. Fluorite `{100}` growth steps are implemented as the first
+reviewed slice: the promoted natural-growth claim selects only the shipped cube form,
+and the renderer uses deterministic face-local normal and roughness variation with
+curated spacing, height, density, and phase. This is a typical visualization cue, not
+a measurement of the displayed specimen. SR9 remains incomplete: etch pits, a quartz
+etch profile, visual-regression acceptance evidence, and the SR9 acceptance audit have
+not been completed.
+
+This phase adds only face-local, shader-realized detail. It must not make a convex
+idealized crystal appear to have measured non-convex morphology.
 
 Extend the reviewed surface-profile vocabulary with `growth-steps` and `etch-pits`.
 Their factual claims must distinguish growth from dissolution and identify a
@@ -408,19 +416,49 @@ changing its appearance presets. Do not infer either rule from a photograph.
 
 The reviewed fluorite overgrowth and quartz window/fenster examples instead have
 visible child crystals, nested or recessed frames, self-occlusion, and often altered
-transmission paths. These require non-convex display geometry and belong to SR10.
+transmission paths. These require a procedural display-growth mesh and belong to SR10.
+Likewise, a fluorite treatment that shows literal terraces rather than SR9's shallow
+shading cue belongs to SR10.
 
-### SR10 — Non-Convex Growth Morphologies
+### SR10 — Procedural Display Growth Morphologies
 
-**Status:** deferred. Skeleton, hopper, window/fenster, and comparable quartz growth
-forms are not surface textures. Edge-dominant growth produces frame-like or recessed
-geometry that changes silhouette and may be non-convex.
+**Status:** deferred for implementation; the architectural direction is accepted in
+[ADR 0014](decisions/0014-procedural-display-growth-morphology.md). Skeleton, hopper,
+window/fenster, literal stepped faces, and comparable growth forms are not surface
+textures. They require render-only procedural mesh generation. Their resulting geometry
+may be non-convex, but non-convexity is not the defining scope boundary: a visibly
+terraced fluorite face also belongs here.
 
-Before implementation, define a separate display-only growth-morphology layer linked
-to, but never modifying, an idealized `HabitPreset`. It must preserve the scientific
-core mesh and provide explicit provenance, terminology, and a mode/label that makes
-the display approximation clear. Do not use `surfaceProfiles`, normal mapping, or
-the current convex half-space intersection to imitate skeleton quartz.
+Implement SR10 through a separate display-only growth-morphology layer that derives a
+render mesh from, but never modifies, the **idealized core mesh**. The selected
+`HabitPreset` determines that core mesh before display-mesh construction; it is not
+itself display geometry. The idealized core mesh is the authoritative scientific
+geometry and is rendered directly in the default morphology mode. The optional
+**display-growth mode** renders the derived mesh. The display layer must provide
+explicit provenance, terminology, and a mode/label that makes its approximation clear.
+It may reuse the current appearance, lighting, transmission, camera, and global
+surface-detail controls, but existing face-local `surfaceProfiles` must not
+automatically apply: the layer needs an explicit mapping from every display feature to
+its originating core face for material routing, inspection, and picking. Do not use
+normal mapping, or add constraints to the core's convex half-space construction, to
+imitate literal terraces, skeleton quartz, or fenster geometry.
+
+The first implementation slice is a fluorite `{100}` procedural display mesh with
+recessed, nested square hopper terraces. It is a curated visualization interpretation
+of the reviewed natural-growth observation, not a reconstruction or measurement of a
+specimen. Every component that represents a solid must be closed and watertight; the
+layer may contain multiple such components so later twins, child crystals, and
+window/fenster forms are not constrained to a single mesh. A hit on display geometry
+resolves only to the originating idealized core face; display features do not add a
+public inspection identity. The existing cube-form selector `a` identifies the initial
+fluorite `{100}` faces under the current selector contract.
+
+Use collector-friendly labels and search aliases without making them scientific
+categories or evidence claims. The initial display label is **Terraced fluorite**, with
+**hopper-style** and **stepped cubic growth** as descriptive terms. A later quartz
+display preset may be labelled **Fenster (window) quartz**, with **skeletal quartz** and
+**window quartz** as aliases; **elestial** remains a search synonym only because its
+usage is inconsistent.
 
 The user-supplied fluorite overgrowth and quartz fenster references reviewed on
 2026-09-19 illustrate this boundary. Treat their child-crystal growth and nested
@@ -428,9 +466,27 @@ windows as visual-design references for this display-only layer, not as source-b
 mineral-data claims or SR9 shader targets. Do not commit or redistribute the images
 without their owner's explicit licensing decision.
 
-This phase requires a separate architecture and data-model decision covering
-non-convex display geometry, inspection/picking behavior, exports, state, and the
-ambiguous collector terminology around skeleton, hopper, window, and fenster quartz.
+This phase still requires implementation-level design for procedural mesh generation,
+display-mode state and API, exports, and validation. Any export of display geometry must
+be explicitly selected and labelled; default scientific exports continue to use the
+idealized core mesh.
+
+Acceptance:
+
+* default morphology mode continues to render and export only the idealized core mesh;
+* display-growth mode leaves the idealized core mesh, its bounds, normals,
+  contributors, scientific picking result, and default export unchanged;
+* every solid display component is closed and watertight, and repeated rendering from
+  the same state regenerates identical display geometry and core-face attribution;
+* every display triangle maps to an originating idealized core face, and picking exposes
+  that face without a display-feature inspection identity;
+* the initial fluorite display mesh affects only cube-form `a` / `{100}` faces and is
+  identified as a curated typical interpretation rather than a specimen measurement;
+* no existing `surfaceProfiles` are inferred or applied to display geometry without an
+  explicit reviewed mapping;
+* display geometry has deterministic resource replacement and disposal behavior; and
+* any display-geometry export is explicitly requested and labelled as a display
+  approximation.
 
 ## Cross-Cutting Test Matrix
 
@@ -443,7 +499,9 @@ At minimum, test:
 * geometry immutability;
 * shader fallback when no surface profile exists;
 * context loss, material disposal, and mineral replacement;
-* transparent, metallic, and opaque rendering paths; and
+* transparent, metallic, and opaque rendering paths;
+* display-growth watertightness, deterministic regeneration, display-triangle to
+  core-face attribution, core-mesh immutability, and display-resource disposal; and
 * visual regression scenes under a pinned renderer, environment, camera, exposure,
   and output color space.
 
@@ -477,7 +535,7 @@ The following require prototypes or evidence and are intentionally not decided h
 * built-in environment asset and its license;
 * serialized state coverage for seeds and surface controls;
 * whether geometric displacement or damage is ever supported; and
-* representation, interaction, and export of non-convex growth morphology; and
+* representation, interaction, and export of procedural display growth morphology; and
 * whether advanced anisotropic optics warrants a separate milestone.
 
 Adopt durable choices through the normal architecture or decision-record process.
