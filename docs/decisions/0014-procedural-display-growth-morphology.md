@@ -56,7 +56,8 @@
   * A possible later renderer-neutral boolean union of the core solid and display-growth
     solids is deferred. It may remove overlapping internal display surfaces, especially
     for transmission, but requires a reviewed deterministic attribution strategy and
-    does not authorize cross-face child footprints.
+    does not authorize cross-face child footprints. Begin with a dependency-free
+    constrained design spike; any general CSG dependency needs separate review.
   * Validation must prove that the idealized core mesh and its bounds, normals,
     contributors, scientific picking result, and default export remain unchanged when
     display-growth mode is enabled. It must also validate watertight components,

@@ -502,6 +502,13 @@ Do not infer permission for a child footprint to cross a source-face boundary fr
 note. A union limited to the current face-local solids may clean internal overlap but
 does not itself soften a physical cube edge.
 
+Start with a dependency-free, renderer-neutral design spike for the constrained
+fluorite core-plus-cubic-growth case. Adopt a general CSG dependency only after a
+separate review of its determinism, watertightness behavior, generated-triangle
+provenance support, runtime/WASM and bundle cost, licensing, and compatibility with the
+package boundary. Generic renderer-level CSG utilities are not suitable by default
+because they do not preserve the required attribution contract.
+
 ## Cross-Cutting Test Matrix
 
 At minimum, test:
